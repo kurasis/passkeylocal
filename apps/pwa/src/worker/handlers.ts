@@ -46,7 +46,7 @@ type KdbxEntry = ReturnType<typeof findEntry>;
 const DEFAULT_PREFERENCES: Preferences = {
   lockIntervalMs: DEFAULT_LOCK_INTERVAL_MS,
   language: 'auto',
-  theme: 'auto',
+  theme: 'color',
   onboardingBackupVerified: false
 };
 
@@ -262,7 +262,7 @@ export class VaultWorkerHandlers {
       const lang = await this.storage.getPreference<string>('language');
       if (lang === 'en' || lang === 'ru' || lang === 'auto') out.language = lang;
       const theme = await this.storage.getPreference<string>('theme');
-      if (theme === 'light' || theme === 'dark' || theme === 'auto') out.theme = theme;
+      if (theme === 'light' || theme === 'dark' || theme === 'color' || theme === 'auto') out.theme = theme;
       out.onboardingBackupVerified = (await this.storage.getPreference<boolean>('onboardingBackupVerified')) === true;
       return out;
     },
@@ -270,7 +270,7 @@ export class VaultWorkerHandlers {
       const valid =
         (key === 'lockIntervalMs' && isLockInterval(value)) ||
         (key === 'language' && (value === 'auto' || value === 'en' || value === 'ru')) ||
-        (key === 'theme' && (value === 'auto' || value === 'light' || value === 'dark')) ||
+        (key === 'theme' && (value === 'auto' || value === 'color' || value === 'light' || value === 'dark')) ||
         (key === 'onboardingBackupVerified' && typeof value === 'boolean');
       if (!valid) throw new VaultError('INVALID_INPUT', 'preference');
       await this.storage.setPreference(key, value);

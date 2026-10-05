@@ -280,3 +280,68 @@ test('a passkey provider without PRF cannot enable unlock; password still works'
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
 });
+
+test('three palettes persist while locked and unlocked, follow explicit choice, and fit small screens', async ({ page }) => {
+  const sec = await watchSecurity(page);
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'color');
+  await page.getByRole('button', { name: 'Theme', exact: true }).click();
+  const popover = page.locator('.theme-popover');
+  const backgrounds = new Set<string>();
+  for (const [label, value] of [['Light', 'light'], ['Dark', 'dark'], ['Colorful', 'color']] as const) {
+    await popover.getByText(label, { exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', value);
+    backgrounds.add(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()));
+  }
+  expect(backgrounds.size).toBe(3);
+  await popover.getByRole('radio', { name: 'Light', exact: true }).focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.keyboard.press('Escape');
+  await expect(popover).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Theme', exact: true })).toBeFocused();
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await createAndVerifyVault(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const appearance = page.locator('.appearance-card');
+  await appearance.getByText('Dark', { exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: 'Theme', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'System', exact: true }).check();
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme');
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('dark');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('light');
+  await page.keyboard.press('Escape');
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
+  for (const [label, value] of [['Цветная', 'color'], ['Светлая', 'light'], ['Тёмная', 'dark']] as const) {
+    await appearance.getByText(label, { exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', value);
+    const contrast = await page.evaluate(() => {
+      const luminance = (color: string) => {
+        const rgb = color.match(/[\d.]+/g)!.slice(0, 3).map((x) => Number(x) / 255);
+        const linear = rgb.map((x) => x <= .04045 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4);
+        return linear[0]! * .2126 + linear[1]! * .7152 + linear[2]! * .0722;
+      };
+      const button = getComputedStyle(document.querySelector('button.secondary')!);
+      const text = luminance(button.color), background = luminance(button.backgroundColor);
+      return (Math.max(text, background) + .05) / (Math.min(text, background) + .05);
+    });
+    expect(contrast).toBeGreaterThanOrEqual(4.5);
+    for (const width of [320, 390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    }
+  }
+  await page.getByRole('button', { name: 'Заблокировать', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Хранилище заблокировано' })).toBeVisible();
+  await sec.assertClean();
+});

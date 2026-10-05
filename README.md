@@ -54,6 +54,14 @@ node tests/interop/generate-fixtures.ts
 tools/vault-recovery/.venv/bin/python tests/interop/generate_pykeepass_fixture.py
 ```
 
+## Appearance
+
+Choose **Colorful**, **Light** or **Dark** from the palette button in the header
+or from Settings. Themes are available before unlocking and survive reloads.
+The optional **System** setting follows your device. The interface uses a
+desktop sidebar and mobile bottom navigation. See [design references and
+previews](docs/DESIGN.md).
+
 ## Face ID / passkey unlock
 
 Unlock with the master password, then open **Settings → Face ID / passkey**,
