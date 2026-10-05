@@ -54,6 +54,29 @@ node tests/interop/generate-fixtures.ts
 tools/vault-recovery/.venv/bin/python tests/interop/generate_pykeepass_fixture.py
 ```
 
+## Face ID / passkey unlock
+
+Unlock with the master password, then open **Settings → Face ID / passkey**,
+re-enter the master password and enable the option. The system creates a
+platform passkey and verifies you. On an iPhone this may use Face ID; the OS
+can also choose Touch ID or the screen-lock code. The app cannot force a
+particular biometric method.
+
+Requires a secure origin, a platform authenticator and WebAuthn **PRF** support
+in both the browser and passkey provider. Unsupported providers leave password
+unlock available. For local development use `localhost`, not a raw IP address:
+WebAuthn credentials are bound to the domain. The passkey unlocks an AES-GCM
+encrypted master-password wrapper in this browser's IndexedDB; the PRF secret
+and plaintext password are never persisted. KDBX files and Python recovery
+remain password-based and unchanged. A synced passkey alone does not carry
+the vault or this browser's wrapper to another device.
+
+After password rotation or vault restoration, enable passkey unlock again.
+Disabling it removes the local unlock wrapper, but does not delete a passkey
+from your OS/keychain; remove that separately in device settings if desired.
+If the passkey or site data is lost, use the master password and your encrypted
+backups. Physical-iPhone/Safari validation is still pending.
+
 ## Documents
 
 - [Specification](docs/spec/README.md) (the development handoff this project implements)

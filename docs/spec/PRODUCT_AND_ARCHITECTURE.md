@@ -10,6 +10,8 @@ The user must be able to create, find, view, copy, edit, and recover login crede
 
 - One active vault per browser installation; create or import/restore one.
 - Master-password unlock; manual lock; automatic lock.
+- Optional platform-passkey unlock via WebAuthn PRF (owner request, 2026-10-05);
+  see SECURITY_AND_FORMAT.md for the local encrypted password wrapper.
 - Login records with title, username/email, password, URL, notes, tags, favorite status, optional expiry, and custom text/secret fields.
 - Groups/folders, including a recycle bin.
 - Search, filtering, sorting, duplicate titles, and Unicode data.
@@ -22,7 +24,7 @@ The user must be able to create, find, view, copy, edit, and recover login crede
 
 ### Explicitly outside v1
 
-Cloud accounts, backend authentication, remote vault storage, automatic multi-device sync/merge, collaboration, sharing individual credentials, TOTP generation, passkey storage, Face ID/passkey-based unlocking, PIN-only unlocking, browser extensions, native iOS Password AutoFill provider, file attachments, key files, hardware challenge-response, and password-reset services.
+Cloud accounts, backend authentication, remote vault storage, automatic multi-device sync/merge, collaboration, sharing individual credentials, TOTP generation, storing other sites' passkeys, PIN-only unlocking, browser extensions, native iOS Password AutoFill provider, file attachments, key files, hardware challenge-response, and password-reset services.
 
 Do not expose incomplete versions of these features. In particular, WebAuthn authentication alone must never be presented as encryption or as a replacement for the master password.
 

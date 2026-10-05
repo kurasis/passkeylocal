@@ -5,11 +5,34 @@ is **passed**, **partial**, **failed**, **not run** or **blocked**, with the
 evidence or the reason. "Passed" means an automated test or a recorded manual
 run exists and passed; nothing is marked passed because it "should work".
 
-**Overall: not ready for real credentials.** No PWA exists yet, and no physical
-iPhone test has been run. Passing automated tests is not a security audit; no
+**Overall: not ready for real credentials.** No physical iPhone test has been
+run. Passing automated tests is not a security audit; no
 independent review has been performed.
 
-Last updated: 2026-10-04 (deployed-site check of passkeylocal.top).
+Last updated: 2026-10-05 (local passkey-unlock validation; deployed-site results below are historical).
+
+## Optional Face ID / passkey unlock (2026-10-05)
+
+The owner requested platform-passkey unlock. The implementation uses WebAuthn
+PRF to encrypt the exact master password in an AES-GCM local wrapper; it does
+not change the portable KDBX format or independent password-based recovery.
+The OS chooses Face ID, Touch ID or screen-lock code. This is an explicit
+addition to the original v1 scope, not a claim of exclusively biometric or
+device-bound protection.
+
+Validated on Linux with Node.js 24.19.0 and Chromium 151.0.7922.173:
+
+| Check | Status | Evidence |
+| --- | --- | --- |
+| TypeScript and production build | passed | `npm run typecheck`; `npm run build -w @passkey-local/pwa`. |
+| Unit suites | passed | 96 adapter, 36 core and 26 PWA tests. `npm test`, followed by the expanded PWA suite with `npm test -w @passkey-local/pwa`. |
+| Wrapper authentication and lifecycle | passed | `apps/pwa/test/biometric.test.ts`: password reauthentication, ciphertext-only persistence, worker restart, edits, wrong PRF/credential, tampered AAD/ciphertext, lock during encryption, atomic head-generation conflict, disable, password rotation, snapshot restore and vault replacement. |
+| WebAuthn context and cancellation | passed | `apps/pwa/test/webauthn.test.ts`: rejects wrong origin, challenge, type, RP hash, credential, missing UP/UV; wipes rejected PRF buffers; cancellation and late-result refusal. |
+| Browser workflow | passed (virtual authenticator) | `PLAYWRIGHT_CHROMIUM_PATH=/usr/bin/chromium npm run e2e -w @passkey-local/pwa`: 5 tests, including real WebAuthn PRF enrollment/get with a CTAP2 virtual platform authenticator, pending-get cancellation by reload, offline unlock, disable/password fallback, lock during enrollment and PRF-unavailable fallback. Existing vault/CSP/header tests also pass. Local RP is `localhost` because WebAuthn rejects raw IP domains. |
+| Physical Face ID, Safari and OS passkey providers | not run | Requires an iPhone and a browser/provider supporting WebAuthn PRF. Virtual verification does not prove Face ID or Safari behavior. |
+
+No deployed-site check was run for this change. Existing deployment and
+physical-device gates remain open.
 
 ## Environment of the recorded runs
 

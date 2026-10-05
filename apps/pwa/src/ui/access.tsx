@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { BlobInfo } from '@passkey-local/vault-core';
 import { useT } from '../i18n.ts';
 import { ExportControl, RestoreControl, VerifyControl } from './backup-tools.tsx';
+import { BiometricUnlock } from './biometric.tsx';
 import { Banner, Busy, PasswordInput, errorCode, errorText, handOffFile, newPasswordProblem, useApp, useFormatDate } from './common.tsx';
 
 export function Welcome() {
@@ -161,6 +162,7 @@ export function Unlock() {
         <button type="submit" disabled={!pw || busy}>
           {t('unlock')}
         </button>
+        <BiometricUnlock busy={busy} setBusy={setBusy} onError={setError} />
         {busy && <Busy label={t('unlocking')} />}
         {error && <Banner kind="error">{error}</Banner>}
       </form>

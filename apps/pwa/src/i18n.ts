@@ -6,6 +6,17 @@
 import { createContext, useContext } from 'react';
 
 const en = {
+  biometricTitle: 'Face ID / passkey',
+  biometricUnlock: 'Unlock with Face ID / passkey',
+  biometricEnable: 'Enable Face ID / passkey',
+  biometricDisable: 'Disable Face ID / passkey',
+  biometricPassword: 'Confirm master password for Face ID / passkey',
+  biometricExplain: 'Use a passkey to unlock on this device. Your device chooses Face ID, Touch ID or its screen-lock code. Requires a browser and passkey provider with WebAuthn PRF support. Keep your master password: backups and other devices still need it. Re-enable after changing the password or restoring a vault. Passkeys may sync through your provider; the encrypted unlock data stays in this browser.',
+  biometricEnabled: 'Face ID / passkey unlock is enabled in this browser.',
+  biometricDisabled: 'Face ID / passkey unlock is disabled. You can also remove the passkey in your device settings.',
+  biometricUnavailable: 'Secure passkey unlock is unavailable in this browser or passkey provider. Use your master password.',
+  biometricCancelled: 'Passkey verification was cancelled or timed out. Try again or use your master password.',
+  biometricFailed: 'Unable to verify this passkey. Try again or use your master password.',
   appName: 'PassKey Local',
   // navigation
   navVault: 'Vault',
@@ -23,7 +34,7 @@ const en = {
   // welcome
   welcomeTitle: 'A password vault that stays on this device',
   welcomeLocal: 'Your vault is stored encrypted in this browser on this device only. There is no account and no cloud copy.',
-  welcomePassword: 'Only your master password can open it. If you forget it and have no usable backup, nobody can recover your data.',
+  welcomePassword: 'Keep your master password for recovery and backups, even if you enable passkey unlock on this device. There is no password reset.',
   welcomeBackup: 'Export encrypted backup files regularly and keep one on another device.',
   createVault: 'Create a new vault',
   restoreVault: 'Restore from a backup file',
@@ -235,6 +246,17 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const ru: Record<MessageKey, string> = {
+  biometricTitle: 'Face ID / ключ доступа',
+  biometricUnlock: 'Войти через Face ID / ключ доступа',
+  biometricEnable: 'Включить Face ID / ключ доступа',
+  biometricDisable: 'Отключить Face ID / ключ доступа',
+  biometricPassword: 'Подтвердите мастер-пароль для Face ID / ключа доступа',
+  biometricExplain: 'Ключ доступа позволяет открывать хранилище на этом устройстве. Устройство выбирает Face ID, Touch ID или код блокировки. Нужны браузер и провайдер ключей с поддержкой WebAuthn PRF. Сохраните мастер-пароль: он нужен для резервных копий и других устройств. После смены пароля или восстановления хранилища включите вход заново. Провайдер может синхронизировать ключ доступа; зашифрованные данные для входа остаются в этом браузере.',
+  biometricEnabled: 'Вход через Face ID / ключ доступа включён в этом браузере.',
+  biometricDisabled: 'Вход через Face ID / ключ доступа отключён. Ключ доступа также можно удалить в настройках устройства.',
+  biometricUnavailable: 'Безопасный вход по ключу доступа недоступен в этом браузере или у провайдера ключей. Используйте мастер-пароль.',
+  biometricCancelled: 'Проверка ключа доступа отменена или время ожидания истекло. Повторите попытку или используйте мастер-пароль.',
+  biometricFailed: 'Не удалось проверить ключ доступа. Повторите попытку или используйте мастер-пароль.',
   appName: 'PassKey Local',
   navVault: 'Хранилище',
   navFavorites: 'Избранное',
@@ -250,7 +272,7 @@ const ru: Record<MessageKey, string> = {
   working: 'Выполняется…',
   welcomeTitle: 'Хранилище паролей, которое остаётся на этом устройстве',
   welcomeLocal: 'Хранилище хранится в зашифрованном виде только в этом браузере на этом устройстве. Нет аккаунта и нет облачной копии.',
-  welcomePassword: 'Открыть его можно только мастер-паролем. Если вы его забудете и у вас нет рабочей резервной копии, восстановить данные не сможет никто.',
+  welcomePassword: 'Сохраните мастер-пароль для восстановления и резервных копий, даже если включите вход по ключу доступа на этом устройстве. Сброса пароля нет.',
   welcomeBackup: 'Регулярно сохраняйте зашифрованные резервные копии и держите одну на другом устройстве.',
   createVault: 'Создать новое хранилище',
   restoreVault: 'Восстановить из файла копии',

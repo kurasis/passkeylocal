@@ -68,6 +68,10 @@ export interface BackupCheckSummary {
 }
 
 export interface Requests {
+  biometricCredential: [void, BiometricCredential | null];
+  enableBiometric: [{ password: string; credential: BiometricCredential; prf: Uint8Array }, void];
+  unlockBiometric: [{ credentialId: Uint8Array; prf: Uint8Array }, { warnings: PasswordWarning[] }];
+  disableBiometric: [void, void];
   state: [void, { state: LifecycleState; persistence: 'persisted' | 'not-persisted' | 'unavailable'; storageUnhealthy: boolean }];
   create: [{ password: string }, { warnings: PasswordWarning[] }];
   unlock: [{ password: string }, { warnings: PasswordWarning[] }];
@@ -104,6 +108,12 @@ export interface Requests {
   rawSnapshot: [{ blobId: string }, FileOut];
   getPreferences: [void, Preferences];
   setPreference: [{ key: keyof Preferences; value: unknown }, void];
+}
+
+/** Public WebAuthn metadata only; never includes a PRF result or unwrapped password. */
+export interface BiometricCredential {
+  credentialId: Uint8Array;
+  salt: Uint8Array;
 }
 
 export interface Preferences {
