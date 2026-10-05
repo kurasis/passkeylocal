@@ -83,6 +83,7 @@ backups. Physical-iPhone/Safari validation is still pending.
 - [Release evidence and gate status](docs/RELEASE_EVIDENCE.md)
 - [Dependencies, versions and integration patches](docs/DEPENDENCIES.md)
 - [Deployment](docs/DEPLOYMENT.md) (hosting, headers, updates, origin changes)
+- [Cloudflare Pages upload ZIPs](deploy/cloudflare-pages/) (ready-to-upload production builds)
 - [Disaster-recovery guide](docs/RECOVERY_GUIDE.md) (printable, for users)
 - [Recovery tool README](tools/vault-recovery/README.md)
 
