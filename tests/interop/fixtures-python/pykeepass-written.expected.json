@@ -1,0 +1,515 @@
+{
+  "format": "localvault-recovery-json/1",
+  "source": {
+    "kdbx_version": "4.0",
+    "vault_id": null,
+    "lineage_id": null,
+    "revision": null
+  },
+  "metadata": {
+    "name": "Passwords",
+    "description": null,
+    "default_username": null,
+    "recycle_bin_enabled": true,
+    "recycle_bin_uuid": "c90a6dff-bfed-11f1-93c0-67b3a86f8e42",
+    "history_max_items": 10,
+    "history_max_size": 6291456,
+    "custom_data": [
+      {
+        "key": "KPXC_DECRYPTION_TIME_PREFERENCE",
+        "value": "1000",
+        "last_modified": null
+      },
+      {
+        "key": "_LAST_MODIFIED",
+        "value": "Sun Jan 12 03:51:58 2020 GMT",
+        "last_modified": null
+      }
+    ]
+  },
+  "groups": [
+    {
+      "uuid": "17af68b3-8f78-4c32-ba76-8ba88caeb9bd",
+      "parent_uuid": null,
+      "name": "Root",
+      "notes": null,
+      "icon_id": 48,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2020-01-12T03:51:46Z",
+        "last_modification": "2020-01-12T03:51:46Z",
+        "last_access": "2020-01-12T03:51:46Z",
+        "expiry": "2020-01-12T03:51:46Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2020-01-12T03:51:46Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    },
+    {
+      "uuid": "c90a2a24-bfed-11f1-9649-67b3a86f8e42",
+      "parent_uuid": "17af68b3-8f78-4c32-ba76-8ba88caeb9bd",
+      "name": "Work Ü",
+      "notes": null,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-10-04T12:19:02Z",
+        "last_modification": "2026-10-04T12:19:02Z",
+        "last_access": "2026-10-04T12:19:02Z",
+        "expiry": "2026-10-04T12:19:02Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-10-04T12:19:02Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    },
+    {
+      "uuid": "c90a6dff-bfed-11f1-93c0-67b3a86f8e42",
+      "parent_uuid": "17af68b3-8f78-4c32-ba76-8ba88caeb9bd",
+      "name": "Recycle Bin",
+      "notes": null,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-10-04T12:19:02Z",
+        "last_modification": "2026-10-04T12:19:02Z",
+        "last_access": "2026-10-04T12:19:02Z",
+        "expiry": "2026-10-04T12:19:02Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-10-04T12:19:02Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": true
+    }
+  ],
+  "entries": [
+    {
+      "uuid": "c90a5437-bfed-11f1-8b1d-67b3a86f8e42",
+      "group_uuid": "17af68b3-8f78-4c32-ba76-8ba88caeb9bd",
+      "group_path": [
+        "Root"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Duplicate",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "same",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "pw1",
+          "protected": true
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-10-04T12:19:02Z",
+        "last_modification": "2026-10-04T12:19:02Z",
+        "last_access": "2026-10-04T12:19:02Z",
+        "expiry": "2026-10-04T12:19:02Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-10-04T12:19:02Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": [
+          {
+            "window": "",
+            "sequence": ""
+          }
+        ]
+      },
+      "history": []
+    },
+    {
+      "uuid": "c90a5a33-bfed-11f1-b81d-67b3a86f8e42",
+      "group_uuid": "17af68b3-8f78-4c32-ba76-8ba88caeb9bd",
+      "group_path": [
+        "Root"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Duplicate",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "same",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "pw2",
+          "protected": true
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-10-04T12:19:02Z",
+        "last_modification": "2026-10-04T12:19:02Z",
+        "last_access": "2026-10-04T12:19:02Z",
+        "expiry": "2026-10-04T12:19:02Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-10-04T12:19:02Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": [
+          {
+            "window": "",
+            "sequence": ""
+          }
+        ]
+      },
+      "history": []
+    },
+    {
+      "uuid": "c90a3b23-bfed-11f1-ab7e-67b3a86f8e42",
+      "group_uuid": "c90a2a24-bfed-11f1-9649-67b3a86f8e42",
+      "group_path": [
+        "Root",
+        "Work Ü"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Py entry",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "py-user@example.test",
+          "protected": false
+        },
+        {
+          "name": "URL",
+          "value": "https://py.example.test",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "py\nnotes\twith tab",
+          "protected": false
+        },
+        {
+          "name": "Py secret",
+          "value": "py-protected",
+          "protected": true
+        },
+        {
+          "name": "Py plain",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "py-pass-v3",
+          "protected": true
+        }
+      ],
+      "tags": [
+        "python",
+        "Тег"
+      ],
+      "times": {
+        "creation": "2026-10-04T12:19:02Z",
+        "last_modification": "2026-10-04T12:19:02Z",
+        "last_access": "2026-10-04T12:19:02Z",
+        "expiry": "2026-03-29T00:59:59Z",
+        "expires": true,
+        "usage_count": "0",
+        "location_changed": "2026-10-04T12:19:02Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": [
+          {
+            "window": "",
+            "sequence": ""
+          }
+        ]
+      },
+      "history": [
+        {
+          "history_index": 0,
+          "icon_id": 0,
+          "custom_icon_uuid": null,
+          "foreground_color": null,
+          "background_color": null,
+          "override_url": null,
+          "quality_check": null,
+          "previous_parent_group": null,
+          "fields": [
+            {
+              "name": "Title",
+              "value": "Py entry",
+              "protected": false
+            },
+            {
+              "name": "UserName",
+              "value": "py-user@example.test",
+              "protected": false
+            },
+            {
+              "name": "Password",
+              "value": "py-pass-v1",
+              "protected": true
+            },
+            {
+              "name": "URL",
+              "value": "https://py.example.test",
+              "protected": false
+            },
+            {
+              "name": "Notes",
+              "value": "py\nnotes\twith tab",
+              "protected": false
+            },
+            {
+              "name": "Py secret",
+              "value": "py-protected",
+              "protected": true
+            },
+            {
+              "name": "Py plain",
+              "value": "",
+              "protected": false
+            }
+          ],
+          "tags": [
+            "python",
+            "Тег"
+          ],
+          "times": {
+            "creation": "2026-10-04T12:19:02Z",
+            "last_modification": "2026-10-04T12:19:02Z",
+            "last_access": "2026-10-04T12:19:02Z",
+            "expiry": "2026-03-29T00:59:59Z",
+            "expires": true,
+            "usage_count": "0",
+            "location_changed": "2026-10-04T12:19:02Z"
+          },
+          "custom_data": [],
+          "favorite": false,
+          "deleted_at": null,
+          "auto_type": {
+            "enabled": true,
+            "obfuscation": 0,
+            "default_sequence": null,
+            "associations": [
+              {
+                "window": "",
+                "sequence": ""
+              }
+            ]
+          }
+        },
+        {
+          "history_index": 1,
+          "icon_id": 0,
+          "custom_icon_uuid": null,
+          "foreground_color": null,
+          "background_color": null,
+          "override_url": null,
+          "quality_check": null,
+          "previous_parent_group": null,
+          "fields": [
+            {
+              "name": "Title",
+              "value": "Py entry",
+              "protected": false
+            },
+            {
+              "name": "UserName",
+              "value": "py-user@example.test",
+              "protected": false
+            },
+            {
+              "name": "URL",
+              "value": "https://py.example.test",
+              "protected": false
+            },
+            {
+              "name": "Notes",
+              "value": "py\nnotes\twith tab",
+              "protected": false
+            },
+            {
+              "name": "Py secret",
+              "value": "py-protected",
+              "protected": true
+            },
+            {
+              "name": "Py plain",
+              "value": "",
+              "protected": false
+            },
+            {
+              "name": "Password",
+              "value": "py-pass-v2",
+              "protected": true
+            }
+          ],
+          "tags": [
+            "python",
+            "Тег"
+          ],
+          "times": {
+            "creation": "2026-10-04T12:19:02Z",
+            "last_modification": "2026-10-04T12:19:02Z",
+            "last_access": "2026-10-04T12:19:02Z",
+            "expiry": "2026-03-29T00:59:59Z",
+            "expires": true,
+            "usage_count": "0",
+            "location_changed": "2026-10-04T12:19:02Z"
+          },
+          "custom_data": [],
+          "favorite": false,
+          "deleted_at": null,
+          "auto_type": {
+            "enabled": true,
+            "obfuscation": 0,
+            "default_sequence": null,
+            "associations": [
+              {
+                "window": "",
+                "sequence": ""
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "uuid": "c90a5f92-bfed-11f1-ac8c-67b3a86f8e42",
+      "group_uuid": "c90a6dff-bfed-11f1-93c0-67b3a86f8e42",
+      "group_path": [
+        "Root",
+        "Recycle Bin"
+      ],
+      "in_recycle_bin": true,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Recycled",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "r",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "recycled-pw",
+          "protected": true
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-10-04T12:19:02Z",
+        "last_modification": "2026-10-04T12:19:02Z",
+        "last_access": "2026-10-04T12:19:02Z",
+        "expiry": "2026-10-04T12:19:02Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-10-04T12:19:02Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": [
+          {
+            "window": "",
+            "sequence": ""
+          }
+        ]
+      },
+      "history": []
+    }
+  ],
+  "deleted_objects": []
+}

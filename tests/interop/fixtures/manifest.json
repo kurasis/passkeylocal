@@ -1,0 +1,82 @@
+{
+  "provenance": {
+    "generator": "tests/interop/generate-fixtures.ts",
+    "node": "v22.22.0",
+    "kdbxweb": "2.1.1",
+    "hash-wasm": "4.12.0",
+    "@xmldom/xmldom": "0.9.12",
+    "generated_at": "2026-10-04T12:20:17Z"
+  },
+  "fixtures": [
+    {
+      "file": "empty.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "sha256": "375bfd2211a22f6e7bc8825f096ef4cbf4e1ac73bb5b2b3c0444bf9c02e1fa03",
+      "description": "Empty vault with recycle bin and product metadata."
+    },
+    {
+      "file": "one-entry.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "sha256": "21e75dcb19a2b5276064f29ecf51819cc9cf3855707f4736f091a26d47a6ee5f",
+      "description": "Single ordinary login entry."
+    },
+    {
+      "file": "full.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "sha256": "7f0f61eace674b92227acb96f3861d3d8e365dd15d48da94c7276629bf457972",
+      "description": "Nested groups, duplicates, favorites, tags, custom fields, Unicode, 3+ history states with a restore, expiry, recycled entry with history, large revision."
+    },
+    {
+      "file": "password-nfc.kdbx",
+      "password": "Pässwörd-ñ-synthetic-NFC",
+      "sha256": "44cdec0c97ce0addb62b2e852c3335b84d5ce9263962c6be028b017033263cf1",
+      "description": "Password in NFC form; the NFD form of the same text must not unlock it.",
+      "wrong_passwords": [
+        "Pässwörd-ñ-synthetic-NFC"
+      ]
+    },
+    {
+      "file": "password-spaces.kdbx",
+      "password": "  leading and trailing spaces  ",
+      "sha256": "4640873224356ba2234b9db9c7364617dab5598ebb917aab4c231d808b60dbcc",
+      "description": "Password with leading/trailing spaces, preserved exactly.",
+      "wrong_passwords": [
+        "leading and trailing spaces",
+        "  leading and trailing spaces  \n"
+      ]
+    },
+    {
+      "file": "password-weak-existing.kdbx",
+      "password": "weak",
+      "sha256": "8f1ae948ab22f013595bb3caba806fd8bf4b43824f9d7b85c74969b6692bd2ea",
+      "description": "Existing file with a weak (4 character) password; recovery must accept it."
+    },
+    {
+      "file": "kdf-upper-bound.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "sha256": "85b414e6f72a51b1e892287f8370348b88ae72f03f2dcb333abacb86ac2b0aa0",
+      "description": "Argon2id 256 MiB / 10 iterations / parallelism 4 (upper reader envelope)."
+    },
+    {
+      "file": "stage1-unchanged.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "sha256": "319509b6097470aca20d7fb304367eb8bc0ebfe1df2fe6a7a673c6b57076d1e7",
+      "description": "Full vault re-saved without changes (fresh ciphertext, same content)."
+    },
+    {
+      "file": "stage2-edited.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "sha256": "411ee6c44c4d84fc44f644ffdb0df544c3ecd94e0a89dbb7d10df432508c22db",
+      "description": "Stage 1 plus one password edit (adds a history state)."
+    },
+    {
+      "file": "stage3-rotated.kdbx",
+      "password": "rotated-synthetic-passphrase-2026",
+      "sha256": "14d551143f4639443bda54c06ab9feedb84d422106dff6f4427b8d36c934fac2",
+      "description": "Stage 2 after master-password rotation.",
+      "wrong_passwords": [
+        "synthetic-Interop-пароль-🔑-2026"
+      ]
+    }
+  ]
+}

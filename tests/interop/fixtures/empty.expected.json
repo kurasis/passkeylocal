@@ -1,0 +1,101 @@
+{
+  "format": "localvault-recovery-json/1",
+  "source": {
+    "kdbx_version": "4.1",
+    "vault_id": "1ec1a4d9-6514-41c0-a5ed-bf4ad7e875c7",
+    "lineage_id": "b583309b-8de1-404e-8381-d99479712bf2",
+    "revision": "0"
+  },
+  "metadata": {
+    "name": "Vault",
+    "description": null,
+    "default_username": null,
+    "recycle_bin_enabled": true,
+    "recycle_bin_uuid": "8f81b0ef-b130-caf9-ff2e-7b5770c94bd6",
+    "history_max_items": -1,
+    "history_max_size": -1,
+    "custom_data": [
+      {
+        "key": "LocalVault.SchemaVersion",
+        "value": "1",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.VaultId",
+        "value": "1ec1a4d9-6514-41c0-a5ed-bf4ad7e875c7",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.LineageId",
+        "value": "b583309b-8de1-404e-8381-d99479712bf2",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.Revision",
+        "value": "0",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.SavedAt",
+        "value": "2026-10-04T12:20:17Z",
+        "last_modified": "2026-10-04T03:30:00Z"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "uuid": "c0371d5c-afde-3b0e-d016-9578c2ec27fb",
+      "parent_uuid": null,
+      "name": "Vault",
+      "notes": null,
+      "icon_id": 49,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T00:30:00Z",
+        "last_access": "2026-03-29T00:30:00Z",
+        "expiry": "2026-10-04T12:20:17Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T00:30:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    },
+    {
+      "uuid": "8f81b0ef-b130-caf9-ff2e-7b5770c94bd6",
+      "parent_uuid": "c0371d5c-afde-3b0e-d016-9578c2ec27fb",
+      "name": "Recycle Bin",
+      "notes": null,
+      "icon_id": 43,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T01:07:00Z",
+        "last_access": "2026-03-29T01:07:00Z",
+        "expiry": "2026-10-04T12:20:17Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T01:07:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": false,
+      "enable_searching": false,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": true
+    }
+  ],
+  "entries": [],
+  "deleted_objects": []
+}

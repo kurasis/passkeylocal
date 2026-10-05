@@ -1,0 +1,894 @@
+{
+  "format": "localvault-recovery-json/1",
+  "source": {
+    "kdbx_version": "4.1",
+    "vault_id": "9ddc93f8-a17f-4d01-bd11-92524fb4d8d3",
+    "lineage_id": "08cfa78e-8b23-483c-97a8-109cbb31f1b9",
+    "revision": "18446744073709551618"
+  },
+  "metadata": {
+    "name": "Vault",
+    "description": null,
+    "default_username": null,
+    "recycle_bin_enabled": true,
+    "recycle_bin_uuid": "cd7a9e9f-6b94-69bd-00f1-7083da09cb7e",
+    "history_max_items": -1,
+    "history_max_size": -1,
+    "custom_data": [
+      {
+        "key": "LocalVault.SchemaVersion",
+        "value": "1",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.VaultId",
+        "value": "9ddc93f8-a17f-4d01-bd11-92524fb4d8d3",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.LineageId",
+        "value": "08cfa78e-8b23-483c-97a8-109cbb31f1b9",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.Revision",
+        "value": "18446744073709551618",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.SavedAt",
+        "value": "2026-10-04T04:00:00Z",
+        "last_modified": "2026-10-04T03:30:00Z"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "uuid": "3f898de4-73f7-64fd-40e0-a25c54fc646b",
+      "parent_uuid": null,
+      "name": "Vault",
+      "notes": null,
+      "icon_id": 49,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T00:30:00Z",
+        "last_access": "2026-03-29T00:30:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T00:30:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    },
+    {
+      "uuid": "cd7a9e9f-6b94-69bd-00f1-7083da09cb7e",
+      "parent_uuid": "3f898de4-73f7-64fd-40e0-a25c54fc646b",
+      "name": "Recycle Bin",
+      "notes": null,
+      "icon_id": 43,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T01:07:00Z",
+        "last_access": "2026-03-29T01:07:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T01:07:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": false,
+      "enable_searching": false,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": true
+    },
+    {
+      "uuid": "26fdb5f8-c766-4aa2-2751-a82903ff7550",
+      "parent_uuid": "3f898de4-73f7-64fd-40e0-a25c54fc646b",
+      "name": "Work",
+      "notes": null,
+      "icon_id": 48,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T01:44:00Z",
+        "last_access": "2026-03-29T01:44:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T01:44:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    },
+    {
+      "uuid": "a011feb8-a86d-07bf-f78d-a20b2a129bcb",
+      "parent_uuid": "26fdb5f8-c766-4aa2-2751-a82903ff7550",
+      "name": "Nested Ünïcode",
+      "notes": null,
+      "icon_id": 48,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T02:21:00Z",
+        "last_access": "2026-03-29T02:21:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T02:21:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    },
+    {
+      "uuid": "a48b092d-38a2-0ff4-676c-62e96285d8cf",
+      "parent_uuid": "a011feb8-a86d-07bf-f78d-a20b2a129bcb",
+      "name": "Deep",
+      "notes": null,
+      "icon_id": 48,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T02:58:00Z",
+        "last_access": "2026-03-29T02:58:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T02:58:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    }
+  ],
+  "entries": [
+    {
+      "uuid": "f10e4545-8d86-253c-cc1e-95ca0e3b8ad4",
+      "group_uuid": "3f898de4-73f7-64fd-40e0-a25c54fc646b",
+      "group_path": [
+        "Vault"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Mail",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "alice@example.test",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "duplicate-title",
+          "protected": true
+        },
+        {
+          "name": "URL",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "",
+          "protected": false
+        }
+      ],
+      "tags": [
+        "dup"
+      ],
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T03:35:00Z",
+        "last_access": "2026-03-29T03:35:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T03:35:00Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": []
+      },
+      "history": []
+    },
+    {
+      "uuid": "695d1c74-6d97-e937-223f-8a6975fbcbc2",
+      "group_uuid": "3f898de4-73f7-64fd-40e0-a25c54fc646b",
+      "group_path": [
+        "Vault"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Expiring",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "exp",
+          "protected": true
+        },
+        {
+          "name": "URL",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "",
+          "protected": false
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T04:12:00Z",
+        "last_access": "2026-03-29T04:12:00Z",
+        "expiry": "2026-03-29T00:59:59Z",
+        "expires": true,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T04:12:00Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": []
+      },
+      "history": []
+    },
+    {
+      "uuid": "c72ef3c4-bc67-e1bd-093a-f9dddc9792cd",
+      "group_uuid": "cd7a9e9f-6b94-69bd-00f1-7083da09cb7e",
+      "group_path": [
+        "Vault",
+        "Recycle Bin"
+      ],
+      "in_recycle_bin": true,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": "3f898de4-73f7-64fd-40e0-a25c54fc646b",
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Old account",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "recycled-v2",
+          "protected": true
+        },
+        {
+          "name": "URL",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "",
+          "protected": false
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T05:26:00Z",
+        "last_access": "2026-03-29T05:26:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T05:26:00Z"
+      },
+      "custom_data": [
+        {
+          "key": "LocalVault.DeletedAt",
+          "value": "2026-10-25T01:30:00Z",
+          "last_modified": "2026-10-25T00:59:59Z"
+        }
+      ],
+      "favorite": false,
+      "deleted_at": "2026-10-25T01:30:00Z",
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": []
+      },
+      "history": [
+        {
+          "history_index": 0,
+          "icon_id": 0,
+          "custom_icon_uuid": null,
+          "foreground_color": null,
+          "background_color": null,
+          "override_url": null,
+          "quality_check": null,
+          "previous_parent_group": null,
+          "fields": [
+            {
+              "name": "Title",
+              "value": "Old account",
+              "protected": false
+            },
+            {
+              "name": "UserName",
+              "value": "",
+              "protected": false
+            },
+            {
+              "name": "Password",
+              "value": "recycled-v1",
+              "protected": true
+            },
+            {
+              "name": "URL",
+              "value": "",
+              "protected": false
+            },
+            {
+              "name": "Notes",
+              "value": "",
+              "protected": false
+            }
+          ],
+          "tags": [],
+          "times": {
+            "creation": "2026-03-29T00:30:00Z",
+            "last_modification": "2026-03-29T04:49:00Z",
+            "last_access": "2026-03-29T04:49:00Z",
+            "expiry": "2026-10-04T12:20:18Z",
+            "expires": false,
+            "usage_count": "0",
+            "location_changed": "2026-03-29T04:49:00Z"
+          },
+          "custom_data": [],
+          "favorite": false,
+          "deleted_at": null,
+          "auto_type": {
+            "enabled": true,
+            "obfuscation": 0,
+            "default_sequence": null,
+            "associations": []
+          }
+        }
+      ]
+    },
+    {
+      "uuid": "01c0cbf3-ed20-f74e-9657-6650513ba9ae",
+      "group_uuid": "26fdb5f8-c766-4aa2-2751-a82903ff7550",
+      "group_path": [
+        "Vault",
+        "Work"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Mail",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "alice@example.test",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "stage2-edited",
+          "protected": true
+        },
+        {
+          "name": "URL",
+          "value": "https://mail.example.test/",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "",
+          "protected": false
+        }
+      ],
+      "tags": [
+        "email"
+      ],
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T08:31:00Z",
+        "last_access": "2026-03-29T08:31:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T08:31:00Z"
+      },
+      "custom_data": [
+        {
+          "key": "LocalVault.Favorite",
+          "value": "true",
+          "last_modified": "2026-10-25T00:59:59Z"
+        }
+      ],
+      "favorite": true,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": []
+      },
+      "history": [
+        {
+          "history_index": 0,
+          "icon_id": 0,
+          "custom_icon_uuid": null,
+          "foreground_color": null,
+          "background_color": null,
+          "override_url": null,
+          "quality_check": null,
+          "previous_parent_group": null,
+          "fields": [
+            {
+              "name": "Title",
+              "value": "Mail",
+              "protected": false
+            },
+            {
+              "name": "UserName",
+              "value": "alice@example.test",
+              "protected": false
+            },
+            {
+              "name": "Password",
+              "value": "history-v1",
+              "protected": true
+            },
+            {
+              "name": "URL",
+              "value": "https://mail.example.test/",
+              "protected": false
+            },
+            {
+              "name": "Notes",
+              "value": "multi\r\nline\nnotes\twith tab & <xml> \"specials\" 'quotes' ]]>",
+              "protected": false
+            },
+            {
+              "name": "Recovery code",
+              "value": "RC-0001-synthetic",
+              "protected": true
+            },
+            {
+              "name": "Empty field",
+              "value": "",
+              "protected": false
+            },
+            {
+              "name": "Account №",
+              "value": "  42  ",
+              "protected": false
+            }
+          ],
+          "tags": [
+            "email",
+            "Личное",
+            "🔥"
+          ],
+          "times": {
+            "creation": "2026-03-29T00:30:00Z",
+            "last_modification": "2026-03-29T06:03:00Z",
+            "last_access": "2026-03-29T06:03:00Z",
+            "expiry": "2026-10-04T12:20:18Z",
+            "expires": false,
+            "usage_count": "0",
+            "location_changed": "2026-03-29T06:03:00Z"
+          },
+          "custom_data": [],
+          "favorite": false,
+          "deleted_at": null,
+          "auto_type": {
+            "enabled": true,
+            "obfuscation": 0,
+            "default_sequence": null,
+            "associations": []
+          }
+        },
+        {
+          "history_index": 1,
+          "icon_id": 0,
+          "custom_icon_uuid": null,
+          "foreground_color": null,
+          "background_color": null,
+          "override_url": null,
+          "quality_check": null,
+          "previous_parent_group": null,
+          "fields": [
+            {
+              "name": "Title",
+              "value": "Mail",
+              "protected": false
+            },
+            {
+              "name": "UserName",
+              "value": "alice@example.test",
+              "protected": false
+            },
+            {
+              "name": "Password",
+              "value": "history-v2",
+              "protected": true
+            },
+            {
+              "name": "URL",
+              "value": "https://mail.example.test/",
+              "protected": false
+            },
+            {
+              "name": "Notes",
+              "value": "",
+              "protected": false
+            }
+          ],
+          "tags": [
+            "email"
+          ],
+          "times": {
+            "creation": "2026-03-29T00:30:00Z",
+            "last_modification": "2026-03-29T06:40:00Z",
+            "last_access": "2026-03-29T06:40:00Z",
+            "expiry": "2026-10-04T12:20:18Z",
+            "expires": false,
+            "usage_count": "0",
+            "location_changed": "2026-03-29T06:40:00Z"
+          },
+          "custom_data": [],
+          "favorite": false,
+          "deleted_at": null,
+          "auto_type": {
+            "enabled": true,
+            "obfuscation": 0,
+            "default_sequence": null,
+            "associations": []
+          }
+        },
+        {
+          "history_index": 2,
+          "icon_id": 0,
+          "custom_icon_uuid": null,
+          "foreground_color": null,
+          "background_color": null,
+          "override_url": null,
+          "quality_check": null,
+          "previous_parent_group": null,
+          "fields": [
+            {
+              "name": "Title",
+              "value": "Mail",
+              "protected": false
+            },
+            {
+              "name": "UserName",
+              "value": "alice@example.test",
+              "protected": false
+            },
+            {
+              "name": "Password",
+              "value": "history-v3",
+              "protected": true
+            },
+            {
+              "name": "URL",
+              "value": "https://mail.example.test/",
+              "protected": false
+            },
+            {
+              "name": "Notes",
+              "value": "third",
+              "protected": false
+            }
+          ],
+          "tags": [
+            "email"
+          ],
+          "times": {
+            "creation": "2026-03-29T00:30:00Z",
+            "last_modification": "2026-03-29T07:17:00Z",
+            "last_access": "2026-03-29T07:17:00Z",
+            "expiry": "2026-10-04T12:20:18Z",
+            "expires": false,
+            "usage_count": "0",
+            "location_changed": "2026-03-29T07:17:00Z"
+          },
+          "custom_data": [],
+          "favorite": false,
+          "deleted_at": null,
+          "auto_type": {
+            "enabled": true,
+            "obfuscation": 0,
+            "default_sequence": null,
+            "associations": []
+          }
+        },
+        {
+          "history_index": 3,
+          "icon_id": 0,
+          "custom_icon_uuid": null,
+          "foreground_color": null,
+          "background_color": null,
+          "override_url": null,
+          "quality_check": null,
+          "previous_parent_group": null,
+          "fields": [
+            {
+              "name": "Title",
+              "value": "Mail",
+              "protected": false
+            },
+            {
+              "name": "UserName",
+              "value": "alice@example.test",
+              "protected": false
+            },
+            {
+              "name": "Password",
+              "value": "history-v2",
+              "protected": true
+            },
+            {
+              "name": "URL",
+              "value": "https://mail.example.test/",
+              "protected": false
+            },
+            {
+              "name": "Notes",
+              "value": "",
+              "protected": false
+            }
+          ],
+          "tags": [
+            "email"
+          ],
+          "times": {
+            "creation": "2026-03-29T00:30:00Z",
+            "last_modification": "2026-03-29T07:54:00Z",
+            "last_access": "2026-03-29T07:54:00Z",
+            "expiry": "2026-10-04T12:20:18Z",
+            "expires": false,
+            "usage_count": "0",
+            "location_changed": "2026-03-29T07:54:00Z"
+          },
+          "custom_data": [
+            {
+              "key": "LocalVault.Favorite",
+              "value": "true",
+              "last_modified": "2026-10-25T01:00:00Z"
+            }
+          ],
+          "favorite": true,
+          "deleted_at": null,
+          "auto_type": {
+            "enabled": true,
+            "obfuscation": 0,
+            "default_sequence": null,
+            "associations": []
+          }
+        }
+      ]
+    },
+    {
+      "uuid": "8e8e046a-1048-574b-82fe-5d2319aabb13",
+      "group_uuid": "a48b092d-38a2-0ff4-676c-62e96285d8cf",
+      "group_path": [
+        "Vault",
+        "Work",
+        "Nested Ünïcode",
+        "Deep"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "Mail",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "bob@example.test",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "duplicate-title-2",
+          "protected": true
+        },
+        {
+          "name": "URL",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "",
+          "protected": false
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T09:08:00Z",
+        "last_access": "2026-03-29T09:08:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T09:08:00Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": []
+      },
+      "history": []
+    },
+    {
+      "uuid": "83bcf785-1457-c8ed-1555-63aa6fac35c8",
+      "group_uuid": "a48b092d-38a2-0ff4-676c-62e96285d8cf",
+      "group_path": [
+        "Vault",
+        "Work",
+        "Nested Ünïcode",
+        "Deep"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "  Ünïcode é العربية עברית 😀 ",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "Ж‍Ж",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "  leading and trailing spaces　 ",
+          "protected": true
+        },
+        {
+          "name": "URL",
+          "value": "http://insecure.example.test/path?q=1&r=<2>",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "RTL ‮override",
+          "value": "value",
+          "protected": false
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T09:45:00Z",
+        "last_access": "2026-03-29T09:45:00Z",
+        "expiry": "2026-10-04T12:20:18Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T09:45:00Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": []
+      },
+      "history": []
+    }
+  ],
+  "deleted_objects": []
+}

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vault-recovery"
+version = "0.1.0"
+description = "Independent offline recovery tool for PassKey Local KDBX 4.1 backups"
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "pykeepass==4.2.0",
+]
+
+[project.scripts]
+vault-recovery = "vault_recovery.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+vault_recovery = ["schema/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "../../tests/interop", "../../tests/security"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"

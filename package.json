@@ -1,0 +1,23 @@
+{
+  "name": "passkey-local",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "version": "0.0.0",
+  "description": "Local-first KDBX password vault PWA with an independent Python recovery tool",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "fixtures:generate": "node tests/interop/generate-fixtures.ts"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.9.12"
+  }
+}

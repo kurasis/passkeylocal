@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vault-adapter:
+    name: TypeScript packages (typecheck, tests, audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --audit-level=high
+
+  pwa:
+    name: PWA build and browser tests (Chromium, production CSP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Production build
+        run: npm run build -w @passkey-local/pwa
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Browser tests against the built app served with the real headers
+        run: npm run e2e -w @passkey-local/pwa
+
+  recovery-tool:
+    name: Python recovery tool (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.12", "3.13"]
+        include:
+          - os: macos-latest
+            python: "3.12"
+    defaults:
+      run:
+        working-directory: tools/vault-recovery
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install pinned, hash-checked dependencies
+        run: python -m pip install --require-hashes -r requirements.lock -r requirements-dev.lock
+      - name: Tests (CLI, browser-written corpus, security corpus)
+        run: python -m pytest -p no:cacheprovider
+      - name: Dependency advisories
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          python -m pip install pip-audit==2.9.0
+          pip-audit --require-hashes -r requirements.lock
+
+  interop-fresh:
+    name: Fresh browser fixtures -> Python recovery
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - name: Install an independent KeePass reader (KeePassXC CLI)
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends keepassxc && keepassxc-cli --version
+      - name: Regenerate the corpus with the current adapter code
+        run: node tests/interop/generate-fixtures.ts
+      - name: Install recovery tool dependencies
+        run: python -m pip install --require-hashes -r tools/vault-recovery/requirements.lock -r tools/vault-recovery/requirements-dev.lock
+      - name: Recover every freshly written file with Python and KeePassXC
+        working-directory: tools/vault-recovery
+        run: python -m pytest -p no:cacheprovider -rs ../../tests
+      - name: Browser adapter reads the fresh corpus
+        run: npm test
+
+  offline-kit:
+    name: Offline recovery kit (Windows x64, Python 3.12)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build wheelhouse (network allowed only in this step)
+        shell: pwsh
+        run: tools/vault-recovery/scripts/build-offline-kit.ps1 -OutDir dist/vault-recovery-kit
+      - name: Install from the kit with --no-index --require-hashes and recover a fixture
+        shell: pwsh
+        run: |
+          python -m venv kit-venv
+          kit-venv\Scripts\python -m pip install --no-index --find-links dist/vault-recovery-kit/wheelhouse --require-hashes -r dist/vault-recovery-kit/requirements.lock
+          $env:PYTHONPATH = "dist/vault-recovery-kit/src"
+          $pw = (Get-Content tests/interop/fixtures/manifest.json | ConvertFrom-Json).fixtures[2].password
+          [System.IO.File]::WriteAllBytes("pw.bin", [System.Text.Encoding]::UTF8.GetBytes($pw))
+          cmd /c "kit-venv\Scripts\python -m vault_recovery verify tests/interop/fixtures/full.kdbx --password-stdin < pw.bin"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Remove-Item pw.bin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vault-recovery-offline-kit-win-amd64-py312
+          path: dist/vault-recovery-kit

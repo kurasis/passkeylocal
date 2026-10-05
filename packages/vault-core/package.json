@@ -1,0 +1,27 @@
+{
+  "name": "@passkey-local/vault-core",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "version": "0.1.0",
+  "description": "Durability core for PassKey Local: atomic IndexedDB persistence of encrypted KDBX blobs, session lifecycle, backup status.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./autolock": "./src/autolock.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@passkey-local/vault-adapter": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "fake-indexeddb": "6.2.5",
+    "typescript": "7.0.2",
+    "vitest": "5.0.3"
+  }
+}

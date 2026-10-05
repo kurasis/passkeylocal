@@ -1,0 +1,121 @@
+{
+  "provenance": {
+    "generator": "tests/interop/generate-fixtures.ts",
+    "node": "v22.22.0",
+    "kdbxweb": "2.1.1",
+    "hash-wasm": "4.12.0",
+    "@xmldom/xmldom": "0.9.12",
+    "generated_at": "2026-10-04T12:20:17Z"
+  },
+  "fixtures": [
+    {
+      "file": "xml-dtd-entity.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Authenticated XML with an internal DTD and entity declaration.",
+      "expect_ts": {
+        "code": "UNSUPPORTED",
+        "detail": "xml-dtd-or-declaration"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "xml-external-entity.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Authenticated XML with an external entity pointing at a local closed port.",
+      "expect_ts": {
+        "code": "UNSUPPORTED",
+        "detail": "xml-dtd-or-declaration"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "xml-xinclude.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Authenticated XML with an XInclude element.",
+      "expect_ts": {
+        "code": "UNSUPPORTED",
+        "detail": "xml-xinclude"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "xml-too-deep.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Authenticated XML nested 100 levels deep (limit 64).",
+      "expect_ts": {
+        "code": "LIMIT_EXCEEDED",
+        "detail": "xml-too-deep"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "xml-processing-instruction.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Authenticated XML with a processing instruction.",
+      "expect_ts": {
+        "code": "UNSUPPORTED",
+        "detail": "xml-processing-instruction"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "attachment.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Entry with a file attachment (unsupported in v1).",
+      "expect_ts": {
+        "code": "UNSUPPORTED",
+        "detail": "attachments"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "schema-newer.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Product schema version 2 (newer than supported).",
+      "expect_ts": {
+        "code": "UNSUPPORTED",
+        "detail": "schema-version-newer"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "gzip-compressed.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Authenticated but gzip-compressed payload.",
+      "expect_ts": {
+        "code": "UNSUPPORTED",
+        "detail": "compression-gzip"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "notes-too-long.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Notes field over 65,536 characters.",
+      "expect_ts": {
+        "code": "LIMIT_EXCEEDED",
+        "detail": "notes-too-long"
+      },
+      "expect_exit": 4
+    },
+    {
+      "file": "malicious-strings.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Script tags, C1 CSI control, bidi override and javascript: strings in record fields. Valid file: must open, and render inert.",
+      "expect_ts": {
+        "code": "OK"
+      },
+      "expect_exit": 0
+    },
+    {
+      "file": "unknown-entry-element.kdbx",
+      "password": "synthetic-Interop-пароль-🔑-2026",
+      "description": "Entry with an element neither reader models. Browser: read-only (no lossy re-save). Python: no export.",
+      "expect_ts": {
+        "code": "READ_ONLY",
+        "detail": "unknown-element-entry"
+      },
+      "expect_exit": 4
+    }
+  ]
+}

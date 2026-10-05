@@ -1,0 +1,599 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://passkey-local.invalid/schema/localvault-recovery-json-1.json",
+  "title": "localvault-recovery-json/1",
+  "description": "Complete plaintext recovery export of a PassKey Local KDBX vault. Contains every current and historical secret.",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "nullableUuid": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "time": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "nullableTime": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "decimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "customData": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "value",
+          "last_modified"
+        ],
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "last_modified": {
+            "$ref": "#/$defs/nullableTime"
+          }
+        }
+      }
+    },
+    "times": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "creation",
+        "last_modification",
+        "last_access",
+        "expiry",
+        "expires",
+        "usage_count",
+        "location_changed"
+      ],
+      "properties": {
+        "creation": {
+          "$ref": "#/$defs/nullableTime"
+        },
+        "last_modification": {
+          "$ref": "#/$defs/nullableTime"
+        },
+        "last_access": {
+          "$ref": "#/$defs/nullableTime"
+        },
+        "expiry": {
+          "$ref": "#/$defs/nullableTime"
+        },
+        "expires": {
+          "type": "boolean"
+        },
+        "usage_count": {
+          "$ref": "#/$defs/decimal"
+        },
+        "location_changed": {
+          "$ref": "#/$defs/nullableTime"
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "value",
+        "protected"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "protected": {
+          "type": "boolean"
+        }
+      }
+    },
+    "autoType": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "obfuscation",
+        "default_sequence",
+        "associations"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "obfuscation": {
+          "type": "integer"
+        },
+        "default_sequence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "associations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "window",
+              "sequence"
+            ],
+            "properties": {
+              "window": {
+                "type": "string"
+              },
+              "sequence": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "historyItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "history_index",
+        "icon_id",
+        "custom_icon_uuid",
+        "foreground_color",
+        "background_color",
+        "override_url",
+        "quality_check",
+        "previous_parent_group",
+        "fields",
+        "tags",
+        "times",
+        "custom_data",
+        "favorite",
+        "deleted_at",
+        "auto_type"
+      ],
+      "properties": {
+        "history_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "icon_id": {
+          "type": "integer"
+        },
+        "custom_icon_uuid": {
+          "type": "null"
+        },
+        "foreground_color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "background_color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "override_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quality_check": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "previous_parent_group": {
+          "$ref": "#/$defs/nullableUuid"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "times": {
+          "$ref": "#/$defs/times"
+        },
+        "custom_data": {
+          "$ref": "#/$defs/customData"
+        },
+        "favorite": {
+          "type": "boolean"
+        },
+        "deleted_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "auto_type": {
+          "$ref": "#/$defs/autoType"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "uuid",
+        "group_uuid",
+        "group_path",
+        "in_recycle_bin",
+        "icon_id",
+        "custom_icon_uuid",
+        "foreground_color",
+        "background_color",
+        "override_url",
+        "quality_check",
+        "previous_parent_group",
+        "fields",
+        "tags",
+        "times",
+        "custom_data",
+        "favorite",
+        "deleted_at",
+        "auto_type",
+        "history"
+      ],
+      "properties": {
+        "uuid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "group_uuid": {
+          "$ref": "#/$defs/uuid"
+        },
+        "group_path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "in_recycle_bin": {
+          "type": "boolean"
+        },
+        "icon_id": {
+          "type": "integer"
+        },
+        "custom_icon_uuid": {
+          "type": "null"
+        },
+        "foreground_color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "background_color": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "override_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "quality_check": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "previous_parent_group": {
+          "$ref": "#/$defs/nullableUuid"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "times": {
+          "$ref": "#/$defs/times"
+        },
+        "custom_data": {
+          "$ref": "#/$defs/customData"
+        },
+        "favorite": {
+          "type": "boolean"
+        },
+        "deleted_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "auto_type": {
+          "$ref": "#/$defs/autoType"
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/historyItem"
+          }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "source",
+    "exported_at",
+    "metadata",
+    "groups",
+    "entries",
+    "deleted_objects"
+  ],
+  "properties": {
+    "format": {
+      "const": "localvault-recovery-json/1"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "kdbx_version",
+        "vault_id",
+        "lineage_id",
+        "revision"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "kdbx_version": {
+          "type": "string",
+          "pattern": "^4\\.[01]$"
+        },
+        "vault_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "lineage_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]*)$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "exported_at": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "description",
+        "default_username",
+        "recycle_bin_enabled",
+        "recycle_bin_uuid",
+        "history_max_items",
+        "history_max_size",
+        "custom_data"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "default_username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recycle_bin_enabled": {
+          "type": "boolean"
+        },
+        "recycle_bin_uuid": {
+          "$ref": "#/$defs/nullableUuid"
+        },
+        "history_max_items": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "history_max_size": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "custom_data": {
+          "$ref": "#/$defs/customData"
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "uuid",
+          "parent_uuid",
+          "name",
+          "notes",
+          "icon_id",
+          "custom_icon_uuid",
+          "times",
+          "is_expanded",
+          "default_auto_type_sequence",
+          "enable_auto_type",
+          "enable_searching",
+          "last_top_visible_entry",
+          "previous_parent_group",
+          "tags",
+          "custom_data",
+          "in_recycle_bin"
+        ],
+        "properties": {
+          "uuid": {
+            "$ref": "#/$defs/uuid"
+          },
+          "parent_uuid": {
+            "$ref": "#/$defs/nullableUuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "icon_id": {
+            "type": "integer"
+          },
+          "custom_icon_uuid": {
+            "type": "null"
+          },
+          "times": {
+            "$ref": "#/$defs/times"
+          },
+          "is_expanded": {
+            "type": "boolean"
+          },
+          "default_auto_type_sequence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enable_auto_type": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "enable_searching": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "last_top_visible_entry": {
+            "$ref": "#/$defs/nullableUuid"
+          },
+          "previous_parent_group": {
+            "$ref": "#/$defs/nullableUuid"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "custom_data": {
+            "$ref": "#/$defs/customData"
+          },
+          "in_recycle_bin": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    },
+    "deleted_objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "uuid",
+          "deletion_time"
+        ],
+        "properties": {
+          "uuid": {
+            "$ref": "#/$defs/uuid"
+          },
+          "deletion_time": {
+            "$ref": "#/$defs/nullableTime"
+          }
+        }
+      }
+    }
+  }
+}

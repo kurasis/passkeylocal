@@ -1,0 +1,164 @@
+{
+  "format": "localvault-recovery-json/1",
+  "source": {
+    "kdbx_version": "4.1",
+    "vault_id": "c31a6c07-2d0b-46e4-bb34-316a39beb82d",
+    "lineage_id": "8bfd115f-f993-4468-bb68-703f5b2e6be9",
+    "revision": "0"
+  },
+  "metadata": {
+    "name": "Vault",
+    "description": null,
+    "default_username": null,
+    "recycle_bin_enabled": true,
+    "recycle_bin_uuid": "33d30522-921e-0190-ce93-e2f8ea4b983b",
+    "history_max_items": -1,
+    "history_max_size": -1,
+    "custom_data": [
+      {
+        "key": "LocalVault.SchemaVersion",
+        "value": "1",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.VaultId",
+        "value": "c31a6c07-2d0b-46e4-bb34-316a39beb82d",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.LineageId",
+        "value": "8bfd115f-f993-4468-bb68-703f5b2e6be9",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.Revision",
+        "value": "0",
+        "last_modified": "2026-10-04T03:30:00Z"
+      },
+      {
+        "key": "LocalVault.SavedAt",
+        "value": "2026-10-04T12:20:20Z",
+        "last_modified": "2026-10-04T03:30:00Z"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "uuid": "bf6272a1-0a52-389f-0643-416a1e664ec3",
+      "parent_uuid": null,
+      "name": "Vault",
+      "notes": null,
+      "icon_id": 49,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T00:30:00Z",
+        "last_access": "2026-03-29T00:30:00Z",
+        "expiry": "2026-10-04T12:20:20Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T00:30:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": null,
+      "enable_searching": null,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": false
+    },
+    {
+      "uuid": "33d30522-921e-0190-ce93-e2f8ea4b983b",
+      "parent_uuid": "bf6272a1-0a52-389f-0643-416a1e664ec3",
+      "name": "Recycle Bin",
+      "notes": null,
+      "icon_id": 43,
+      "custom_icon_uuid": null,
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T01:07:00Z",
+        "last_access": "2026-03-29T01:07:00Z",
+        "expiry": "2026-10-04T12:20:20Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T01:07:00Z"
+      },
+      "is_expanded": true,
+      "default_auto_type_sequence": null,
+      "enable_auto_type": false,
+      "enable_searching": false,
+      "last_top_visible_entry": null,
+      "previous_parent_group": null,
+      "tags": [],
+      "custom_data": [],
+      "in_recycle_bin": true
+    }
+  ],
+  "entries": [
+    {
+      "uuid": "55c153ea-48ee-a9e8-a526-23df83be2e09",
+      "group_uuid": "bf6272a1-0a52-389f-0643-416a1e664ec3",
+      "group_path": [
+        "Vault"
+      ],
+      "in_recycle_bin": false,
+      "icon_id": 0,
+      "custom_icon_uuid": null,
+      "foreground_color": null,
+      "background_color": null,
+      "override_url": null,
+      "quality_check": null,
+      "previous_parent_group": null,
+      "fields": [
+        {
+          "name": "Title",
+          "value": "kdf-upper",
+          "protected": false
+        },
+        {
+          "name": "UserName",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Password",
+          "value": "upper-bound",
+          "protected": true
+        },
+        {
+          "name": "URL",
+          "value": "",
+          "protected": false
+        },
+        {
+          "name": "Notes",
+          "value": "",
+          "protected": false
+        }
+      ],
+      "tags": [],
+      "times": {
+        "creation": "2026-03-29T00:30:00Z",
+        "last_modification": "2026-03-29T01:44:00Z",
+        "last_access": "2026-03-29T01:44:00Z",
+        "expiry": "2026-10-04T12:20:20Z",
+        "expires": false,
+        "usage_count": "0",
+        "location_changed": "2026-03-29T01:44:00Z"
+      },
+      "custom_data": [],
+      "favorite": false,
+      "deleted_at": null,
+      "auto_type": {
+        "enabled": true,
+        "obfuscation": 0,
+        "default_sequence": null,
+        "associations": []
+      },
+      "history": []
+    }
+  ],
+  "deleted_objects": []
+}
