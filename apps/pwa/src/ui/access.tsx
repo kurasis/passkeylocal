@@ -5,6 +5,7 @@ import type { BlobInfo } from '@passkey-local/vault-core';
 import { useT } from '../i18n.ts';
 import { ExportControl, RestoreControl, VerifyControl } from './backup-tools.tsx';
 import { BiometricUnlock } from './biometric.tsx';
+import { Icon } from './icons.tsx';
 import { Banner, Busy, PasswordInput, errorCode, errorText, handOffFile, newPasswordProblem, useApp, useFormatDate } from './common.tsx';
 
 export function Welcome() {
@@ -23,20 +24,27 @@ export function Welcome() {
       </section>
     );
   return (
-    <section className="screen narrow">
-      <h1>{t('welcomeTitle')}</h1>
+    <section className="screen narrow welcome">
+      <div className="welcome-hero">
+        <span className="auth-icon"><Icon name="vault" /></span>
+        <p className="eyebrow">{t('welcomeEyebrow')}</p>
+        <h1>{t('welcomeTitle')}</h1>
+        <p className="welcome-lead">{t('welcomeLead')}</p>
+      </div>
+      <div className="card stack">
       <ul className="facts">
-        <li>{t('welcomeLocal')}</li>
-        <li>{t('welcomePassword')}</li>
-        <li>{t('welcomeBackup')}</li>
+        <li><span className="fact-icon"><Icon name="shield" /></span><span>{t('welcomeLocal')}</span></li>
+        <li><span className="fact-icon"><Icon name="key" /></span><span>{t('welcomePassword')}</span></li>
+        <li><span className="fact-icon"><Icon name="backup" /></span><span>{t('welcomeBackup')}</span></li>
       </ul>
       <div className="stack">
         <button type="button" onClick={() => setMode('create')}>
-          {t('createVault')}
+          <Icon name="plus" />{t('createVault')}
         </button>
         <button type="button" className="secondary" onClick={() => setMode('restore')}>
           {t('restoreVault')}
         </button>
+      </div>
       </div>
     </section>
   );
@@ -71,7 +79,8 @@ function CreateVault(props: { onCancel: () => void }) {
   };
 
   return (
-    <section className="screen narrow">
+    <section className="screen narrow auth-screen">
+      <span className="auth-icon"><Icon name="key" /></span>
       <h1>{t('createTitle')}</h1>
       <p>{t('createExplain')}</p>
       <form
@@ -149,8 +158,11 @@ export function Unlock() {
   };
 
   return (
-    <section className="screen narrow">
+    <section className="screen narrow auth-screen">
+      <span className="auth-icon"><Icon name="lock" /></span>
+      <p className="eyebrow">{t('unlockEyebrow')}</p>
       <h1>{t('unlockTitle')}</h1>
+      <p className="muted">{t('unlockHint')}</p>
       <form
         className="stack"
         onSubmit={(e) => {

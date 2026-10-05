@@ -5,6 +5,7 @@ import type { EntryInput, EntryView, SearchHit } from '@passkey-local/vault-adap
 import { useT } from '../i18n.ts';
 import type { EntryDetail, HistoryItem, Overview } from '../protocol.ts';
 import { Banner, Busy, PasswordInput, TextField, copyText, errorText, openExternal, urlPolicy, useApp, useFormatDate } from './common.tsx';
+import { Icon } from './icons.tsx';
 
 export type VaultView =
   | { name: 'list' }
@@ -112,6 +113,10 @@ function EntryList(props: Props & { recycle?: boolean }) {
 
   return (
     <section className="screen">
+      {!props.recycle && <div className="screen-heading">
+        <div><p className="eyebrow">{t('workspaceLabel')}</p><h1>{props.favoritesOnly ? t('navFavorites') : t('navVault')}</h1><p className="screen-subtitle">{props.favoritesOnly ? t('favoritesIntro') : t('vaultIntro')}</p><span className="entry-count">{t('entryCount', { n: rows.length })}</span></div>
+        {!props.overview.readOnly && <button type="button" onClick={() => props.go({ name: 'edit', uuid: null })}><Icon name="plus" />{t('addEntry')}</button>}
+      </div>}
       {props.recycle ? (
         <>
           <div className="toolbar">
@@ -125,6 +130,8 @@ function EntryList(props: Props & { recycle?: boolean }) {
       ) : (
         <>
           <div className="search">
+            <div className="search-field">
+            <Icon name="search" />
             <input
               type="search"
               aria-label={t('search')}
@@ -136,8 +143,9 @@ function EntryList(props: Props & { recycle?: boolean }) {
               autoCorrect="off"
               spellCheck={false}
             />
-            <button type="button" className="secondary" aria-expanded={showOpts} onClick={() => setShowOpts((v) => !v)}>
-              {t('searchOptions')}
+            </div>
+            <button type="button" className="secondary" aria-label={t('searchOptions')} aria-expanded={showOpts} onClick={() => setShowOpts((v) => !v)}>
+              <Icon name="sliders" /><span className="search-options-label">{t('searchOptions')}</span>
             </button>
           </div>
           {showOpts && (
@@ -186,7 +194,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
         </>
       )}
       {rows.length === 0 ? (
-        <p className="empty">{hits ? t('noResults') : t('noEntries')}</p>
+        <div className="empty"><span className="empty-symbol"><Icon name={props.favoritesOnly ? 'star' : 'vault'} /></span><h2>{hits ? t('noResults') : t('noEntries')}</h2><p>{hits ? t('searchHint') : props.recycle ? t('recycleNote') : props.favoritesOnly ? t('favoritesHint') : t('emptyHint')}</p></div>
       ) : (
         <ul className="list entries">
           {rows.map(({ entry, hit }) => (
@@ -198,7 +206,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
                   props.go(hit?.historyIndex !== undefined ? { name: 'historyItem', uuid: entry.uuid, index: hit.historyIndex } : { name: 'detail', uuid: entry.uuid })
                 }
               >
-                <span className="avatar" aria-hidden="true">
+                <span className={`avatar avatar-tone-${(entry.title.codePointAt(0) ?? 0) % 4}`} aria-hidden="true">
                   {initials(entry.title)}
                 </span>
                 <span className="row-text">
@@ -215,6 +223,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
                   )}
                   {props.recycle && <span className="row-sub">{fmt(entry.modifiedAt)}</span>}
                 </span>
+                <Icon name="chevron" />
               </button>
             </li>
           ))}
@@ -222,11 +231,6 @@ function EntryList(props: Props & { recycle?: boolean }) {
       )}
       {!props.recycle && !hits && (
         <div className="stack actions">
-          {!props.overview.readOnly && (
-            <button type="button" onClick={() => props.go({ name: 'edit', uuid: null })}>
-              {t('addEntry')}
-            </button>
-          )}
           {newGroup === null ? (
             <button type="button" className="secondary" onClick={() => setNewGroup('')}>
               {t('newGroup')}

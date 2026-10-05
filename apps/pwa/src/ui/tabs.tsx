@@ -7,6 +7,7 @@ import { useT } from '../i18n.ts';
 import type { Preferences } from '../protocol.ts';
 import { ExportControl, RestoreControl, VerifyControl } from './backup-tools.tsx';
 import { BiometricSettings } from './biometric.tsx';
+import { ThemePicker } from './theme.tsx';
 import { Banner, Busy, PasswordInput, errorText, newPasswordProblem, useApp, useFormatDate } from './common.tsx';
 
 export function BackupStatusBanner(props: { status: BackupStatus | null }) {
@@ -102,6 +103,12 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
   return (
     <section className="screen">
       <h1>{t('settingsTitle')}</h1>
+      <p className="screen-subtitle">{t('settingsIntro')}</p>
+      <div className="card appearance-card">
+        <h2>{t('themeTitle')}</h2>
+        <p className="muted">{t('themeHint')}</p>
+        <ThemePicker value={props.prefs.theme} onChange={(value) => props.setPref('theme', value)} />
+      </div>
       <div className="card stack">
         <label className="field">
           {t('lockAfter')}
@@ -119,14 +126,6 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
             <option value="auto">{t('languageAuto')}</option>
             <option value="en">English</option>
             <option value="ru">Русский</option>
-          </select>
-        </label>
-        <label className="field">
-          {t('theme')}
-          <select value={props.prefs.theme} onChange={(e) => props.setPref('theme', e.target.value)}>
-            <option value="auto">{t('themeAuto')}</option>
-            <option value="light">{t('themeLight')}</option>
-            <option value="dark">{t('themeDark')}</option>
           </select>
         </label>
         <p className="muted">{t('historyPolicy')}</p>

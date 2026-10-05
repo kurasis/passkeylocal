@@ -119,7 +119,7 @@ export interface BiometricCredential {
 export interface Preferences {
   lockIntervalMs: number;
   language: 'auto' | 'en' | 'ru';
-  theme: 'auto' | 'light' | 'dark';
+  theme: 'auto' | 'color' | 'light' | 'dark';
   onboardingBackupVerified: boolean;
 }
 

@@ -19,10 +19,12 @@ import { AppContext, Banner, errorText, handOffFile, useApp, type AppApi } from 
 import { BackupStatusBanner, BackupsTab, SettingsTab } from './tabs.tsx';
 import { VaultScreens, type VaultView } from './vault.tsx';
 import { useServiceWorkerUpdate } from './sw-update.ts';
+import { Icon, type IconName } from './icons.tsx';
+import { ThemeMenu } from './theme.tsx';
 
 type Tab = 'vault' | 'favorites' | 'backups' | 'settings';
 
-const DEFAULT_PREFS: Preferences = { lockIntervalMs: DEFAULT_LOCK_INTERVAL_MS, language: 'auto', theme: 'auto', onboardingBackupVerified: false };
+const DEFAULT_PREFS: Preferences = { lockIntervalMs: DEFAULT_LOCK_INTERVAL_MS, language: 'auto', theme: 'color', onboardingBackupVerified: false };
 
 export function App() {
   const client = useMemo(() => new VaultClient(), []);
@@ -188,14 +190,18 @@ export function App() {
   return (
     <I18nContext.Provider value={{ t, lang }}>
       <AppContext.Provider value={api}>
-        <div className="app">
+        <div className={`app ${unlocked ? 'workspace' : 'access-layout'}`}>
           <header className="topbar">
-            <span className="brand">{t('appName')}</span>
+            <div className="brand"><span className="brand-mark"><Icon name="vault" /></span><span>{t('appName')}<small>{t('brandSubtitle')}</small></span></div>
+            <div className="topbar-actions">
+              <span className="privacy-chip"><Icon name="shield" />{t('localOnly')}</span>
+              <ThemeMenu value={prefs.theme} onChange={(value) => setPref('theme', value)} />
             {phase === 'unlocked' && (
-              <button type="button" className="secondary" onClick={lockNow}>
-                {t('lock')}
+              <button type="button" className="secondary" aria-label={t('lock')} title={t('lock')} onClick={lockNow}>
+                <Icon name="lock" /><span className="lock-label">{t('lock')}</span>
               </button>
             )}
+            </div>
           </header>
           {update && phase !== 'unlocked' && (
             <Banner kind="info">
@@ -213,6 +219,7 @@ export function App() {
           )}
           {unlocked && (
             <nav className="tabbar" aria-label="Main">
+              <span className="nav-heading">{t('workspaceLabel')}</span>
               {(
                 [
                   ['vault', t('navVault')],
@@ -231,9 +238,10 @@ export function App() {
                     if (id === 'backups') void reload();
                   }}
                 >
-                  {label}
+                  <Icon name={({ vault: 'vault', favorites: 'star', backups: 'backup', settings: 'settings' } as Record<Tab, IconName>)[id]} /><span>{label}</span>
                 </button>
               ))}
+              <div className="nav-note"><Icon name="shield" /><strong>{t('localOnly')}</strong><span>{t('navPrivacy')}</span></div>
             </nav>
           )}
         </div>

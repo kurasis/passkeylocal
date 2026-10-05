@@ -9,7 +9,28 @@ run exists and passed; nothing is marked passed because it "should work".
 run. Passing automated tests is not a security audit; no
 independent review has been performed.
 
-Last updated: 2026-10-05 (local passkey-unlock validation; deployed-site results below are historical).
+Last updated: 2026-10-05 (local passkey and appearance validation; deployed-site results below are historical).
+
+## Three themes and responsive layout (2026-10-05)
+
+Colorful, Light and Dark palettes are implemented, with Colorful as the
+default for installations without a saved preference. The System option and
+existing saved themes remain supported. The header picker works while empty
+or locked; Settings offers the same choices while unlocked. The layout uses
+desktop sidebar navigation, mobile bottom navigation, a prominent search
+field, local SVG icons and colored entry initials.
+
+Passed: `npm run typecheck`, production build, 26 PWA unit tests and all 6
+Chromium e2e tests. The appearance e2e checks explicit choices under a dark
+OS preference, persistence across reload/lock/unlock, System changes,
+keyboard selection and Escape focus return, Russian labels, no horizontal
+overflow at 320/390/1440 pixels, secondary-button text contrast of at least
+4.5:1 in all three palettes, and no CSP/console/network violations. Existing
+backup, offline and virtual-passkey scenarios also pass.
+
+Desktop and mobile-viewport screenshots were visually reviewed with synthetic
+entries; see [design references and previews](DESIGN.md). No Safari,
+physical-iPhone or deployed-site checks were run for this change.
 
 ## Optional Face ID / passkey unlock (2026-10-05)
 

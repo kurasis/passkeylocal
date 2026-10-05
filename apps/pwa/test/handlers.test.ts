@@ -35,6 +35,7 @@ describe('vault worker handlers', () => {
 
   it('history lists changed fields and restores without losing the current state', async () => {
     const h = await handlers();
+    expect((await h.handle('getPreferences', undefined)).theme).toBe('color');
     await h.handle('create', { password: PW });
     const { uuid } = await h.handle('saveEntry', { uuid: null, input });
     const same = await h.handle('saveEntry', { uuid, input });
@@ -78,6 +79,11 @@ describe('vault worker handlers', () => {
     expect((await h.handle('getPreferences', undefined)).lockIntervalMs).toBe(3_600_000);
     const err = await h.handle('setPreference', { key: 'lockIntervalMs', value: 0 }).catch((e: unknown) => toSafeError(e));
     expect(err).toEqual({ code: 'INVALID_INPUT', detail: 'preference' });
+    for (const theme of ['color', 'light', 'dark', 'auto'] as const) {
+      await h.handle('setPreference', { key: 'theme', value: theme });
+      expect((await h.handle('getPreferences', undefined)).theme).toBe(theme);
+    }
+    await expect(h.handle('setPreference', { key: 'theme', value: 'unsupported' })).rejects.toMatchObject({ code: 'INVALID_INPUT' });
   });
 
   it('errors crossing to the UI carry only a code and detail', async () => {
