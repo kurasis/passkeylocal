@@ -17,7 +17,7 @@ The product encrypts a local, portable password database. It is designed to resi
 | Valid old file replaces current file | Warn using local lineage/revision information when available. Offline files have no trusted global anti-rollback counter. |
 | Forgotten master password | No server reset and no decryption bypass. A backup does not recover a missing password. |
 
-Do not use claims such as “unhackable,” “military-grade,” “Face ID protected” in v1, “hardware-backed key” for an ordinary Web Crypto key, or “securely erased” for a deleted IndexedDB record. Do not claim that all data stays on the phone after a user deliberately exports/shares a backup.
+Do not use claims such as “unhackable,” “military-grade,” guaranteed “Face ID protected,” “hardware-backed key” for an ordinary Web Crypto key, or “securely erased” for a deleted IndexedDB record. The OS chooses user verification (Face ID, Touch ID or screen-lock code), and passkeys may be synced by the user's provider. Do not claim that all data stays on the phone after a user deliberately exports/shares a backup.
 
 ## 2. Standard format instead of a new protocol
 
@@ -65,10 +65,44 @@ Run KDF work off the UI thread and support cancellation by terminating the dedic
 - New vaults require 16–1,024 Unicode scalar values; strength guidance must explain that length alone does not make a predictable password strong.
 - Creation rejects NUL, CR and LF to avoid single-line input ambiguity; it does not remove these characters silently. Recovery accepts up to 4,096 UTF-8 bytes of valid password text and must not silently truncate an existing password. The Python exact-stdin path can recover unusual existing line-break-containing passwords; a PWA input limitation must be reported rather than changing the password bytes.
 - For importing/recovering an otherwise supported existing file, allow nonempty passwords below the creation minimum and warn after success; never prevent recovery just because an old password is weak.
-- Neither plaintext master password, transformed master key, nor a verifier that bypasses the KDF may be persisted. No “remember master password” toggle.
+- Neither plaintext master password, transformed master key, nor a verifier that bypasses the KDF may be persisted. Optional PRF unlock persists only the authenticated encrypted wrapper described below; no ordinary “remember master password” toggle.
 - Keep only the minimum credential material the library needs while unlocked. Clear input controls and drop references promptly; overwrite mutable buffers where possible.
 
 Password changing requires the old password to be re-entered and successfully verified, even when the vault is already open. Validate a candidate saved under the new password before any head switch. Follow the backup/rotation sequence in the recovery document. Existing exported files still require their original passwords.
+
+### Optional platform-passkey unlock (owner request, 2026-10-05)
+
+WebAuthn authentication alone cannot decrypt a vault. Enrollment requires an
+unlocked, saved vault and a re-entered master password authenticated against
+its committed KDBX head. A platform passkey with required user verification
+must supply a 32-byte WebAuthn PRF result. That result is imported as a
+nonextractable AES-256-GCM key in the vault worker; it encrypts the exact UTF-8
+master password with a fresh 96-bit IV. Authenticated additional data binds the
+wrapper version, credential ID, random 32-byte PRF input and password epoch.
+Only those public parameters and authenticated ciphertext are persisted.
+The wrapper installation atomically checks the head generation to reject
+concurrent vault changes. PRF and mutable plaintext buffers are overwritten
+after use; JavaScript strings cannot be guaranteed erased.
+
+Unlock requests a fresh WebAuthn challenge with required user verification and
+the enrolled credential ID. It checks the assertion origin, challenge, RP-ID
+hash, user presence and user-verification flags. The successful PRF-mediated
+AES-GCM decryption is the local cryptographic proof; there is no server-side
+account or assertion signature verifier. The worker then runs ordinary KDBX
+password authentication and Argon2id; backups and Python recovery keep the
+same password-only format. Never persist the PRF secret, an unwrapped
+password or an origin-stored fallback key. Unsupported PRF, cancellation,
+wrong credentials and authentication failure leave password unlock available.
+Late WebAuthn results after lock/unmount are aborted and discarded.
+
+Password-change attempts and vault restoration remove the local wrapper;
+changed password epochs also make old wrappers unusable. Disabling removes
+the local wrapper, not the OS passkey or external copies of the wrapper.
+Deleting site data loses both vault and wrapper. Provider-synced passkeys
+may reproduce the secret on another device if a wrapper is also copied;
+do not claim the credential is device-bound or exclusively biometric.
+Compromised origin code can access secrets during use, as with password
+unlock. Physical-iPhone and Safari validation remains a release prerequisite.
 
 ## 3. Reader compatibility and hostile-input limits
 

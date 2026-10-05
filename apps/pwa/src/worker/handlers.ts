@@ -39,6 +39,7 @@ import {
   type VaultStorage
 } from '@passkey-local/vault-core';
 import type { Args, EntryDetail, Op, Preferences, Result, SafeError } from '../protocol.ts';
+import { BiometricVault } from './biometric.ts';
 
 type KdbxEntry = ReturnType<typeof findEntry>;
 
@@ -90,10 +91,12 @@ export class VaultWorkerHandlers {
   private readonly controller: VaultController;
   private readonly storage: VaultStorage;
   private candidate: RestoreCandidate | null = null;
+  private readonly biometric: BiometricVault;
 
   constructor(storage: VaultStorage, controller = new VaultController(storage)) {
     this.storage = storage;
     this.controller = controller;
+    this.biometric = new BiometricVault(storage, controller);
   }
 
   private session(): UnlockedSession {
@@ -113,6 +116,10 @@ export class VaultWorkerHandlers {
   }
 
   private readonly ops: { [O in Op]: (args: Args<O>) => Promise<Result<O>> | Result<O> } = {
+    biometricCredential: () => this.biometric.credential(),
+    enableBiometric: ({ password, credential, prf }) => this.biometric.enable(password, credential, prf),
+    unlockBiometric: ({ credentialId, prf }) => this.biometric.unlock(credentialId, prf),
+    disableBiometric: () => this.biometric.disable(),
     state: async () => {
       const st = this.controller.current ? { kind: 'unlocked' as const } : await this.controller.state();
       return {
@@ -226,6 +233,7 @@ export class VaultWorkerHandlers {
     adoptCandidate: async ({ confirmReplace }) => {
       const c = this.candidate;
       if (!c) throw new StorageError('INVALID_STATE', 'no-candidate');
+      await this.biometric.disable();
       this.candidate = null;
       await this.controller.adoptCandidate(c, { confirmReplace });
     },
@@ -233,9 +241,14 @@ export class VaultWorkerHandlers {
       this.candidate?.discard();
       this.candidate = null;
     },
-    changePassword: ({ current, next }) => this.session().changePassword(current, next),
+    changePassword: async ({ current, next }) => {
+      const s = this.session();
+      await this.biometric.disable();
+      return s.changePassword(current, next);
+    },
     snapshots: () => this.controller.listSnapshots(),
     restoreSnapshot: async ({ blobId, password }) => {
+      await this.biometric.disable();
       await this.controller.restoreSnapshot(blobId, password);
     },
     rawSnapshot: async ({ blobId }) => {

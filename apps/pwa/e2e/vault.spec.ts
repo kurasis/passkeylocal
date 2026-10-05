@@ -8,7 +8,7 @@ const MASTER = 'synthetic e2e master passphrase 2026';
 const MARKER_TITLE = 'ZZMARKER-title-7f3a';
 const MARKER_USER = 'zzmarker.user@example.test';
 const MARKER_PASSWORD = 'ZZMARKER-secret-91c4!';
-const ORIGIN = new URL(process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4173').origin;
+const ORIGIN = new URL(process.env.E2E_BASE_URL ?? 'http://localhost:4173').origin;
 
 async function watchSecurity(page: Page) {
   const csp: string[] = [];
@@ -82,12 +82,8 @@ async function persistedText(page: Page): Promise<string> {
   });
 }
 
-test('create, back up, add entry, app switch, inactivity lock, reload, offline unlock, no plaintext at rest', async ({ page, context }) => {
-  const sec = await watchSecurity(page);
-  await page.clock.install();
+async function createAndVerifyVault(page: Page) {
   const dir = mkdtempSync(join(tmpdir(), 'pkl-e2e-'));
-  await page.goto('/');
-
   // Welcome → create
   await page.getByRole('button', { name: 'Create a new vault' }).click();
   await page.getByLabel('Master password', { exact: true }).fill(MASTER);
@@ -108,6 +104,14 @@ test('create, back up, add entry, app switch, inactivity lock, reload, offline u
   await page.getByRole('button', { name: 'Verify', exact: true }).click();
   await expect(page.getByText(/Verified: this file is exactly the current version/)).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
+}
+
+test('create, back up, add entry, app switch, inactivity lock, reload, offline unlock, no plaintext at rest', async ({ page, context }) => {
+  const sec = await watchSecurity(page);
+  await page.clock.install();
+  await page.goto('/');
+
+  await createAndVerifyVault(page);
 
   // Add an entry.
   await page.getByRole('button', { name: 'Add entry' }).click();
@@ -190,4 +194,89 @@ test('deployment headers are served as configured', async ({ request }) => {
   expect(index.headers()['location']).toBe('/');
   const worker = await request.get('/sw.js');
   expect(worker.headers()['content-type']).toContain('javascript');
+});
+
+test('passkey PRF enrollment, offline unlock after reload, disable and password fallback', async ({ page, context }) => {
+  const sec = await watchSecurity(page);
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', { options: {
+    protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal',
+    hasResidentKey: true, hasUserVerification: true, isUserVerified: true,
+    automaticPresenceSimulation: true, hasPrf: true
+  } });
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Confirm master password for Face ID / passkey').fill(MASTER);
+  await page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Disable Face ID / passkey' })).toBeVisible();
+  const atRest = await persistedText(page);
+  expect(atRest).not.toContain(MASTER);
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  // Leave a real WebAuthn get pending, then reload; late results must never reopen the vault.
+  await cdp.send('WebAuthn.setAutomaticPresenceSimulation', { authenticatorId, enabled: false });
+  await page.getByRole('button', { name: 'Unlock with Face ID / passkey' }).click();
+  await expect(page.getByRole('button', { name: 'Unlock with Face ID / passkey' })).toBeDisabled();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
+  await cdp.send('WebAuthn.setAutomaticPresenceSimulation', { authenticatorId, enabled: true });
+  await context.setOffline(true);
+  await page.getByRole('button', { name: 'Unlock with Face ID / passkey' }).click();
+  await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
+  await context.setOffline(false);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Disable Face ID / passkey' }).click();
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlock with Face ID / passkey' })).toHaveCount(0);
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
+  await sec.assertClean();
+});
+
+test('locking during passkey enrollment aborts it and keeps password unlock available', async ({ page, context }) => {
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', { options: {
+    protocol: 'ctap2', ctap2Version: 'ctap2_1', transport: 'internal',
+    hasResidentKey: true, hasUserVerification: true, isUserVerified: true,
+    automaticPresenceSimulation: false, hasPrf: true
+  } });
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Confirm master password for Face ID / passkey').fill(MASTER);
+  await page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await cdp.send('WebAuthn.setAutomaticPresenceSimulation', { authenticatorId, enabled: true });
+  await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlock with Face ID / passkey' })).toHaveCount(0);
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
+});
+
+test('a passkey provider without PRF cannot enable unlock; password still works', async ({ page, context }) => {
+  const cdp = await context.newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator', { options: {
+    protocol: 'ctap2', transport: 'internal', hasResidentKey: true,
+    hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true, hasPrf: false
+  } });
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByLabel('Confirm master password for Face ID / passkey').fill(MASTER);
+  await page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true }).click();
+  await expect(page.getByText('Secure passkey unlock is unavailable in this browser or passkey provider. Use your master password.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Disable Face ID / passkey' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Unlock with Face ID / passkey' })).toHaveCount(0);
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
 });

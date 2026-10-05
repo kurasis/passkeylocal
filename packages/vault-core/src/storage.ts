@@ -474,9 +474,18 @@ export class VaultStorage {
     return rec?.value;
   }
 
-  async setPreference(key: string, value: unknown): Promise<void> {
-    await runTransaction<void>(this.db, [STORES.prefs], 'readwrite', (tx, _fail, done) => {
-      tx.objectStore(STORES.prefs).put({ key, value }).onsuccess = () => done(undefined);
+  /** Optional head-generation check atomically rejects preferences derived from a stale vault. */
+  async setPreference(key: string, value: unknown, expectedGeneration?: number): Promise<void> {
+    const stores = expectedGeneration === undefined ? [STORES.prefs] : [STORES.prefs, STORES.heads];
+    await runTransaction<void>(this.db, stores, 'readwrite', (tx, fail, done) => {
+      const put = () => { tx.objectStore(STORES.prefs).put({ key, value }).onsuccess = () => done(undefined); };
+      if (expectedGeneration === undefined) return put();
+      const head = tx.objectStore(STORES.heads).get(HEAD_SLOT);
+      head.onsuccess = () => {
+        if ((head.result as HeadRecord | undefined)?.generation !== expectedGeneration) {
+          fail(new StorageError('CONFLICT', 'generation'));
+        } else put();
+      };
     });
   }
 }
