@@ -19,7 +19,7 @@ npm run desktop:dev
 npm run desktop:build
 ```
 
-Tauri uses a separate development port 1420 and `apps/desktop/dist-desktop`; web `dist`, SW, manifest, deployment headers and the existing dev port remain separate. `desktop:build` invokes only the frontend hook, not itself. Release assets are bundled locally under the Tauri asset origin; the dev URL is not a production website dependency. No server, Node, Python sidecar, telemetry, remote fonts or updater is packaged.
+Tauri uses a separate development port 1420 and `apps/desktop/dist-desktop`; web `dist`, SW, manifest, deployment headers and the existing dev port remain separate. `desktop:build` invokes only the frontend hook, not itself. Release assets are bundled locally under the Tauri asset origin; the dev URL is not a production website dependency. No server, Node, Python sidecar, telemetry, remote fonts or updater is packaged. The build disables Tauri bundle-type binary patching so installed bytes can be compared exactly with the compiled executable; per-bundle updater detection is unused.
 
 ```sh
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check

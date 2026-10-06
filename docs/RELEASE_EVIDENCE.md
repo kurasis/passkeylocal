@@ -231,14 +231,10 @@ See [Windows baseline](windows/BASELINE.md), [acceptance ledger](windows/ACCEPTA
 
 Post-change: typecheck, 158 TypeScript tests, web/desktop frontend isolation, 6 Chromium scenarios, 12 native Linux tests, Windows GNU production-origin/permissions compilation and full native-file/Python interoperability passed. npm audit: zero vulnerabilities; RustSec: zero vulnerability advisories, two informational non-Windows graph warnings documented in the Windows report. Full installed Windows/physical-device gates remain open.
 
-Native inactivity regression: exact deadline, activity extension, interval changes and no revival of expired sessions pass in the twelfth Rust test. Native session/status commands run off the Windows event thread; timeout revocation uses an independent clock, avoiding a blocked file write delaying lock. Physical lifecycle tests remain open.
+Native inactivity regression: exact deadline, activity extension, immediate interval changes from the last activity and no revival of expired sessions pass in 13 Linux native tests. Native session/status commands run off the Windows event thread; timeout revocation uses an independent clock, avoiding blocked file writes delaying lock. Physical lifecycle tests remain open.
 
-Windows runner execution exposed an ACL setup failure (SetSecurityInfo error 5); native handles now include READ_CONTROL and verify the exact protected DACL after assignment. The Windows rerun is pending.
+Windows hosted [run 37416273642](https://github.com/kurasis/passkeylocal/actions/runs/37416273642) passed 13 native tests, Clippy, native-file/shared-engine/full Python parity, both frontend builds/isolation and independent recovery tests; the offline-runtime NSIS installer built. Packaged CDP smoke failed.
 
-Windows runner run 37413908839: native Clippy, 12 Windows tests (real replacement + protected ACL verification) and full Python interoperability passed. Windows frontend build exposed an existing file-URL/path conversion bug, now fixed with fileURLToPath. Packaged installer checks remain pending.
+[Run 37418236570](https://github.com/kurasis/passkeylocal/actions/runs/37418236570) completed per-user NSIS installation but stopped before launching the installed app: Tauri's bundle-type binary patch makes the packaged executable differ from the original build. The build now explicitly uses `--no-binary-patching` (no updater is implemented), preserving strict installed/built byte equality. The release host uses the Windows GUI subsystem. Windows production-origin Clippy compilation passes with warnings denied; runtime acceptance remains pending.
 
-Windows run 37414339835 additionally passed both frontend builds, bundle isolation and independent recovery tests. The Tauri build hook workspace selection was corrected and validated from apps/desktop; the installer rerun is pending.
-
-Windows run 37414850933 built the executable/NSIS installer, but packaged CDP smoke failed to attach. Installer distribution stays gated. Added synthetic-only diagnostics and a native origin/port/URL-credentials regression test; Windows execution remains pending.
-
-Windows run 37416273642: all 13 native tests passed; packaged CDP attachment remains failed. The next harness tests actual NSIS installation and compiled/installed byte equality, and checks native WebView2 autosave/autofill readback. Profile isolation/autosave protection cross-compile with Clippy; runtime acceptance remains pending.
+GitHub API access returned HTTP 401 before these final changes could be pushed. Final Windows execution and automatic merge remain pending until access is restored. No gated installer artifact is available yet.

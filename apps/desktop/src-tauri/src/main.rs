@@ -1,3 +1,5 @@
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
+
 #[cfg(windows)]
 fn main() {
     passkey_local_desktop::host::run();

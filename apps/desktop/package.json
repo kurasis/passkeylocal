@@ -7,7 +7,7 @@
   "scripts": {
     "frontend": "vite build --mode desktop ../pwa --config ../pwa/vite.config.ts",
     "dev": "tauri dev",
-    "build": "tauri build --target x86_64-pc-windows-msvc --bundles nsis --features custom-protocol",
+    "build": "tauri build --target x86_64-pc-windows-msvc --bundles nsis --features custom-protocol --no-binary-patching",
     "typecheck": "tsc -p tsconfig.json",
     "native:test": "cargo test --locked --manifest-path src-tauri/Cargo.toml",
     "native:check": "cargo check --locked --manifest-path src-tauri/Cargo.toml"

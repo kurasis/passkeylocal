@@ -142,7 +142,7 @@ async fn storage(
                 .inactivity
                 .lock()
                 .map_err(|_| Error::new("UNAVAILABLE"))?
-                .interval(managed.lock_interval());
+                .interval(Instant::now(), managed.lock_interval());
         }
         drop(managed);
         if result.is_ok() && ["commit", "restoreBlob"].contains(&operation.as_str()) {
