@@ -1,12 +1,12 @@
 # Cloudflare Pages upload archives
 
-Download [passkeylocal-cloudflare-pages-fcc9511.zip](passkeylocal-cloudflare-pages-fcc9511.zip)
+Download [passkeylocal-cloudflare-pages-9259379.zip](passkeylocal-cloudflare-pages-9259379.zip)
 by opening the file on GitHub and choosing **Download raw file** (the download
 icon), then upload the ZIP through Cloudflare Pages **Direct Upload**.
 
 This production build comes from source commit
-[`fcc9511`](https://github.com/kurasis/passkeylocal/commit/fcc9511)
-and includes the restore completion fix, 6 / 12 / 24 hour inactivity choices,
+[`9259379`](https://github.com/kurasis/passkeylocal/commit/9259379)
+and includes the responsive navigation/layout fix, restore completion, 6 / 12 / 24 hour inactivity choices,
 continued auto-lock after changing language, Colorful / Light / Dark themes and
 Face ID / passkey unlock. See [design previews](../../docs/DESIGN.md). The archive has `index.html`, `_headers`,
 `sw.js`, the manifest, icons and compiled assets at the site root. No build
@@ -16,7 +16,7 @@ The adjacent `.zip.sha256` file contains the archive checksum. To verify a
 download with a SHA-256 tool:
 
 ```sh
-sha256sum -c passkeylocal-cloudflare-pages-fcc9511.zip.sha256
+sha256sum -c passkeylocal-cloudflare-pages-9259379.zip.sha256
 ```
 
 Use HTTPS and a stable hostname; passkeys and local vault data belong to that

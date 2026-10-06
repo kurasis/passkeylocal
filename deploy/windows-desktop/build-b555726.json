@@ -1,0 +1,18 @@
+{
+  "product": "PassKey Local",
+  "cargoLock": "909e76f511545395d5efc6674e5cb4c24bc437c422aca80faf032ce8b61910c9",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "architecture": "x86_64-pc-windows-msvc",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "fileSafePreview": "unavailable: AppContainer/LPAC isolation proof BLOCKED",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "sha256": "950e244662055a5b885b01356e74b644169ec6f2f9bc6d0d7f3499a49450bd3d",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "node": "v22.23.3",
+  "windowsHello": "vault unlock unavailable: protected-key provider and physical TPM proof BLOCKED",
+  "signing": "unsigned",
+  "version": "0.1.0",
+  "sourceCommit": "b5557267e43ada24bb98f82fdb593bc0c9023164"
+}

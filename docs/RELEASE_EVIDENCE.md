@@ -28,8 +28,24 @@ fixed sidebar starts at 198.19 px at the same 1311-pixel viewport.
 Those services are synthetic
 doubles and are not biometric-device evidence. All eight production PWA e2e
 scenarios also pass, including CSP/offline/passkeys/themes/restore/long timeout.
-The updated installed Windows smoke is pending for this change; results and
-exact artifact provenance will be added once complete. See
+Final general CI [37492302382](https://github.com/kurasis/passkeylocal/actions/runs/37492302382)
+and Windows workflow [37492302591](https://github.com/kurasis/passkeylocal/actions/runs/37492302591)
+PASS for code head `92593791fa16a2397ad3c3c28be8ab34f97abe03`, tested PR merge
+source `b5557267e43ada24bb98f82fdb593bc0c9023164`. The Windows run passed 33
+native tests plus its separately executed optimized 5 GiB gate, fresh full
+10,000-file restore/search, and independent Python corpus (88 passed / 15
+skipped). Its installed NSIS app exercised real WinRT readiness IPC, Russian
+layout geometry, password/native save/lock, independent file-safe unlock and
+long inactivity preference persistence. The actual hosted configuration was
+`device-not-present`, not an inferred reader/protected-key result. The consent
+prompt and OS Settings window were not automated; all physical Hello gates
+remain NOT RUN/BLOCKED.
+
+The downloaded installer is 217,811,037 bytes, SHA-256
+`950e244662055a5b885b01356e74b644169ec6f2f9bc6d0d7f3499a49450bd3d`, independently
+matched to its checksum sidecar and exact-source build/smoke/resource metadata.
+See [installer/evidence folder](../deploy/windows-desktop/README.md) and the
+[updated Cloudflare upload archive](../deploy/cloudflare-pages/README.md). See
 [Hello implementation limits](windows/HELLO_SECURITY_DESIGN.md).
 
 
