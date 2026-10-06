@@ -4,7 +4,7 @@
  * decrypted database, keys and any in-flight KDF work with it.
  */
 
-import { openStorage } from '@passkey-local/vault-core';
+import { openPlatformStorage } from '@platform-storage';
 import type { RequestMessage, ResponseMessage } from '../protocol.ts';
 import { VaultWorkerHandlers, toSafeError } from './handlers.ts';
 
@@ -13,7 +13,7 @@ declare const self: DedicatedWorkerGlobalScope;
 let handlers: Promise<VaultWorkerHandlers> | null = null;
 
 function getHandlers(): Promise<VaultWorkerHandlers> {
-  handlers ??= openStorage().then((storage) => new VaultWorkerHandlers(storage));
+  handlers ??= openPlatformStorage().then((storage) => new VaultWorkerHandlers(storage));
   return handlers;
 }
 
@@ -26,6 +26,7 @@ function transferables(result: unknown): Transferable[] {
 }
 
 self.onmessage = async (ev: MessageEvent<RequestMessage>) => {
+  if ('channel' in ev.data) return; // Native-storage replies have their own listener.
   const { id, op, args } = ev.data;
   let msg: ResponseMessage;
   try {

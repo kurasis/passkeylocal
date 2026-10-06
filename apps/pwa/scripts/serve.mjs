@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // Minimal static server for dist/ that applies public/_headers exactly as a
 // Cloudflare Pages / Netlify style host would. Used by the browser tests and
 // as a reference for deployment. Usage: node scripts/serve.mjs [port] [dir]
@@ -6,7 +7,7 @@ import { readFileSync, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 
 const port = Number(process.argv[2] ?? 4173);
-const root = process.argv[3] ?? new URL('../dist/', import.meta.url).pathname;
+const root = process.argv[3] ?? fileURLToPath(new URL('../dist/', import.meta.url));
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

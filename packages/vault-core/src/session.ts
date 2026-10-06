@@ -1,7 +1,7 @@
 /**
  * Vault controller: the save transaction, lock lifecycle, conflicts, snapshot
  * recovery, password rotation, backups and restore, on top of the adapter
- * (format) and VaultStorage (ciphertext persistence).
+ * (format) and VaultStore (ciphertext persistence).
  *
  * Plaintext lives only in the in-memory `Kdbx` object of an unlocked session.
  * `lock()` drops it and invalidates the session token; every asynchronous
@@ -26,7 +26,7 @@ import {
   type VaultCounts
 } from '@passkey-local/vault-adapter';
 import { StorageError, isStorageError } from './errors.ts';
-import { sha256Hex, type BlobInfo, type HeadRecord, type ReceiptKind, type ReceiptRecord, type VaultStorage } from './storage.ts';
+import { sha256Hex, type BlobInfo, type HeadRecord, type ReceiptKind, type ReceiptRecord, type VaultStore } from './storage.ts';
 
 export type VaultState =
   /** No head: fresh installation or site data cleared (DATA-07). */
@@ -112,12 +112,12 @@ export interface ControllerOptions {
 }
 
 export class VaultController {
-  readonly storage: VaultStorage;
+  readonly storage: VaultStore;
   private readonly now: () => Date;
   private token = 0;
   private session: UnlockedSession | null = null;
 
-  constructor(storage: VaultStorage, opts: ControllerOptions = {}) {
+  constructor(storage: VaultStore, opts: ControllerOptions = {}) {
     this.storage = storage;
     this.now = opts.now ?? (() => new Date());
   }
@@ -329,6 +329,7 @@ export class VaultController {
       expectedGeneration: head ? head.generation : null,
       // A restored file may use another password: older blobs belong to an older epoch.
       passwordEpoch: head ? head.passwordEpoch + 1 : 0,
+      confirmedReplacement: !!head && opts.confirmReplace,
       now: this.now()
     });
     this.checkLive(token);

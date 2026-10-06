@@ -224,3 +224,19 @@ headless) on Linux x64, through an outbound HTTPS proxy.
   Safari or CSP testing exposes further problems.
 - Licence: GPL-3.0-only (`LICENSE`).
 - No independent security audit has been performed.
+
+## 2026-10-06 — additive Windows integration
+
+The Tauri target reuses the existing frontend/worker/KDBX engine. See [implementation](windows/IMPLEMENTATION.md), [acceptance ledger](windows/ACCEPTANCE.md), [Hello decision](windows/HELLO_SECURITY_DESIGN.md) and [download folder](../deploy/windows-desktop/). Local validation passed: typecheck/158 TypeScript tests, six production Chromium scenarios, both builds/isolation, 13 Linux native tests, Windows GNU production/capability Clippy compilation, full native-file/independent Python parity. Inactivity covers exact deadlines, immediate interval changes and no expired-session revival. npm audit: zero vulnerabilities; RustSec: zero vulnerability advisories, two informational non-Windows graph warnings documented in the acceptance report.
+
+[Windows run 37424185908](https://github.com/kurasis/passkeylocal/actions/runs/37424185908) and [normal CI 37424185848](https://github.com/kurasis/passkeylocal/actions/runs/37424185848) passed. Code head `edb9405eac3b5b18fbcc3cc944b57d1c3c3d6a03`; tested PR merge source `e88ba87c9ac0c96a0042928b2b0240b6ece4f17a`. Hosted environment: windows-2025 x64, Node 22.23.3, Rust 1.90.0, Python 3.12.10, WebView2 Edg 153.
+
+Executed: 158 TypeScript tests, Windows Clippy/14 native tests (actual replacement/protected ACL readback), full shared-engine/native-file/independent Python parity, both frontend builds/isolation and independent recovery (74 passed, 14 skipped). Normal CI also passed browser scenarios and the Python matrix.
+
+Installed-app smoke passed: per-user NSIS installation, installed/built executable byte equality, generic main window, native autosave/autofill disabled and read back, shared React UI, real IPC/session/worker/Argon2, vault creation/reload/password unlock, entry save, manual lock, direct Hello rejection, saved KDBX reopened in Node, and no foreign application requests/page errors. The fixture shortcut skips native backup-dialog automation. This is hosted evidence, not complete clean offline/standard-user/physical Windows 11 acceptance.
+
+[Unsigned installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37424185908/artifacts/11395251579): 217,415,126 bytes. Downloaded SHA-256 matches the sidecar/build metadata: `70725fd831a40e3c1ac9f89eac90283e51e947c4caa820391207e3b28218640d`. Small metadata and a synthetic locked-window screenshot are retained in the Windows download folder. The large installer has 30-day Actions retention. Lock hashes describe Windows CRLF checkout bytes; equivalent Linux LF bytes differ only in line endings.
+
+Runtime 150+ ignores environment debugger overrides on elevated hosts ([Wry issue](https://github.com/tauri-apps/wry/issues/1782)). The disposable CI runner uses app-specific HKLM debugging policy with readback and cleanup; the installer/release configuration has no debugging switch. Bundle-type executable patching is disabled because there is no updater, allowing strict byte comparison.
+
+These are unsigned experimental builds. Windows Hello remains unavailable; physical TPM/Kensington/Safari, clean offline/standard-user installation and the full lifecycle/fault/upgrade matrix remain open. No production release is claimed.

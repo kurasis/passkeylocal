@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -22,7 +23,7 @@ function serviceWorker(): Plugin {
     name: 'passkey-local-sw',
     apply: 'build',
     generateBundle(_opts, bundle) {
-      const publicDir = new URL('./public/', import.meta.url).pathname;
+      const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
       const hash = createHash('sha256');
       // The shell is cached under '/', never '/index.html': Cloudflare Pages
       // answers '/index.html' with a redirect to '/', and a redirected
@@ -50,16 +51,32 @@ function serviceWorker(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), serviceWorker()],
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-  resolve: { alias: { crypto: new URL('./src/worker/node-crypto-stub.ts', import.meta.url).pathname } },
+function desktopHtml(): Plugin {
+  return { name: 'desktop-html', transformIndexHtml: (html) => html.replace(/\s*<link[^>]+(?:manifest|icon)[^>]*>/g, '') };
+}
+
+export default defineConfig(({ mode }) => {
+const desktop = mode === 'desktop';
+return {
+  plugins: [react(), ...desktop ? [desktopHtml()] : [serviceWorker()]],
+  base: desktop ? './' : '/',
+  publicDir: desktop ? false : 'public',
+  define: { __APP_VERSION__: JSON.stringify(pkg.version), __DESKTOP__: JSON.stringify(desktop) },
+  resolve: { alias: {
+    crypto: fileURLToPath(new URL('./src/worker/node-crypto-stub.ts', import.meta.url)),
+    '@platform': fileURLToPath(new URL(desktop ? '../desktop/src/platform.ts' : './src/platform.ts', import.meta.url)),
+    '@platform-storage': fileURLToPath(new URL(desktop ? '../desktop/src/worker-storage.ts' : './src/worker/platform-storage.ts', import.meta.url))
+  } },
+  server: desktop ? { port: 1420, strictPort: true } : undefined,
   worker: { format: 'es' },
   build: {
+    outDir: desktop ? '../desktop/dist-desktop' : 'dist',
+    emptyOutDir: true,
     target: 'es2022',
     sourcemap: false,
     // Inline assets would need data: URLs, which the CSP does not allow.
     assetsInlineLimit: 0,
     modulePreload: { polyfill: false }
   }
+};
 });

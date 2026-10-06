@@ -5,6 +5,7 @@ import type { BlobInfo } from '@passkey-local/vault-core';
 import { useT } from '../i18n.ts';
 import { ExportControl, RestoreControl, VerifyControl } from './backup-tools.tsx';
 import { BiometricUnlock } from './biometric.tsx';
+import { desktop } from '@platform';
 import { Icon } from './icons.tsx';
 import { Banner, Busy, PasswordInput, errorCode, errorText, handOffFile, newPasswordProblem, useApp, useFormatDate } from './common.tsx';
 
@@ -162,7 +163,7 @@ export function Unlock() {
       <span className="auth-icon"><Icon name="lock" /></span>
       <p className="eyebrow">{t('unlockEyebrow')}</p>
       <h1>{t('unlockTitle')}</h1>
-      <p className="muted">{t('unlockHint')}</p>
+      <p className="muted">{t(desktop ? 'desktopUnlockHint' : 'unlockHint')}</p>
       <form
         className="stack"
         onSubmit={(e) => {

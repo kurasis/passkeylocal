@@ -7,6 +7,7 @@ import { useId, useState } from 'react';
 import { useT } from '../i18n.ts';
 import type { BackupCheckSummary, CandidateSummary, FileOut } from '../protocol.ts';
 import { Banner, Busy, PasswordInput, errorText, handOffFile, readFileBytes, useApp } from './common.tsx';
+import { desktop, pickNativeFile } from '@platform';
 
 /** Two-step export: prepare (async, checked ciphertext), then hand off in a fresh gesture. */
 export function ExportControl(props: { onOffered?: (sha256: string) => void }) {
@@ -74,6 +75,17 @@ export function ExportControl(props: { onOffered?: (sha256: string) => void }) {
 function FilePicker(props: { onFile: (f: File | null) => void; testId: string }) {
   const t = useT();
   const id = useId();
+  const [error, setError] = useState(false);
+  const [selected, setSelected] = useState(false);
+  if (desktop) return <div className="field">
+    <button type="button" className="secondary" data-testid={props.testId} onClick={async () => {
+      setError(false);
+      try { const f = await pickNativeFile(); props.onFile(f); setSelected(!!f); }
+      catch { setError(true); props.onFile(null); }
+    }}>{t('chooseFile')}</button>
+    {selected && <span>{t('desktopFileSelected')}</span>}
+    {error && <Banner kind="error">{t('err_UNAVAILABLE')}</Banner>}
+  </div>;
   return (
     <div className="field">
       <label htmlFor={id}>{t('chooseFile')}</label>

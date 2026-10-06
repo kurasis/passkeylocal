@@ -5,6 +5,7 @@
  */
 
 import type { Args, Op, RequestMessage, ResponseMessage, Result, SafeError } from './protocol.ts';
+import { bindStorageBridge } from '@platform';
 
 export class VaultRequestError extends Error {
   readonly code: string;
@@ -24,6 +25,7 @@ export class VaultClient {
   private worker: Worker | null = null;
   private next = 1;
   private pending = new Map<number, Pending>();
+  private disposeBridge: (() => void) | null = null;
   /** Increments on every lock; callers compare it to drop stale UI updates. */
   epoch = 0;
 
@@ -39,6 +41,7 @@ export class VaultClient {
       };
       w.onerror = () => this.failAll('WORKER_FAILED');
       this.worker = w;
+      this.disposeBridge = bindStorageBridge(w);
     }
     return this.worker;
   }
@@ -61,6 +64,8 @@ export class VaultClient {
   /** Immediate lock: terminate the worker and reject everything in flight. */
   lock(): void {
     this.epoch++;
+    this.disposeBridge?.();
+    this.disposeBridge = null;
     this.worker?.terminate();
     this.worker = null;
     this.failAll('LOCKED');

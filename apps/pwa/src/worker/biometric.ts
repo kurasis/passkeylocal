@@ -1,6 +1,6 @@
 /** Encrypt the master password with a WebAuthn PRF secret, never with an origin-stored key. */
 import { openVault, VaultError } from '@passkey-local/vault-adapter';
-import { StorageError, type VaultController, type VaultStorage } from '@passkey-local/vault-core';
+import { StorageError, type VaultController, type VaultStore } from '@passkey-local/vault-core';
 import type { BiometricCredential } from '../protocol.ts';
 
 const SLOT = 'biometricUnlock';
@@ -28,10 +28,10 @@ async function key(prf: Uint8Array): Promise<CryptoKey> {
 }
 
 export class BiometricVault {
-  private readonly storage: VaultStorage;
+  private readonly storage: VaultStore;
   private readonly controller: VaultController;
 
-  constructor(storage: VaultStorage, controller: VaultController) {
+  constructor(storage: VaultStore, controller: VaultController) {
     this.storage = storage;
     this.controller = controller;
   }

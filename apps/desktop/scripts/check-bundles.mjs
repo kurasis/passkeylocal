@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+const web = resolve('apps/pwa/dist');
+const desktop = resolve('apps/desktop/dist-desktop');
+assert(existsSync(`${web}/sw.js`));
+assert(existsSync(`${web}/manifest.webmanifest`));
+assert(!existsSync(`${desktop}/sw.js`));
+assert(!existsSync(`${desktop}/manifest.webmanifest`));
+assert(!readFileSync(`${desktop}/index.html`, 'utf8').includes('rel="manifest"'));
+const bundle = (dir) => readdirSync(`${dir}/assets`).filter((s) => s.endsWith('.js')).map((s) => readFileSync(`${dir}/assets/${s}`, 'utf8')).join('\n');
+assert(!bundle(web).includes('__TAURI_INTERNALS__'));
+assert(bundle(desktop).includes('__TAURI_INTERNALS__'));
+assert(!bundle(desktop).includes('register("/sw.js"'));
+console.log('PASS: independent outputs, local desktop assets, native IPC absent from web, web SW preserved.');

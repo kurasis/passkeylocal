@@ -7,6 +7,8 @@ import { useT } from '../i18n.ts';
 import type { Preferences } from '../protocol.ts';
 import { ExportControl, RestoreControl, VerifyControl } from './backup-tools.tsx';
 import { BiometricSettings } from './biometric.tsx';
+import { DesktopSettings } from './desktop.tsx';
+import { desktop } from '@platform';
 import { ThemePicker } from './theme.tsx';
 import { Banner, Busy, PasswordInput, errorText, newPasswordProblem, useApp, useFormatDate } from './common.tsx';
 
@@ -49,7 +51,7 @@ export function BackupsTab(props: {
       <h2>{t('verifyBackup')}</h2>
       <VerifyControl onVerified={props.onChanged} />
       <h2>{t('storageTitle')}</h2>
-      <p>{t(`persistence_${props.persistence.replace(/-/g, '_')}` as 'persistence_unavailable')}</p>
+      <p>{desktop ? t('desktopStorageExplain') : t(`persistence_${props.persistence.replace(/-/g, '_')}` as 'persistence_unavailable')}</p>
       {props.storageUnhealthy && <Banner kind="error">{t('storageUnhealthy')}</Banner>}
       <h2>{t('restoreTitle')}</h2>
       {restore ? (
@@ -74,6 +76,7 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
   const [offline, setOffline] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (desktop) return setOffline(true);
     const sw = navigator.serviceWorker;
     if (!sw) return setOffline(false);
     sw.getRegistration().then((r) => setOffline(!!r?.active), () => setOffline(false));
@@ -131,7 +134,7 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
         <p className="muted">{t('historyPolicy')}</p>
         <p className="muted">{offline ? t('offlineReady') : t('offlineNotReady')}</p>
       </div>
-      <BiometricSettings disabled={busy} />
+      {desktop ? <DesktopSettings /> : <BiometricSettings disabled={busy} />}
       <h2>{t('changePassword')}</h2>
       <form
         className="stack"

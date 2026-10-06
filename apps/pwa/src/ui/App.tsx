@@ -21,6 +21,8 @@ import { VaultScreens, type VaultView } from './vault.tsx';
 import { useServiceWorkerUpdate } from './sw-update.ts';
 import { Icon, type IconName } from './icons.tsx';
 import { ThemeMenu } from './theme.tsx';
+import { configureNativeClose, desktop, nativeActivity, subscribeNativeLock } from '@platform';
+import { DesktopBackupStatus } from './desktop.tsx';
 
 type Tab = 'vault' | 'favorites' | 'backups' | 'settings';
 
@@ -38,6 +40,14 @@ export function App() {
   const [view, setView] = useState<VaultView>({ name: 'list' });
   const [notice, setNotice] = useState<string | null>(null);
   const [fatal, setFatal] = useState<string | null>(null);
+  const [closePrompt, setClosePrompt] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closeResolve = useRef<((close: boolean) => void) | null>(null);
+  const draftSave = useRef<(() => Promise<boolean>) | null>(null);
+  const registerDraftSave = useCallback((save: () => Promise<boolean>) => {
+    draftSave.current = save;
+    return () => { if (draftSave.current === save) draftSave.current = null; };
+  }, []);
   const update = useServiceWorkerUpdate();
 
   const lang = prefs.language === 'auto' ? deviceLanguage() : prefs.language;
@@ -78,6 +88,10 @@ export function App() {
   }, [client, loadUnlocked, t]);
 
   const lockNow = useCallback(() => {
+    draftSave.current = null;
+    closeResolve.current?.(false);
+    closeResolve.current = null;
+    setClosePrompt(false);
     client.lock();
     // Unmount every sensitive view and drop derived data.
     setOverview(null);
@@ -88,6 +102,40 @@ export function App() {
     setPhase('loading');
     void refresh();
   }, [client, refresh]);
+
+  useEffect(() => subscribeNativeLock(lockNow), [lockNow]);
+  useEffect(() => configureNativeClose(async () => {
+    if (phase !== 'unlocked') return true;
+    const epoch = client.epoch;
+    const o = await client.call('overview');
+    if (client.epoch !== epoch) return false;
+    if (view.name === 'edit' || o.unsaved) return new Promise<boolean>((resolve) => {
+      closeResolve.current = resolve;
+      setClosePrompt(true);
+    });
+    lockNow();
+    return true;
+  }), [phase, view, client, t, lockNow]);
+
+  useEffect(() => {
+    if (!desktop) return;
+    const shortcut = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key.toLowerCase() === 'l') { event.preventDefault(); lockNow(); }
+      if (phase !== 'unlocked') return;
+      if (event.ctrlKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault(); setTab('vault'); setView({ name: 'list' });
+        requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[type="search"]')?.focus());
+      }
+      if (event.ctrlKey && event.key.toLowerCase() === 'n' && !overview?.readOnly) {
+        event.preventDefault(); setTab('vault'); setView({ name: 'edit', uuid: null });
+      }
+      if (event.ctrlKey && event.key.toLowerCase() === 's') {
+        event.preventDefault(); document.querySelector<HTMLFormElement>('main form')?.requestSubmit();
+      }
+    };
+    window.addEventListener('keydown', shortcut);
+    return () => window.removeEventListener('keydown', shortcut);
+  }, [phase, overview, lockNow]);
 
   const autoLock = useRef<AutoLock | null>(null);
   useEffect(() => {
@@ -114,7 +162,7 @@ export function App() {
       autoLock.current?.check();
       redact(false);
     };
-    const onActivity = () => autoLock.current?.touch();
+    const onActivity = () => { autoLock.current?.touch(); nativeActivity(); };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', onPageHide);
     window.addEventListener('pageshow', onPageShow);
@@ -140,7 +188,7 @@ export function App() {
     return () => clearTimeout(id);
   }, [notice]);
 
-  const api: AppApi = useMemo(() => ({ client, notify: setNotice, refresh: () => void refresh(), lockNow }), [client, refresh, lockNow]);
+  const api: AppApi = useMemo(() => ({ client, notify: setNotice, refresh: () => void refresh(), lockNow, registerDraftSave }), [client, refresh, lockNow, registerDraftSave]);
 
   const setPref = (key: keyof Preferences, value: unknown) => {
     setPrefs((p) => ({ ...p, [key]: value }));
@@ -175,6 +223,7 @@ export function App() {
     body = (
       <>
         <UnsavedBanner overview={overview} reload={reload} />
+        <DesktopBackupStatus />
         {tab !== 'backups' && <BackupStatusBanner status={status} />}
         {(tab === 'vault' || tab === 'favorites') && (
           <VaultScreens overview={overview} favoritesOnly={tab === 'favorites'} view={view} go={setView} reload={reload} />
@@ -212,6 +261,28 @@ export function App() {
             </Banner>
           )}
           <main>{body}</main>
+          {desktop && closePrompt && <div className="desktop-close-overlay"><section className="card stack desktop-close-dialog" role="dialog" aria-modal="true" aria-labelledby="desktop-close-title">
+            <h2 id="desktop-close-title">{t('desktopCloseTitle')}</h2><p>{t('desktopCloseExplain')}</p>
+            <button type="button" disabled={closing} autoFocus onClick={async () => {
+              const epoch = client.epoch;
+              setClosing(true);
+              try {
+                const o = await client.call('overview');
+                if (o.unsaved) await client.call('retrySave');
+                if (draftSave.current && !(await draftSave.current())) return;
+                if (client.epoch !== epoch) return;
+                const done = closeResolve.current; closeResolve.current = null;
+                lockNow(); done?.(true);
+              } catch (e) { setNotice(errorText(e, t)); }
+              finally { setClosing(false); }
+            }}>{t('save')}</button>
+            <button type="button" className="danger" disabled={closing} onClick={() => {
+              const done = closeResolve.current; closeResolve.current = null; lockNow(); done?.(true);
+            }}>{t('desktopDiscardClose')}</button>
+            <button type="button" className="secondary" disabled={closing} onClick={() => {
+              closeResolve.current?.(false); closeResolve.current = null; setClosePrompt(false);
+            }}>{t('cancel')}</button>
+          </section></div>}
           {notice && (
             <div className="toast" role="status">
               {notice}
@@ -241,7 +312,7 @@ export function App() {
                   <Icon name={({ vault: 'vault', favorites: 'star', backups: 'backup', settings: 'settings' } as Record<Tab, IconName>)[id]} /><span>{label}</span>
                 </button>
               ))}
-              <div className="nav-note"><Icon name="shield" /><strong>{t('localOnly')}</strong><span>{t('navPrivacy')}</span></div>
+              <div className="nav-note"><Icon name="shield" /><strong>{t('localOnly')}</strong><span>{t(desktop ? 'desktopPrivacy' : 'navPrivacy')}</span></div>
             </nav>
           )}
         </div>

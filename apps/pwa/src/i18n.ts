@@ -6,6 +6,26 @@
 import { createContext, useContext } from 'react';
 
 const en = {
+  desktopStorageExplain: "Your encrypted vault is stored in your Windows user data folder, independently of browser storage. Keep a verified backup on another device.",
+  desktopDiscardClose: "Discard and close",
+  desktopCloseTitle: "Save changes before closing?",
+  desktopCloseExplain: "Save and close, discard the draft and close, or cancel to keep working.",
+  desktopRetention: "Keep this many managed external backups",
+  desktopPrivacy: "Your encrypted vault stays on this computer. Keep a verified copy on another device.",
+  desktopUnlockHint: "Open your vault with your master password.",
+  desktopFileSelected: "Encrypted backup selected.",
+  desktopBackupTitle: "Windows backups",
+  desktopBackupExplain: "Save a byte-verified copy after each local save in a selected folder. Keep another copy on another device. Backups run only while this app is open; cloud upload and recovery are verified separately.",
+  desktopChooseFolder: "Choose backup folder",
+  desktopBackup_unconfigured: "No automatic backup folder selected.",
+  desktopBackup_pending: "Saved on this computer. External backup pending.",
+  desktopBackup_failed: "Saved on this computer. External backup failed; reconnect the drive and retry.",
+  desktopBackup_verified: "External backup bytes verified. Verify recovery with the master password separately.",
+  desktopHelloBlocked: "Windows Hello is unavailable: TPM key binding and authorization on every unwrap have not been verified on Kensington hardware. Use your master password. The app does not change Windows security settings.",
+  desktopCloseDraft: "An entry editor is open. Discard the draft and close? Cancel to return and save it.",
+  desktopCloseSave: "A save failed. Try saving before closing? Cancel to choose whether to discard.",
+  desktopCloseDiscard: "Discard unsaved changes and close? Cancel to keep working.",
+
   brandSubtitle: 'A little more peace of mind',
   localOnly: 'On this device',
   workspaceLabel: 'Your space',
@@ -264,6 +284,26 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const ru: Record<MessageKey, string> = {
+  desktopStorageExplain: "Зашифрованное хранилище сохранено в папке данных пользователя Windows, независимо от браузера. Храните проверенную копию на другом устройстве.",
+  desktopDiscardClose: "Отбросить и закрыть",
+  desktopCloseTitle: "Сохранить изменения перед закрытием?",
+  desktopCloseExplain: "Сохраните и закройте, отбросьте черновик или отмените закрытие, чтобы продолжить работу.",
+  desktopRetention: "Хранить столько внешних резервных копий",
+  desktopPrivacy: "Зашифрованное хранилище остаётся на этом компьютере. Сохраните проверенную копию на другом устройстве.",
+  desktopUnlockHint: "Откройте хранилище мастер-паролем.",
+  desktopFileSelected: "Выбрана зашифрованная резервная копия.",
+  desktopBackupTitle: "Резервные копии Windows",
+  desktopBackupExplain: "После каждого сохранения создаётся копия в выбранной папке с проверкой байтов. Храните ещё одну копию на другом устройстве. Копирование работает только при открытом приложении; загрузка в облако и восстановление проверяются отдельно.",
+  desktopChooseFolder: "Выбрать папку копий",
+  desktopBackup_unconfigured: "Папка автоматических копий не выбрана.",
+  desktopBackup_pending: "Сохранено на компьютере. Резервное копирование ожидается.",
+  desktopBackup_failed: "Сохранено на компьютере. Копирование не удалось; подключите диск и повторите.",
+  desktopBackup_verified: "Байты резервной копии проверены. Отдельно проверьте восстановление мастер-паролем.",
+  desktopHelloBlocked: "Windows Hello недоступен: привязка ключа к TPM и авторизация каждого раскрытия ещё не проверены на Kensington. Используйте мастер-пароль. Приложение не меняет настройки безопасности Windows.",
+  desktopCloseDraft: "Открыт редактор записи. Отбросить черновик и закрыть? Отмена вернёт вас к сохранению.",
+  desktopCloseSave: "Сохранение не удалось. Повторить перед закрытием? Отмена предложит отбросить изменения.",
+  desktopCloseDiscard: "Отбросить несохранённые изменения и закрыть? Отмена продолжит работу.",
+
   brandSubtitle: 'Чуть больше спокойствия',
   localOnly: 'На этом устройстве',
   workspaceLabel: 'Ваше пространство',

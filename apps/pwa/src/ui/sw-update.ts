@@ -10,6 +10,7 @@ export function useServiceWorkerUpdate(): (() => void) | null {
   const [waiting, setWaiting] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
+    if (__DESKTOP__) return;
     const sw = navigator.serviceWorker;
     if (!sw) return;
     let cancelled = false;

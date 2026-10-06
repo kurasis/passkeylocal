@@ -1,0 +1,5 @@
+{
+  "extends": "../pwa/tsconfig.json",
+  "compilerOptions": { "paths": { "@platform": ["./src/platform.ts"], "@platform-storage": ["./src/worker-storage.ts"] } },
+  "include": ["src", "../pwa/src"]
+}
