@@ -31,6 +31,7 @@ def cli(command, path, *args, password=PW):
         ],
         input=password,
         capture_output=True,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "tools/vault-recovery/src")},
     )
 
 

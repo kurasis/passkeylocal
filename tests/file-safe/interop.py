@@ -49,6 +49,7 @@ with tempfile.TemporaryDirectory(prefix="file-safe-fresh-interop-") as temp:
         input=writer.PW,
         capture_output=True,
         check=True,
+        env={**os.environ, "PYTHONPATH": str(ROOT / "tools/vault-recovery/src")},
     )
     assert json.loads(r.stdout)["files"] == 7
     writer.generate(temp / "python")
