@@ -56,6 +56,7 @@ pub struct Status {
     pub exists: bool,
     pub unlocked: bool,
     pub token: Option<String>,
+    pub generation: String,
     pub busy: bool,
     pub interval_ms: u64,
     pub progress: Progress,
@@ -307,16 +308,16 @@ impl SafeManager {
     }
     pub fn status(&self) -> Result<Status> {
         self.expire();
-        let token = self
-            .active
-            .lock()
-            .map_err(|_| Error::new("UNAVAILABLE"))?
-            .clone();
+        let active = self.active.lock().map_err(|_| Error::new("UNAVAILABLE"))?;
+        let token = active.clone();
+        let generation = self.generation().to_string();
+        drop(active);
         let unlocked = token.is_some();
         Ok(Status {
             exists: self.exists.load(Ordering::Acquire),
             unlocked: token.is_some(),
             token,
+            generation,
             busy: self.busy.load(Ordering::Acquire),
             interval_ms: self
                 .interval
@@ -955,10 +956,13 @@ mod stale_tests {
     fn queued_password_and_candidate_cannot_outlive_native_revocation() {
         let temp = tempfile::tempdir().unwrap();
         let manager = SafeManager::open(&temp.path().join("safe")).unwrap();
-        let epoch = manager.generation();
+        let epoch = manager.status().unwrap().generation.parse::<u64>().unwrap();
         manager.lock();
         assert!(manager.access_at("password".into(), true, epoch).is_err());
         assert!(!manager.status().unwrap().exists);
+        let fresh = manager.status().unwrap().generation.parse::<u64>().unwrap();
+        assert_ne!(epoch, fresh);
+        manager.access_at("password".into(), true, fresh).unwrap();
     }
 }
 

@@ -35,6 +35,7 @@ export interface SafeStatus {
   exists: boolean;
   unlocked: boolean;
   token: string | null;
+  generation: string;
   busy: boolean;
   interval_ms: number;
   progress: { stage: string; done: number; total: number };
@@ -102,7 +103,11 @@ export interface SafeRecovery {
 }
 export interface FileSafeApi {
   status(): Promise<SafeStatus>;
-  access(password: string, create: boolean): Promise<string>;
+  access(
+    password: string,
+    create: boolean,
+    expectedGeneration: string,
+  ): Promise<string>;
   lock(): Promise<void>;
   lockAll(): Promise<void>;
   subscribeLock(callback: () => void): () => void;

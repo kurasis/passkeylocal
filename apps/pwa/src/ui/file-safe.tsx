@@ -531,11 +531,13 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               setMessage(w.mismatched);
               return;
             }
+            if (!status) return;
             const pw = password;
+            const expectedGeneration = status.generation;
             setPassword("");
             setRepeat("");
             void run(async () => {
-              await api.access(pw, !status?.exists);
+              await api.access(pw, !status.exists, expectedGeneration);
             });
           }}
         >

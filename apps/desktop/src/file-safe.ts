@@ -4,8 +4,8 @@ import type { FileSafeApi } from "../../pwa/src/file-safe-protocol.ts";
 let activityAt = 0;
 export const fileSafe: FileSafeApi = {
   status: () => invoke("file_safe_status"),
-  access: (password, create) =>
-    invoke("file_safe_access", { password, create }),
+  access: (password, create, expectedGeneration) =>
+    invoke("file_safe_access", { password, create, expectedGeneration }),
   lock: () => invoke("file_safe_lock"),
   lockAll: () => invoke("lock_all"),
   subscribeLock(callback) {

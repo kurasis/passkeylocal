@@ -42,6 +42,7 @@ const api: FileSafeApi = {
       exists: true,
       unlocked,
       token: unlocked ? token : null,
+      generation: "0",
       busy: false,
       interval_ms: 120000,
       progress: { stage: "", done: 0, total: 0 },

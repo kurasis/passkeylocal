@@ -20,9 +20,17 @@ pub async fn file_safe_access(
     app: tauri::AppHandle,
     password: String,
     create: bool,
+    expected_generation: String,
 ) -> Result<String> {
     focused(&window)?;
-    let epoch = app.state::<SafeHost>().get()?.generation();
+    // Bind admission to the status observed before password submission, even
+    // when the IPC message reaches Rust only after a native lock event.
+    let epoch = expected_generation
+        .parse::<u64>()
+        .map_err(|_| Error::new("INVALID_STATE"))?;
+    if epoch.to_string() != expected_generation {
+        return Err(Error::new("INVALID_STATE"));
+    }
     tauri::async_runtime::spawn_blocking(move || {
         app.state::<SafeHost>()
             .get()?
