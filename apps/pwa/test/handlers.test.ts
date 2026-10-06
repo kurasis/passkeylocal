@@ -66,7 +66,8 @@ describe('vault worker handlers', () => {
   });
 
   it('recycle bin round trip and preferences validation', async () => {
-    const h = await handlers();
+    const storage = await openStorage({ indexedDB: new IDBFactory() });
+    const h = new VaultWorkerHandlers(storage);
     await h.handle('create', { password: PW });
     const { uuid } = await h.handle('saveEntry', { uuid: null, input });
     await h.handle('recycle', { uuid });
@@ -77,6 +78,11 @@ describe('vault worker handlers', () => {
     expect((await h.handle('getPreferences', undefined)).lockIntervalMs).toBe(30_000);
     await h.handle('setPreference', { key: 'lockIntervalMs', value: 3_600_000 });
     expect((await h.handle('getPreferences', undefined)).lockIntervalMs).toBe(3_600_000);
+    for (const interval of [21_600_000, 43_200_000, 86_400_000]) {
+      await h.handle('setPreference', { key: 'lockIntervalMs', value: interval });
+      const reopened = new VaultWorkerHandlers(storage);
+      expect((await reopened.handle('getPreferences', undefined)).lockIntervalMs).toBe(interval);
+    }
     const err = await h.handle('setPreference', { key: 'lockIntervalMs', value: 0 }).catch((e: unknown) => toSafeError(e));
     expect(err).toEqual({ code: 'INVALID_INPUT', detail: 'preference' });
     for (const theme of ['color', 'light', 'dark', 'auto'] as const) {

@@ -345,3 +345,70 @@ test('three palettes persist while locked and unlocked, follow explicit choice, 
   await expect(page.getByRole('heading', { name: 'Хранилище заблокировано' })).toBeVisible();
   await sec.assertClean();
 });
+
+test('replacing a backup finishes with saved status, closes the consumed preview and survives reload', async ({ page }) => {
+  const sec = await watchSecurity(page);
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await page.getByRole('button', { name: 'Add entry' }).click();
+  await page.getByLabel('Title').fill('Synthetic restored entry');
+  await page.getByLabel('Password', { exact: true }).fill('synthetic restore secret');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Synthetic restored entry' })).toBeVisible();
+  await page.getByRole('button', { name: 'Backups', exact: true }).click();
+  await page.getByRole('button', { name: 'Prepare encrypted backup' }).click();
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByTestId('save-backup').click();
+  const download = await downloadPromise;
+  const file = join(mkdtempSync(join(tmpdir(), 'pkl-restore-')), download.suggestedFilename());
+  await download.saveAs(file);
+
+  // Same-revision replacement must also finish: it still creates a new committed head.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.getByRole('button', { name: 'Restore from a backup file', exact: true }).click();
+    await expect(page.getByText('Vault replaced with this backup. Saved on this device.')).toHaveCount(0);
+    await page.getByTestId('restore-file').setInputFiles(file);
+    await page.locator('input[name="restore-password"]').fill(MASTER);
+    await page.getByRole('button', { name: 'Open', exact: true }).click();
+    await page.getByRole('checkbox', { name: /I understand that unsaved/ }).check();
+    await page.getByRole('button', { name: 'Replace with this backup', exact: true }).click();
+    await expect(page.getByRole('status').filter({ hasText: 'Vault replaced with this backup. Saved on this device.' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Replace with this backup', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Restore from a backup file', exact: true })).toBeVisible();
+  }
+  await page.reload();
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Synthetic restored entry/ })).toBeVisible();
+  await sec.assertClean();
+});
+
+test('6, 12 and 24 hour inactivity choices persist and the 24 hour deadline locks', async ({ page }) => {
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const interval = page.getByRole('combobox', { name: 'Lock after inactivity', exact: true });
+  for (const [label, value] of [['6 hours', '21600000'], ['12 hours', '43200000'], ['24 hours', '86400000']]) {
+    await interval.selectOption({ label });
+    await page.getByRole('button', { name: 'Lock', exact: true }).click();
+    await page.reload();
+    await page.getByLabel('Master password').fill(MASTER);
+    await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await expect(interval).toHaveValue(value!);
+  }
+  // Install the fake clock after the persistence reloads, then rearm on unlock.
+  await page.clock.install();
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
+  const ruInterval = page.getByRole('combobox', { name: 'Блокировать после бездействия', exact: true });
+  for (const n of [6, 12, 24]) await expect(ruInterval.getByRole('option', { name: `${n} ч.`, exact: true })).toHaveCount(1);
+  await page.clock.fastForward(86_399_000);
+  await expect(ruInterval).toBeVisible();
+  await page.clock.fastForward(1000);
+  await expect(page.getByRole('heading', { name: 'Хранилище заблокировано' })).toBeVisible();
+});

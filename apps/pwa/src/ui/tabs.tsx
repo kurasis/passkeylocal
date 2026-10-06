@@ -28,6 +28,7 @@ export function BackupsTab(props: {
   const t = useT();
   const fmt = useFormatDate();
   const [restore, setRestore] = useState(false);
+  const [restored, setRestored] = useState(false);
   const s = props.status;
   return (
     <section className="screen">
@@ -54,10 +55,15 @@ export function BackupsTab(props: {
       <p>{desktop ? t('desktopStorageExplain') : t(`persistence_${props.persistence.replace(/-/g, '_')}` as 'persistence_unavailable')}</p>
       {props.storageUnhealthy && <Banner kind="error">{t('storageUnhealthy')}</Banner>}
       <h2>{t('restoreTitle')}</h2>
+      {restored && <Banner kind="info">{t('restoreSucceeded')}</Banner>}
       {restore ? (
-        <RestoreControl replacing onDone={props.onChanged} />
+        <RestoreControl replacing onDone={() => {
+          setRestore(false);
+          setRestored(true);
+          props.onChanged();
+        }} />
       ) : (
-        <button type="button" className="secondary" onClick={() => setRestore(true)}>
+        <button type="button" className="secondary" onClick={() => { setRestored(false); setRestore(true); }}>
           {t('restoreVault')}
         </button>
       )}
@@ -118,7 +124,7 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
           <select value={props.prefs.lockIntervalMs} onChange={(e) => props.setPref('lockIntervalMs', Number(e.target.value))}>
             {LOCK_INTERVALS_MS.map((ms) => (
               <option key={ms} value={ms}>
-                {ms < 60_000 ? t('seconds', { n: ms / 1000 }) : t('minutes', { n: ms / 60_000 })}
+                {ms < 60_000 ? t('seconds', { n: ms / 1000 }) : ms < 21_600_000 ? t('minutes', { n: ms / 60_000 }) : t('hours', { n: ms / 3_600_000 })}
               </option>
             ))}
           </select>

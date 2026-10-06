@@ -185,6 +185,8 @@ export function RestoreControl(props: { replacing: boolean; onDone: () => void }
     setError(null);
     try {
       await client.call('adoptCandidate', { confirmReplace: props.replacing });
+      setCandidate(null);
+      setAck(false);
       props.onDone();
     } catch (e) {
       setError(errorText(e, t));
@@ -242,7 +244,9 @@ export function RestoreControl(props: { replacing: boolean; onDone: () => void }
           <button
             type="button"
             className="secondary"
+            disabled={busy}
             onClick={() => {
+              setAck(false);
               client.call('discardCandidate').catch(() => {});
               setCandidate(null);
             }}

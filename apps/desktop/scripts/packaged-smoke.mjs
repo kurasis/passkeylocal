@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
-import { chromium } from '@playwright/test';
+import { chromium, expect } from '@playwright/test';
 import { openVault, listEntries } from '@passkey-local/vault-adapter';
 
 assert.equal(process.platform, 'win32');
@@ -83,6 +83,18 @@ try {
   await page.reload();
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const interval = page.getByRole('combobox', { name: 'Lock after inactivity', exact: true });
+  for (const [label, milliseconds] of [['6 hours', 21600000], ['12 hours', 43200000], ['24 hours', 86400000]]) {
+    await interval.selectOption({ label });
+    await expect.poll(async () => JSON.parse(await readFile(join(data, 'state.json'), 'utf8')).preferences.lockIntervalMs).toBe(milliseconds);
+  }
+  await page.reload();
+  await page.getByLabel('Master password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(interval).toHaveValue('86400000');
+  await page.getByRole('button', { name: 'Vault', exact: true }).click();
   await page.getByRole('button', { name: 'Add entry', exact: true }).click();
   await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Synthetic Windows smoke');
   await page.getByLabel('Username or email', { exact: true }).fill('synthetic-user');
@@ -108,7 +120,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', 'password lock and fallback', 'unproved Hello denied', 'no foreign requests'],
+    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');
   console.log('PASS: packaged Windows assets, real IPC/worker/Argon2, verified native save and lock; Hello remains unavailable.');

@@ -28,8 +28,8 @@ function fakeClock() {
 }
 
 describe('AutoLock', () => {
-  it('offers 30 s up to 60 minutes with 2 minutes default and no "never"', () => {
-    expect([...LOCK_INTERVALS_MS]).toEqual([30_000, 60_000, 120_000, 300_000, 600_000, 1_800_000, 3_600_000]);
+  it('offers 30 s up to 24 hours with 2 minutes default and no "never"', () => {
+    expect([...LOCK_INTERVALS_MS]).toEqual([30_000, 60_000, 120_000, 300_000, 600_000, 1_800_000, 3_600_000, 21_600_000, 43_200_000, 86_400_000]);
     expect(DEFAULT_LOCK_INTERVAL_MS).toBe(120_000);
     expect(isLockInterval(0)).toBe(false);
     expect(isLockInterval(Infinity)).toBe(false);
@@ -58,6 +58,21 @@ describe('AutoLock', () => {
     al.arm();
     advance(45_000, false); // suspended page: timers did not run
     expect(al.check()).toBe(true);
+    expect(locks).toBe(1);
+  });
+
+  it.each([21_600_000, 43_200_000, 86_400_000] as const)('locks at the %i ms deadline, including suspended timers', (interval) => {
+    const { clock, advance } = fakeClock();
+    let locks = 0;
+    const al = new AutoLock(() => locks++, interval, clock);
+    al.arm();
+    advance(interval - 1);
+    expect(al.check()).toBe(false);
+    expect(locks).toBe(0);
+    advance(1, false);
+    expect(al.check()).toBe(true);
+    expect(locks).toBe(1);
+    advance(interval);
     expect(locks).toBe(1);
   });
 
