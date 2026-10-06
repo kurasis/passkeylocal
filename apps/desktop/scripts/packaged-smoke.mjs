@@ -86,6 +86,35 @@ try {
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const helloReport = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_status'));
+  assert.equal(helloReport.available, false, 'OS configuration must not enable unproved vault unwrap');
+  assert.equal(helloReport.enrolled, false);
+  assert(['available', 'device-not-present', 'not-configured', 'disabled-by-policy', 'device-busy', 'unknown'].includes(helloReport.helloConfiguration), 'Actual WinRT availability probe returns a sanitized configuration');
+  const helloSection = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  await helloSection.getByRole('button', { name: 'Check Windows Hello', exact: true }).click();
+  await expect(helloSection.getByRole('button', { name: 'Windows sign-in settings', exact: true })).toBeEnabled();
+  await expect.poll(async () => helloSection.getByRole('button', { name: 'Test fingerprint or PIN', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
+  // Check the reported Russian layout in the real installed WebView2, where
+  // module controls and the sidebar previously occupied the same vertical area.
+  await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
+  await expect(page.getByRole('heading', { name: 'Настройки', exact: true })).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const rect = (selector) => {
+      const r = document.querySelector(selector).getBoundingClientRect();
+      return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+    };
+    return { modules: rect('.module-navigation'), nav: rect('.tabbar'), main: rect('main'), desktop: innerWidth >= 900, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+  });
+  assert.equal(layout.overflow, false, 'Installed Russian layout has no horizontal overflow');
+  assert(layout.main.top >= layout.modules.bottom - 1, 'Main content follows module controls');
+  if (layout.desktop) {
+    assert(layout.nav.top >= layout.modules.bottom, 'Sidebar follows module controls without overlap');
+    assert(layout.nav.right <= layout.main.left + 1, 'Sidebar and main content occupy separate columns');
+  }
+  await mkdir('apps/desktop/artifacts', { recursive: true });
+  await page.screenshot({ path: 'apps/desktop/artifacts/windows-settings-smoke.png' });
+  await page.getByRole('combobox', { name: 'Язык', exact: true }).selectOption('en');
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
   const interval = page.getByRole('combobox', { name: 'Lock after inactivity', exact: true });
   for (const [label, milliseconds] of [['6 hours', 21600000], ['12 hours', 43200000], ['24 hours', 86400000]]) {
     await interval.selectOption({ label });
@@ -146,6 +175,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
+    helloConfiguration: helloReport.helloConfiguration, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

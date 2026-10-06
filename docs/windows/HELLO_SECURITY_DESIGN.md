@@ -16,4 +16,30 @@ Use a synthetic vault and a separate test account/machine. Record exact Kensingt
 
 A native synthetic-secret proof must establish supported wrap/unwrap algorithms and padding, per-key non-exportable TPM protection, rejection of silent unwrap and private-key export, fresh authorization on repeated attempts in one/fresh process, cancellation/lockout returning no secret, account/machine copy resistance, and fallback after key loss. Only then implement/enroll the actual protected envelope and execute H-01–H-16 in [WINDOWS_HELLO_KENSINGTON.md](WINDOWS_HELLO_KENSINGTON.md). Do not clear the owner's TPM or reset real Hello enrollment as a test. Driver/ESS incompatibility is an owner OS-policy decision; keep password access usable.
 
-Current automated evidence covers only denial of all unproved enrollment/unlock attempts and unchanged password/KDBX/Python recovery. All physical provider/sensor acceptance gates are NOT RUN/BLOCKED. Kensington support and Windows Hello delivery are **not complete**.
+## OS configuration and diagnostic actions (2026-10-06)
+
+The Settings card now distinguishes actual Windows configuration from vault
+unlock eligibility. `hello_status` calls WinRT
+`UserConsentVerifier.CheckAvailabilityAsync` on an initialized blocking-thread
+apartment, returning configured/available, missing device, unconfigured user,
+policy disabled, busy or unknown. It never promotes consent availability to
+protected-key eligibility. No reader model, TPM binding or ESS compatibility is
+inferred from this report.
+
+`hello_settings` opens only the fixed `ms-settings:signinoptions` destination
+from the focused trusted main window. `hello_verify` invokes
+`IUserConsentVerifierInterop.RequestVerificationForWindowAsync` with that
+window's actual HWND and a fixed message saying this is a test. Only one native
+test can run at a time. Its result is nonsensitive diagnostic data and has no
+credential/envelope/key access. A changed native session generation discards
+the response; unmounted UI also rejects late results. The UI explicitly says a
+passed test does not unlock or enroll a vault. These are useful troubleshooting
+actions for an already-configured fingerprint or PIN, **not an implementation
+of Hello vault unlock** and not evidence for H-02/H-03.
+
+Automated evidence includes diagnostic enum handling, UI availability/actions,
+cancel/policy states and late-result redaction with synthetic service doubles.
+The installed Windows smoke checks the real WinRT availability command and
+the Russian layout; it does not automate the consent dialog or OS Settings.
+All physical provider/sensor acceptance gates remain NOT RUN/BLOCKED.
+Kensington support and Windows Hello vault unlocking are **not complete**.

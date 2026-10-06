@@ -265,6 +265,53 @@ async fn backup_retention(
     .map_err(|_| Error::new("UNAVAILABLE"))?
 }
 #[tauri::command]
+async fn hello_status(window: WebviewWindow) -> Result<Value> {
+    trusted(&window)?;
+    tauri::async_runtime::spawn_blocking(hello::diagnostics::check)
+        .await
+        .map_err(|_| Error::new("UNAVAILABLE"))
+}
+#[tauri::command]
+async fn hello_verify(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    focused(&window)?;
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    let result = tauri::async_runtime::spawn_blocking(move || hello::diagnostics::verify(hwnd))
+        .await
+        .map_err(|_| Error::new("UNAVAILABLE"))??;
+    trusted(&window)?;
+    if app.state::<NativeState>().serial.load(Ordering::SeqCst) != serial {
+        return Err(Error::new("CANCELLED"));
+    }
+    Ok(result)
+}
+#[tauri::command]
+fn hello_settings(window: WebviewWindow) -> Result<()> {
+    focused(&window)?;
+    // A fixed OS destination, never a caller-supplied protocol or command.
+    use windows_sys::Win32::UI::{Shell::ShellExecuteW, WindowsAndMessaging::SW_SHOWNORMAL};
+    let target: Vec<_> = "ms-settings:signinoptions"
+        .encode_utf16()
+        .chain(Some(0))
+        .collect();
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0;
+    let result = unsafe {
+        ShellExecuteW(
+            hwnd,
+            std::ptr::null(),
+            target.as_ptr(),
+            std::ptr::null(),
+            std::ptr::null(),
+            SW_SHOWNORMAL,
+        )
+    };
+    if result as usize <= 32 {
+        Err(Error::new("UNAVAILABLE"))
+    } else {
+        Ok(())
+    }
+}
+#[tauri::command]
 fn hello_enroll(window: WebviewWindow) -> Result<Value> {
     focused(&window)?;
     hello::enroll()
@@ -426,6 +473,9 @@ pub fn run() {
             backup_retention,
             open_external,
             hello_enroll,
+            hello_status,
+            hello_verify,
+            hello_settings,
             hello_unlock,
             hello_revoke,
             file_safe_status,
