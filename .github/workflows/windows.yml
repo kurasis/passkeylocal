@@ -58,7 +58,8 @@ jobs:
           node apps/desktop/scripts/check-bundles.mjs
       - name: Independent recovery corpus
         run: python -m pytest -q -p no:cacheprovider tools/vault-recovery/tests tests/interop tests/security
-      - name: Save verified native test cache
+      - name: Save native compilation cache (tests still gate packaging)
+        if: success() || failure()
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |

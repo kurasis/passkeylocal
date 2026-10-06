@@ -15,6 +15,8 @@ pub fn reject_links(path: &Path) -> Result<()> {
             {
                 use std::os::windows::fs::MetadataExt;
                 if m.file_attributes() & 0x400 != 0 {
+                    #[cfg(test)]
+                    eprintln!("Windows test rejected reparse ancestor: {ancestor:?}");
                     return Err(Error::new("UNAVAILABLE"));
                 }
             }
@@ -314,6 +316,8 @@ pub fn secure_file_handle(file: &File, directory: bool) -> Result<()> {
         };
         LocalFree(descriptor);
         if result != 0 {
+            #[cfg(test)]
+            eprintln!("Windows test SetSecurityInfo failed with code {result}");
             return Err(Error::new("UNAVAILABLE"));
         }
     }
