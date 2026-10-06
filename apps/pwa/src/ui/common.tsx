@@ -17,6 +17,7 @@ export interface AppApi {
   /** Re-read lifecycle state from the worker (after create/unlock/restore). */
   refresh: () => void;
   lockNow: () => void;
+  registerDraftSave: (save: () => Promise<boolean>) => () => void;
 }
 
 export const AppContext = createContext<AppApi | null>(null);

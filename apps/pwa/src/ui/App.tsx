@@ -40,6 +40,14 @@ export function App() {
   const [view, setView] = useState<VaultView>({ name: 'list' });
   const [notice, setNotice] = useState<string | null>(null);
   const [fatal, setFatal] = useState<string | null>(null);
+  const [closePrompt, setClosePrompt] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closeResolve = useRef<((close: boolean) => void) | null>(null);
+  const draftSave = useRef<(() => Promise<boolean>) | null>(null);
+  const registerDraftSave = useCallback((save: () => Promise<boolean>) => {
+    draftSave.current = save;
+    return () => { if (draftSave.current === save) draftSave.current = null; };
+  }, []);
   const update = useServiceWorkerUpdate();
 
   const lang = prefs.language === 'auto' ? deviceLanguage() : prefs.language;
@@ -80,6 +88,9 @@ export function App() {
   }, [client, loadUnlocked, t]);
 
   const lockNow = useCallback(() => {
+    closeResolve.current?.(false);
+    closeResolve.current = null;
+    setClosePrompt(false);
     client.lock();
     // Unmount every sensitive view and drop derived data.
     setOverview(null);
@@ -94,18 +105,16 @@ export function App() {
   useEffect(() => subscribeNativeLock(lockNow), [lockNow]);
   useEffect(() => configureNativeClose(async () => {
     if (phase !== 'unlocked') return true;
-    if (view.name === 'edit') {
-      if (!window.confirm(t('desktopCloseDraft'))) return false;
-    }
+    const epoch = client.epoch;
     const o = await client.call('overview');
-    if (o.unsaved) {
-      if (window.confirm(t('desktopCloseSave'))) {
-        try { await client.call('retrySave'); } catch { return false; }
-      } else if (!window.confirm(t('desktopCloseDiscard'))) return false;
-    }
-    client.lock();
+    if (client.epoch !== epoch) return false;
+    if (view.name === 'edit' || o.unsaved) return new Promise<boolean>((resolve) => {
+      closeResolve.current = resolve;
+      setClosePrompt(true);
+    });
+    lockNow();
     return true;
-  }), [phase, view, client, t]);
+  }), [phase, view, client, t, lockNow]);
 
   useEffect(() => {
     if (!desktop) return;
@@ -178,7 +187,7 @@ export function App() {
     return () => clearTimeout(id);
   }, [notice]);
 
-  const api: AppApi = useMemo(() => ({ client, notify: setNotice, refresh: () => void refresh(), lockNow }), [client, refresh, lockNow]);
+  const api: AppApi = useMemo(() => ({ client, notify: setNotice, refresh: () => void refresh(), lockNow, registerDraftSave }), [client, refresh, lockNow, registerDraftSave]);
 
   const setPref = (key: keyof Preferences, value: unknown) => {
     setPrefs((p) => ({ ...p, [key]: value }));
@@ -251,6 +260,28 @@ export function App() {
             </Banner>
           )}
           <main>{body}</main>
+          {desktop && closePrompt && <div className="desktop-close-overlay"><section className="card stack desktop-close-dialog" role="dialog" aria-modal="true" aria-labelledby="desktop-close-title">
+            <h2 id="desktop-close-title">{t('desktopCloseTitle')}</h2><p>{t('desktopCloseExplain')}</p>
+            <button type="button" disabled={closing} autoFocus onClick={async () => {
+              const epoch = client.epoch;
+              setClosing(true);
+              try {
+                const o = await client.call('overview');
+                if (o.unsaved) await client.call('retrySave');
+                if (draftSave.current && !(await draftSave.current())) return;
+                if (client.epoch !== epoch) return;
+                const done = closeResolve.current; closeResolve.current = null;
+                lockNow(); done?.(true);
+              } catch (e) { setNotice(errorText(e, t)); }
+              finally { setClosing(false); }
+            }}>{t('save')}</button>
+            <button type="button" className="danger" disabled={closing} onClick={() => {
+              const done = closeResolve.current; closeResolve.current = null; lockNow(); done?.(true);
+            }}>{t('desktopDiscardClose')}</button>
+            <button type="button" className="secondary" disabled={closing} onClick={() => {
+              closeResolve.current?.(false); closeResolve.current = null; setClosePrompt(false);
+            }}>{t('cancel')}</button>
+          </section></div>}
           {notice && (
             <div className="toast" role="status">
               {notice}

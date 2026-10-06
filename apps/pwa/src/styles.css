@@ -210,3 +210,7 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 @media (max-width: 380px) { .brand small { display: none; } .theme-preview { padding: 7px; height: 58px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
 .redacted #root { visibility: hidden; }
+
+/* Native close guard is shared UI; no inline styles or third-party assets. */
+.desktop-close-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1.5rem; background: rgb(0 0 0 / .55); }
+.desktop-close-dialog { width: min(100%, 28rem); }

@@ -161,9 +161,7 @@ impl BackupJob {
             let path = io::child(&self.folder, &old.name)?;
             if path.exists() {
                 // User-replaced content under a tracked name is no longer ours.
-                if io::read(&path, MAX_BYTES).is_ok_and(|b| hash(&b) == old.sha256) {
-                    fs::remove_file(path)?;
-                }
+                io::remove_verified(&path, &old.sha256)?;
             }
             removed.push(old.name.clone());
         }
@@ -311,6 +309,16 @@ impl Store {
             return Err(Error::new("CORRUPT"));
         }
         parse_id(&self.meta.backup.owner)?;
+        if let Some(h) = &self.meta.head {
+            parse_id(&h.blob_id)?;
+            if h.slot != "active"
+                || h.format != "kdbx4"
+                || h.generation > 9_007_199_254_740_990
+                || h.password_epoch > 9_007_199_254_740_990
+            {
+                return Err(Error::new("CORRUPT"));
+            }
+        }
         for b in &self.meta.blobs {
             parse_id(&b.id)?;
             if !hash_valid(&b.sha256) || b.size > MAX_BYTES {
@@ -429,7 +437,7 @@ impl Store {
                     bytes,
                     blob.sha256,
                     expected,
-                    Some(blob.password_epoch),
+                    Some(self.meta.head.as_ref().map_or(0, |h| h.password_epoch + 1)),
                     true,
                 )?)?)
             }
@@ -528,6 +536,7 @@ impl Store {
             return Err(Error::new("CONFLICT"));
         }
         let current = self.path("current.kdbx")?;
+        let first_publication = !current.exists();
         if let Some(head) = &self.meta.head {
             let known = self
                 .meta
@@ -539,9 +548,11 @@ impl Store {
             // Normal editing never gets here with a damaged head; generation CAS
             // additionally protects against another successful managed save.
             if let Ok(existing) = io::read(&current, MAX_BYTES) {
-                if !recovery && known.is_some() && known != Some(&hash(&existing)) {
+                if !recovery && known != Some(&hash(&existing)) {
                     return Err(Error::new("CONFLICT"));
                 }
+            } else if !recovery {
+                return Err(Error::new("CONFLICT"));
             } else if current.exists() {
                 return Err(Error::new("CORRUPT"));
             }
@@ -585,7 +596,7 @@ impl Store {
         // The immutable prior blob already exists; Windows also writes a
         // separate replacement copy. Never delete current before replacement.
         let prior = self.path(&format!("replaced-{}.kdbx", id()))?;
-        let outcome = io::replace(&candidate, &current, Some(&prior));
+        let outcome = io::replace(&candidate, &current, Some(&prior), first_publication);
         self.boundary("after-replace")?;
         if io::read(&current, MAX_BYTES)
             .ok()
@@ -1042,6 +1053,118 @@ mod tests {
             5
         );
         assert_eq!(s.meta.blobs.len(), 1);
+    }
+    #[test]
+    fn first_save_interruption_never_looks_like_an_empty_installation() {
+        for stage in [
+            "after-immutable-flush",
+            "after-candidate-flush",
+            "after-journal-flush",
+            "after-replace",
+        ] {
+            let dir = tempfile::tempdir().unwrap();
+            let mut s = Store::open(dir.path()).unwrap();
+            let token = s.begin();
+            s.fault = Some(stage);
+            assert!(save(&mut s, &token, b"synthetic first candidate", None).is_err());
+            drop(s);
+            let s = Store::open(dir.path()).unwrap();
+            assert!(s.meta.head.is_some(), "{stage}");
+            assert!(!s.meta.blobs.is_empty(), "{stage}");
+            assert!(s
+                .meta
+                .blobs
+                .iter()
+                .any(
+                    |b| io::read(&s.blob_path(&b.id).unwrap(), MAX_BYTES).unwrap()
+                        == b"synthetic first candidate"
+                ));
+        }
+    }
+    #[test]
+    fn queued_backup_has_immutable_bytes_and_cannot_verify_a_newer_revision() {
+        let dir = tempfile::tempdir().unwrap();
+        let external = tempfile::tempdir().unwrap();
+        let mut s = Store::open(dir.path()).unwrap();
+        let t = s.begin();
+        save(&mut s, &t, b"synthetic original", None).unwrap();
+        s.configure_backup(external.path()).unwrap();
+        let job = s.pending_backup().unwrap().unwrap();
+        save(&mut s, &t, b"synthetic later", Some(1)).unwrap();
+        let copied = job.run().unwrap();
+        assert_eq!(
+            fs::read(job.folder.join(&copied.written.name)).unwrap(),
+            b"synthetic original"
+        );
+        s.finish_backup(&job, Ok(copied)).unwrap();
+        assert_eq!(s.status()["backup"], "pending");
+        s.retry_backup().unwrap();
+        assert_eq!(s.status()["backup"], "verified");
+    }
+    #[test]
+    fn replaced_folder_and_modified_tracked_content_are_not_authorized() {
+        let dir = tempfile::tempdir().unwrap();
+        let external = tempfile::tempdir().unwrap();
+        let mut s = Store::open(dir.path()).unwrap();
+        let t = s.begin();
+        save(&mut s, &t, b"synthetic original", None).unwrap();
+        s.configure_backup(external.path()).unwrap();
+        s.retry_backup().unwrap();
+        let folder = s.meta.backup.folder.clone().unwrap();
+        let original_name = s.meta.backup.tracked[0].name.clone();
+        fs::write(
+            folder.join(&original_name),
+            b"user replaced this tracked name",
+        )
+        .unwrap();
+        s.set_backup_retention(1).unwrap();
+        save(&mut s, &t, b"synthetic next", Some(1)).unwrap();
+        s.retry_backup().unwrap();
+        assert_eq!(
+            fs::read(folder.join(original_name)).unwrap(),
+            b"user replaced this tracked name"
+        );
+        let moved = external.path().join("old-authorized-folder");
+        fs::rename(&folder, moved).unwrap();
+        fs::create_dir(&folder).unwrap();
+        save(&mut s, &t, b"synthetic unauthorized folder", Some(2)).unwrap();
+        assert!(s.retry_backup().is_err());
+        assert_eq!(fs::read_dir(folder).unwrap().count(), 0);
+    }
+    #[test]
+    fn snapshot_recovery_is_explicit_and_hash_errors_cannot_commit() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut s = Store::open(dir.path()).unwrap();
+        let t = s.begin();
+        let first = save(&mut s, &t, b"synthetic recoverable", None).unwrap();
+        save(&mut s, &t, b"synthetic current", Some(1)).unwrap();
+        fs::write(s.path("current.kdbx").unwrap(), b"damaged external data").unwrap();
+        assert!(save(&mut s, &t, b"normal overwrite", Some(2)).is_err());
+        s.dispatch(
+            &t,
+            "restoreBlob",
+            json!({"blobId":first["blobId"],"expectedGeneration":2}),
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read(s.path("current.kdbx").unwrap()).unwrap(),
+            b"synthetic recoverable"
+        );
+        assert!(s.dispatch(&t, "commit", json!({"bytes":b"synthetic bad hash","sha256":hash(b"different"),"expectedGeneration":3})).is_err());
+    }
+    #[cfg(windows)]
+    #[test]
+    fn actual_windows_replacement_errors_preserve_the_destination() {
+        let dir = tempfile::tempdir().unwrap();
+        let current = dir.path().join("current.kdbx");
+        io::exclusive_write(&current, b"synthetic previous").unwrap();
+        assert!(io::replace(&dir.path().join("missing.tmp"), &current, None, false).is_err());
+        assert_eq!(fs::read(&current).unwrap(), b"synthetic previous");
+        let candidate = dir.path().join("new.tmp");
+        io::exclusive_write(&candidate, b"synthetic candidate").unwrap();
+        assert!(io::replace(&candidate, &current, None, true).is_err());
+        assert_eq!(fs::read(&current).unwrap(), b"synthetic previous");
+        assert!(candidate.exists());
     }
     #[cfg(unix)]
     #[test]

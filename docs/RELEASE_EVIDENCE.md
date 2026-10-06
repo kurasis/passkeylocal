@@ -228,3 +228,5 @@ headless) on Linux x64, through an outbound HTTPS proxy.
 ## 2026-10-06 — additive Windows integration
 
 See [Windows baseline](windows/BASELINE.md), [acceptance ledger](windows/ACCEPTANCE.md) and [Hello security decision](windows/HELLO_SECURITY_DESIGN.md). Baseline TypeScript 158 tests/build/typecheck and Python 76 tests passed; native Linux algorithm tests and real file-service/shared-engine/full Python parity passed. Physical Windows installation/TPM/Kensington/Safari are not claimed. Windows workflow artifacts are unsigned test builds, not published releases.
+
+Post-change: typecheck, 158 TypeScript tests, web/desktop frontend isolation, 6 Chromium scenarios, 11 native Linux tests, Windows GNU production-origin/permissions compilation and full native-file/Python interoperability passed. npm audit: zero vulnerabilities; RustSec: zero vulnerability advisories, two informational non-Windows graph warnings documented in the Windows report. Full installed Windows/physical-device gates remain open.

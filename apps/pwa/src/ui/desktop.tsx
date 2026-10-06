@@ -5,7 +5,7 @@ import { Banner } from './common.tsx';
 
 export function DesktopSettings() {
   const t = useT();
-  const [status, setStatus] = useState<{ backup: string; hello: string } | null>(null);
+  const [status, setStatus] = useState<{ backup: string; hello: string; retention?: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const refresh = () => nativeStatus().then(setStatus, () => setStatus(null));
   useEffect(() => { if (desktop) void refresh(); }, []);
@@ -23,7 +23,7 @@ export function DesktopSettings() {
       <button type="button" disabled={busy} onClick={() => void action(configureNativeBackup)}>{t('desktopChooseFolder')}</button>
       <button type="button" className="secondary" disabled={busy} onClick={() => void action(retryNativeBackup)}>{t('retry')}</button>
     </div>
-    <label>{t('desktopRetention')}<select defaultValue="30" disabled={busy} onChange={(e) => void action(() => setNativeRetention(Number(e.target.value)))}>
+    <label>{t('desktopRetention')}<select value={status?.retention ?? 30} disabled={busy} onChange={(e) => void action(() => setNativeRetention(Number(e.target.value)))}>
       {[1, 5, 10, 30, 60, 100].map((n) => <option key={n} value={n}>{n}</option>)}
     </select></label>
     <h2>Windows Hello</h2>

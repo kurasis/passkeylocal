@@ -5,9 +5,9 @@ Baseline source: `be52275e23a5c8bc0eabbf62198f4ee0c4f75d4d`. Final implementatio
 ## Executed local evidence
 
 - Before changes: typecheck, 158 TypeScript tests and web build passed; Python 76 passed / 12 skipped.
-- Native Rust algorithm tests: seven passed on Linux, covering write-boundary restart reconciliation, single writer/CAS, external modification, stale tokens, hostile IDs/preferences, symlinks, backup failure/retry/retention, old-password cleanup, and fail-closed Hello. Windows replacement/ACL behavior is not inferred from Linux.
+- Native Rust algorithm tests: eleven passed on Linux, covering write-boundary restart reconciliation, single writer/CAS, external modification, stale tokens, hostile IDs/preferences, symlinks, backup failure/retry/retention, old-password cleanup, and fail-closed Hello. Windows replacement/ACL behavior is not inferred from Linux.
 - Actual native fixture driver + shared KDBX worker/controller contract: import full synthetic corpus, preserve groups/entries/custom fields/history, edit password/history, save/restart, reject wrong password, rotate master password, and compare complete independent Python recovery JSON. Passed on Linux. Test-only driver is not an installed app.
-- Post-change web/browser checks and Windows-hosted workflow evidence are recorded below when executed. Pending or absent results are not passes.
+- Post-change typecheck, adapter 96 / core 36 / PWA 26 tests, both frontend builds and target isolation passed; production Chromium 6/6 passed, including offline/passkey/themes/CSP. Windows host code and app-command capabilities cross-compile with Rust/Clippy for x64 GNU (including production custom protocol); this is compilation evidence only. Native Windows workflow is running; pending or absent results are not passes.
 
 ## Required gates
 
@@ -15,7 +15,7 @@ Every full gate below remains NOT RUN until its complete scenario is observed on
 
 | ID | Scenario | Status / evidence |
 | --- | --- | --- |
-| WEB-01 | Build/test existing web target before and after integration | NOT RUN: complete target-specific scenario outstanding |
+| WEB-01 | Build/test existing web target before and after integration | PASS: original commands before/after, 158 TypeScript tests, build and typecheck without Rust |
 | WEB-02 | Existing deployment, installability, service-worker update and offline use | NOT RUN: complete target-specific scenario outstanding |
 | WEB-03 | Shared-code changes on actual iPhone/Safari PWA | NOT RUN: complete target-specific scenario outstanding |
 | BUILD-01 | Build both targets consecutively and concurrently in supported configurations | NOT RUN: complete target-specific scenario outstanding |
@@ -71,3 +71,5 @@ Every full gate below remains NOT RUN until its complete scenario is observed on
 ## Outstanding work and release limits
 
 No accepted production Windows release is authorized or claimed. Hello remains unavailable and its provider/envelope/modes need the real-hardware proof and implementation described in HELLO_SECURITY_DESIGN.md. Installer signing, clean-machine offline WebView2, packaged origin/IPC/worker/WASM, native fault/ACL/path races, dialog/close/minimize/session/power, upgrade/uninstall and physical Safari require their actual target environments. A generated unsigned installer alone does not close those gates. No audit claim follows from these tests.
+
+Dependency review: npm audit reports 0 vulnerabilities. cargo-audit 0.22.2 against the current RustSec database reports 0 vulnerability advisories, plus informational warnings for glib 0.18.5 (RUSTSEC-2024-0429) and proc-macro-error 1.0.4 (RUSTSEC-2024-0370); cargo tree for Windows MSVC confirms neither is in the Windows target graph. They are Linux/GTK transitive lock entries; no Linux release is provided. This is dependency review, not an audit of application security.

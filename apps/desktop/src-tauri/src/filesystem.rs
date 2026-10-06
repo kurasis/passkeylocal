@@ -161,7 +161,7 @@ pub fn exclusive_write(path: &Path, bytes: &[u8]) -> Result<()> {
     Ok(())
 }
 
-pub fn replace(from: &Path, to: &Path, backup: Option<&Path>) -> Result<()> {
+pub fn replace(from: &Path, to: &Path, backup: Option<&Path>, first: bool) -> Result<()> {
     reject_links(from)?;
     reject_links(to)?;
     #[cfg(windows)]
@@ -180,7 +180,7 @@ pub fn replace(from: &Path, to: &Path, backup: Option<&Path>) -> Result<()> {
         let b = w(to);
         let prior = backup.map(w);
         let ok = unsafe {
-            if to.exists() {
+            if !first {
                 ReplaceFileW(
                     b.as_ptr(),
                     a.as_ptr(),
@@ -205,7 +205,7 @@ pub fn replace(from: &Path, to: &Path, backup: Option<&Path>) -> Result<()> {
                 File::open(backup)?.sync_all()?;
             }
         }
-        if !to.exists() {
+        if first {
             fs::hard_link(from, to)?;
             fs::remove_file(from)?;
         } else {
@@ -221,7 +221,7 @@ pub fn replace(from: &Path, to: &Path, backup: Option<&Path>) -> Result<()> {
 pub fn atomic_json(path: &Path, bytes: &[u8]) -> Result<()> {
     let tmp = path.with_file_name(format!("metadata-{}.tmp", uuid::Uuid::new_v4()));
     exclusive_write(&tmp, bytes)?;
-    let result = replace(&tmp, path, None);
+    let result = replace(&tmp, path, None, !path.exists());
     // A ReplaceFileW error can have moved names. A matching read-back wins.
     if read(path, 256 * 1024).ok().as_deref() == Some(bytes) {
         return Ok(());
@@ -369,5 +369,60 @@ pub fn identity(path: &Path) -> Result<String> {
         use std::os::unix::fs::MetadataExt;
         let metadata = fs::metadata(path)?;
         Ok(format!("{}:{}", metadata.dev(), metadata.ino()))
+    }
+}
+
+/// Prune only bytes still owned by this app. Windows deletes the exact opened
+/// object, without a hash-check/close/path-delete race or following reparse points.
+pub fn remove_verified(path: &Path, expected_hash: &str) -> Result<bool> {
+    reject_links(path)?;
+    #[cfg(windows)]
+    {
+        use std::os::windows::{fs::OpenOptionsExt, io::AsRawHandle};
+        use windows_sys::Win32::Storage::FileSystem::{
+            FileDispositionInfo, SetFileInformationByHandle, FILE_DISPOSITION_INFO,
+        };
+        let file = OpenOptions::new()
+            .read(true)
+            .access_mode(0x80000000 | 0x00010000)
+            .share_mode(1)
+            .custom_flags(0x00200000)
+            .open(path)?;
+        if !file.metadata()?.is_file() || file.metadata()?.len() > MAX_BYTES as u64 {
+            return Ok(false);
+        }
+        use std::os::windows::fs::MetadataExt;
+        if file.metadata()?.file_attributes() & 0x400 != 0 {
+            return Err(Error::new("UNAVAILABLE"));
+        }
+        let mut bytes = Vec::new();
+        file.try_clone()?
+            .take(MAX_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
+        if crate::storage::hash(&bytes) != expected_hash {
+            return Ok(false);
+        }
+        let disposition = FILE_DISPOSITION_INFO { DeleteFile: true };
+        if unsafe {
+            SetFileInformationByHandle(
+                file.as_raw_handle().cast(),
+                FileDispositionInfo,
+                (&disposition as *const FILE_DISPOSITION_INFO).cast(),
+                std::mem::size_of::<FILE_DISPOSITION_INFO>() as u32,
+            )
+        } == 0
+        {
+            return Err(std::io::Error::last_os_error().into());
+        }
+        drop(file);
+        Ok(true)
+    }
+    #[cfg(not(windows))]
+    {
+        if crate::storage::hash(&read(path, MAX_BYTES)?) != expected_hash {
+            return Ok(false);
+        }
+        fs::remove_file(path)?;
+        Ok(true)
     }
 }

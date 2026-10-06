@@ -31,3 +31,9 @@ tempfile = "3.23"
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]
+
+[profile.dev]
+debug = 0
+
+[profile.release]
+strip = true

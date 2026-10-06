@@ -6,6 +6,9 @@
 import { createContext, useContext } from 'react';
 
 const en = {
+  desktopDiscardClose: "Discard and close",
+  desktopCloseTitle: "Save changes before closing?",
+  desktopCloseExplain: "Save and close, discard the draft and close, or cancel to keep working.",
   desktopRetention: "Keep this many managed external backups",
   desktopPrivacy: "Your encrypted vault stays on this computer. Keep a verified copy on another device.",
   desktopUnlockHint: "Open your vault with your master password.",
@@ -280,6 +283,9 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const ru: Record<MessageKey, string> = {
+  desktopDiscardClose: "Отбросить и закрыть",
+  desktopCloseTitle: "Сохранить изменения перед закрытием?",
+  desktopCloseExplain: "Сохраните и закройте, отбросьте черновик или отмените закрытие, чтобы продолжить работу.",
   desktopRetention: "Хранить столько внешних резервных копий",
   desktopPrivacy: "Зашифрованное хранилище остаётся на этом компьютере. Сохраните проверенную копию на другом устройстве.",
   desktopUnlockHint: "Откройте хранилище мастер-паролем.",

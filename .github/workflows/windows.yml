@@ -12,7 +12,7 @@ jobs:
   windows:
     name: Windows x64 checks and unsigned offline installer
     runs-on: windows-2025
-    timeout-minutes: 40
+    timeout-minutes: 60
     env:
       CARGO_TERM_COLOR: always
     steps:
@@ -51,6 +51,9 @@ jobs:
         run: python -m pytest -q -p no:cacheprovider tools/vault-recovery/tests tests/interop tests/security
       - name: Build Windows per-user NSIS installer with offline WebView2 runtime
         run: npm run desktop:build
+      - name: Packaged application process and main-window smoke
+        shell: pwsh
+        run: apps/desktop/scripts/smoke.ps1
       - name: Package checksums and build metadata (unsigned, hardware unverified)
         shell: pwsh
         run: apps/desktop/scripts/package-artifacts.ps1

@@ -444,7 +444,7 @@ function dateInputValue(d: Date | null): string {
 
 function Edit(props: Props & { uuid: string | null }) {
   const t = useT();
-  const { client } = useApp();
+  const { client, registerDraftSave } = useApp();
   const [input, setInput] = useState<EntryInput | null>(props.uuid ? null : EMPTY);
   const [tagText, setTagText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -465,11 +465,8 @@ function Edit(props: Props & { uuid: string | null }) {
     );
   }, [client, props.uuid, t]);
 
-  if (!input) return <section className="screen">{error ? <Banner kind="error">{error}</Banner> : <Busy label={t('working')} />}</section>;
-  const set = (patch: Partial<EntryInput>) => setInput({ ...input, ...patch });
-  const extraCount = [input.url, input.notes, tagText.trim(), input.expiresAt ? 'x' : ''].filter(Boolean).length + input.customFields.length;
-
-  const save = async () => {
+  const save = async (): Promise<boolean> => {
+    if (!input || busy) return false;
     setBusy(true);
     setError(null);
     try {
@@ -480,13 +477,19 @@ function Edit(props: Props & { uuid: string | null }) {
       const res = await client.call('saveEntry', { uuid: props.uuid, input: { ...input, tags }, groupUuid: groupUuid || undefined });
       await props.reload();
       props.go({ name: 'detail', uuid: res.uuid });
+      return true;
     } catch (e) {
       setError(errorText(e, t));
       await props.reload().catch(() => {});
+      return false;
     } finally {
       setBusy(false);
     }
   };
+  useEffect(() => registerDraftSave(save), [registerDraftSave, save]);
+  if (!input) return <section className="screen">{error ? <Banner kind="error">{error}</Banner> : <Busy label={t('working')} />}</section>;
+  const set = (patch: Partial<EntryInput>) => setInput({ ...input, ...patch });
+  const extraCount = [input.url, input.notes, tagText.trim(), input.expiresAt ? 'x' : ''].filter(Boolean).length + input.customFields.length;
 
   return (
     <section className="screen">
