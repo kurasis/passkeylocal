@@ -5,9 +5,9 @@ Baseline source: `be52275e23a5c8bc0eabbf62198f4ee0c4f75d4d`. Final implementatio
 ## Executed local evidence
 
 - Before changes: typecheck, 158 TypeScript tests and web build passed; Python 76 passed / 12 skipped.
-- Native Rust algorithm tests: eleven passed on Linux, covering write-boundary restart reconciliation, single writer/CAS, external modification, stale tokens, hostile IDs/preferences, symlinks, backup failure/retry/retention, old-password cleanup, and fail-closed Hello. Windows replacement/ACL behavior is not inferred from Linux.
+- Native Rust algorithm tests: twelve passed on Linux, covering write-boundary restart reconciliation, single writer/CAS, external modification, stale tokens, hostile IDs/preferences, symlinks, backup failure/retry/retention, old-password cleanup, and fail-closed Hello. Windows replacement/ACL behavior is not inferred from Linux.
 - Actual native fixture driver + shared KDBX worker/controller contract: import full synthetic corpus, preserve groups/entries/custom fields/history, edit password/history, save/restart, reject wrong password, rotate master password, and compare complete independent Python recovery JSON. Passed on Linux. Test-only driver is not an installed app.
-- Post-change typecheck, adapter 96 / core 36 / PWA 26 tests, both frontend builds and target isolation passed; production Chromium 6/6 passed, including offline/passkey/themes/CSP. Windows host code and app-command capabilities cross-compile with Rust/Clippy for x64 GNU (including production custom protocol); this is compilation evidence only. Native Windows workflow is running; pending or absent results are not passes.
+- Post-change typecheck, adapter 96 / core 36 / PWA 26 tests, both frontend builds and target isolation passed; production Chromium 6/6 passed, including offline/passkey/themes/CSP. The host timeout uses a monotonic clock separate from all filesystem locks; its exact expiry and refusal to revive an expired session are unit-tested. Windows host code and app-command capabilities cross-compile with Rust/Clippy for x64 GNU (including production custom protocol); this is compilation evidence only. Native Windows workflow is running; pending or absent results are not passes.
 
 ## Required gates
 
@@ -75,3 +75,5 @@ No accepted production Windows release is authorized or claimed. Hello remains u
 Dependency review: npm audit reports 0 vulnerabilities. cargo-audit 0.22.2 against the current RustSec database reports 0 vulnerability advisories, plus informational warnings for glib 0.18.5 (RUSTSEC-2024-0429) and proc-macro-error 1.0.4 (RUSTSEC-2024-0370); cargo tree for Windows MSVC confirms neither is in the Windows target graph. They are Linux/GTK transitive lock entries; no Linux release is provided. This is dependency review, not an audit of application security.
 
 Packaged smoke now exercises actual Windows WebView2/asset origin/IPC/worker/Argon2/save/lock through CDP on an ephemeral hosted runner, with external application requests blocked. Its result remains NOT RUN until the workflow finishes successfully; the source contains no activatable fake Hello provider. The fixture preference shortcut skips native backup-dialog automation and is explicitly recorded by the harness.
+
+Windows runner diagnostics found SetSecurityInfo ERROR_ACCESS_DENIED with WRITE_DAC-only handles. READ_CONTROL was added and protected DACL readback now fails closed on mismatch. This fix is awaiting the Windows workflow result; previous failed runs are not acceptance passes.

@@ -384,6 +384,14 @@ impl Store {
     pub fn expired(&self) -> bool {
         self.deadline.is_some_and(|d| Instant::now() >= d)
     }
+    pub fn lock_interval(&self) -> Duration {
+        self.interval
+    }
+    /// The Windows host owns a separate monotonic clock so disk I/O cannot
+    /// delay revocation. Synchronize its deadline before checking a command.
+    pub fn native_deadline(&mut self, deadline: Option<Instant>) {
+        self.deadline = deadline;
+    }
     fn authorize(&self, token: &str) -> Result<()> {
         if self.session.as_deref() != Some(token) || self.expired() {
             Err(Error::new("INVALID_STATE"))

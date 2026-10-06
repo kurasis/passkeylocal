@@ -146,7 +146,7 @@ pub fn exclusive_write(path: &Path, bytes: &[u8]) -> Result<()> {
     {
         use std::os::windows::fs::OpenOptionsExt;
         opts.share_mode(0)
-            .access_mode(0x40000000 | 0x00040000)
+            .access_mode(0x40000000 | 0x00040000 | 0x00020000)
             .custom_flags(0x00200000);
     }
     let mut file = opts.open(path)?;
@@ -245,11 +245,12 @@ pub fn secure_file_handle(file: &File, directory: bool) -> Result<()> {
         Foundation::LocalFree,
         Security::Authorization::{
             ConvertSidToStringSidW, ConvertStringSecurityDescriptorToSecurityDescriptorW,
-            SetSecurityInfo, SE_FILE_OBJECT,
+            GetSecurityInfo, SetSecurityInfo, SE_FILE_OBJECT,
         },
         Security::{
-            GetTokenInformation, TokenUser, DACL_SECURITY_INFORMATION,
-            PROTECTED_DACL_SECURITY_INFORMATION, TOKEN_QUERY, TOKEN_USER,
+            GetSecurityDescriptorControl, GetTokenInformation, TokenUser,
+            DACL_SECURITY_INFORMATION, PROTECTED_DACL_SECURITY_INFORMATION, TOKEN_QUERY,
+            TOKEN_USER,
         },
         System::Threading::{GetCurrentProcess, OpenProcessToken},
     };
@@ -314,10 +315,42 @@ pub fn secure_file_handle(file: &File, directory: bool) -> Result<()> {
                 std::ptr::null_mut(),
             )
         };
-        LocalFree(descriptor);
         if result != 0 {
             #[cfg(test)]
             eprintln!("Windows test SetSecurityInfo failed with code {result}");
+            LocalFree(descriptor);
+            return Err(Error::new("UNAVAILABLE"));
+        }
+        // Request READ_CONTROL as well as WRITE_DAC when opening the handle:
+        // Windows must read the existing security descriptor for propagation,
+        // and the caller must verify the resulting protected DACL.
+        let mut actual_descriptor = std::ptr::null_mut();
+        let mut actual_dacl = std::ptr::null_mut();
+        let read_result = GetSecurityInfo(
+            file.as_raw_handle().cast(),
+            SE_FILE_OBJECT,
+            DACL_SECURITY_INFORMATION,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            &mut actual_dacl,
+            std::ptr::null_mut(),
+            &mut actual_descriptor,
+        );
+        let mut control = 0;
+        let mut revision = 0;
+        let verified = read_result == 0 && !actual_dacl.is_null() && !dacl.is_null()
+            && GetSecurityDescriptorControl(actual_descriptor, &mut control, &mut revision) != 0
+            && control & 0x1000 != 0 // SE_DACL_PROTECTED
+            && (*actual_dacl).AclSize == (*dacl).AclSize
+            && std::slice::from_raw_parts(actual_dacl.cast::<u8>(), (*actual_dacl).AclSize as usize)
+                == std::slice::from_raw_parts(dacl.cast::<u8>(), (*dacl).AclSize as usize);
+        if !actual_descriptor.is_null() {
+            LocalFree(actual_descriptor);
+        }
+        LocalFree(descriptor);
+        if !verified {
+            #[cfg(test)]
+            eprintln!("Windows test protected DACL readback failed with code {read_result}");
             return Err(Error::new("UNAVAILABLE"));
         }
     }
@@ -331,7 +364,7 @@ pub fn secure_directory(path: &Path) -> Result<()> {
         use std::os::windows::fs::OpenOptionsExt;
         let f = OpenOptions::new()
             .read(true)
-            .access_mode(0x00040000 | 0x80)
+            .access_mode(0x00040000 | 0x00020000 | 0x80)
             .share_mode(1 | 2)
             .custom_flags(0x02000000 | 0x00200000)
             .open(path)?;

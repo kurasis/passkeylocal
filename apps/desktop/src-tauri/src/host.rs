@@ -1,5 +1,6 @@
 use crate::{
     filesystem as io, hello,
+    inactivity::Inactivity,
     storage::{Error, Result, Store, MAX_BYTES},
 };
 use serde_json::Value;
@@ -10,7 +11,7 @@ use std::{
         mpsc::{self, SyncSender},
         Mutex,
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 use tauri::{Emitter, Manager, State, WebviewWindow};
 
@@ -18,6 +19,7 @@ struct NativeState {
     store: Mutex<Store>,
     active: Mutex<Option<String>>,
     serial: AtomicU64,
+    inactivity: Mutex<Inactivity>,
     backup: SyncSender<()>,
 }
 impl NativeState {
@@ -28,6 +30,11 @@ impl NativeState {
             .map_err(|_| Error::new("UNAVAILABLE"))?
             .as_deref()
             == Some(token)
+            && !self
+                .inactivity
+                .lock()
+                .map_err(|_| Error::new("UNAVAILABLE"))?
+                .expired(Instant::now())
         {
             Ok(())
         } else {
@@ -57,30 +64,45 @@ fn store<'a>(state: &'a State<'_, NativeState>) -> Result<std::sync::MutexGuard<
     state.store.lock().map_err(|_| Error::new("UNAVAILABLE"))
 }
 #[tauri::command]
-fn session_begin(window: WebviewWindow, state: State<'_, NativeState>) -> Result<String> {
+async fn session_begin(window: WebviewWindow, app: tauri::AppHandle) -> Result<String> {
     trusted(&window)?;
-    let serial = state.serial.load(Ordering::SeqCst);
-    let mut storage = store(&state)?;
-    let token = storage.begin();
-    let mut active = state.active.lock().map_err(|_| Error::new("UNAVAILABLE"))?;
-    if serial != state.serial.load(Ordering::SeqCst) {
-        storage.end(&token);
-        return Err(Error::new("INVALID_STATE"));
-    }
-    *active = Some(token.clone());
-    Ok(token)
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<NativeState>();
+        let mut storage = store(&state)?;
+        let token = storage.begin();
+        let mut active = state.active.lock().map_err(|_| Error::new("UNAVAILABLE"))?;
+        if serial != state.serial.load(Ordering::SeqCst) {
+            storage.end(&token);
+            return Err(Error::new("INVALID_STATE"));
+        }
+        state
+            .inactivity
+            .lock()
+            .map_err(|_| Error::new("UNAVAILABLE"))?
+            .begin(Instant::now(), storage.lock_interval());
+        *active = Some(token.clone());
+        Ok(token)
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))?
 }
 #[tauri::command]
-fn session_end(window: WebviewWindow, state: State<'_, NativeState>, token: String) -> Result<()> {
+async fn session_end(window: WebviewWindow, app: tauri::AppHandle, token: String) -> Result<()> {
     trusted(&window)?;
+    let state = app.state::<NativeState>();
     {
         let mut active = state.active.lock().map_err(|_| Error::new("UNAVAILABLE"))?;
         if active.as_deref() == Some(&token) {
             *active = None;
         }
     }
-    store(&state)?.end(&token);
-    Ok(())
+    tauri::async_runtime::spawn_blocking(move || {
+        store(&app.state::<NativeState>())?.end(&token);
+        Ok(())
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))?
 }
 #[tauri::command]
 async fn storage(
@@ -106,7 +128,21 @@ async fn storage(
         state.check(&token)?;
         let mut managed = store(&state)?;
         state.check(&token)?;
+        managed.native_deadline(
+            state
+                .inactivity
+                .lock()
+                .map_err(|_| Error::new("UNAVAILABLE"))?
+                .deadline(),
+        );
         let result = managed.dispatch(&token, &operation, args);
+        if result.is_ok() && operation == "setPreference" {
+            state
+                .inactivity
+                .lock()
+                .map_err(|_| Error::new("UNAVAILABLE"))?
+                .interval(managed.lock_interval());
+        }
         drop(managed);
         if result.is_ok() && ["commit", "restoreBlob"].contains(&operation.as_str()) {
             state.wake_backup();
@@ -119,13 +155,19 @@ async fn storage(
 #[tauri::command]
 fn native_activity(window: WebviewWindow, state: State<'_, NativeState>) -> Result<()> {
     focused(&window)?;
-    store(&state)?.activity();
+    state
+        .inactivity
+        .lock()
+        .map_err(|_| Error::new("UNAVAILABLE"))?
+        .activity(Instant::now());
     Ok(())
 }
 #[tauri::command]
-fn native_status(window: WebviewWindow, state: State<'_, NativeState>) -> Result<Value> {
+async fn native_status(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
     trusted(&window)?;
-    Ok(store(&state)?.status())
+    tauri::async_runtime::spawn_blocking(move || Ok(store(&app.state::<NativeState>())?.status()))
+        .await
+        .map_err(|_| Error::new("UNAVAILABLE"))?
 }
 #[tauri::command]
 async fn pick_import(window: WebviewWindow) -> Result<Option<Vec<u8>>> {
@@ -199,13 +241,17 @@ fn retry_backup(window: WebviewWindow, state: State<'_, NativeState>) -> Result<
     Ok(())
 }
 #[tauri::command]
-fn backup_retention(
+async fn backup_retention(
     window: WebviewWindow,
-    state: State<'_, NativeState>,
+    app: tauri::AppHandle,
     retention: usize,
 ) -> Result<()> {
     focused(&window)?;
-    store(&state)?.set_backup_retention(retention)
+    tauri::async_runtime::spawn_blocking(move || {
+        store(&app.state::<NativeState>())?.set_backup_retention(retention)
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))?
 }
 #[tauri::command]
 fn hello_enroll(window: WebviewWindow) -> Result<Value> {
@@ -349,11 +395,13 @@ pub fn run() {
         .setup(|app| {
             let root: PathBuf = app.path().app_local_data_dir()?;
             let state = Store::open(&root).map_err(|e| std::io::Error::other(e.code))?;
+            let inactivity = Inactivity::new(state.lock_interval());
             let (wake, jobs) = mpsc::sync_channel(1);
             app.manage(NativeState {
                 store: Mutex::new(state),
                 active: Mutex::new(None),
                 serial: AtomicU64::new(0),
+                inactivity: Mutex::new(inactivity),
                 backup: wake,
             });
             let backup_app = app.handle().clone();
@@ -412,19 +460,27 @@ pub fn run() {
             let timer_app = app.handle().clone();
             std::thread::spawn(move || loop {
                 std::thread::sleep(Duration::from_secs(1));
-                let expired = timer_app
-                    .state::<NativeState>()
-                    .store
-                    .lock()
-                    .map(|s| s.expired())
-                    .unwrap_or(true);
-                let active = timer_app
-                    .state::<NativeState>()
-                    .active
-                    .lock()
-                    .is_ok_and(|a| a.is_some());
-                if expired && active {
-                    lock_native(&timer_app);
+                let state = timer_app.state::<NativeState>();
+                // Match begin/check lock order and revoke under the same guard;
+                // an old timeout observation cannot revoke a newer session.
+                let revoked = if let Ok(mut active) = state.active.lock() {
+                    let expired = state
+                        .inactivity
+                        .lock()
+                        .map(|s| s.expired(Instant::now()))
+                        .unwrap_or(true);
+                    if active.is_some() && expired {
+                        state.serial.fetch_add(1, Ordering::SeqCst);
+                        *active = None;
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    true
+                };
+                if revoked {
+                    let _ = timer_app.emit_to("main", "native-lock", ());
                 }
             });
             app.state::<NativeState>().wake_backup();

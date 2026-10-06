@@ -229,4 +229,8 @@ headless) on Linux x64, through an outbound HTTPS proxy.
 
 See [Windows baseline](windows/BASELINE.md), [acceptance ledger](windows/ACCEPTANCE.md) and [Hello security decision](windows/HELLO_SECURITY_DESIGN.md). Baseline TypeScript 158 tests/build/typecheck and Python 76 tests passed; native Linux algorithm tests and real file-service/shared-engine/full Python parity passed. Physical Windows installation/TPM/Kensington/Safari are not claimed. Windows workflow artifacts are unsigned test builds, not published releases.
 
-Post-change: typecheck, 158 TypeScript tests, web/desktop frontend isolation, 6 Chromium scenarios, 11 native Linux tests, Windows GNU production-origin/permissions compilation and full native-file/Python interoperability passed. npm audit: zero vulnerabilities; RustSec: zero vulnerability advisories, two informational non-Windows graph warnings documented in the Windows report. Full installed Windows/physical-device gates remain open.
+Post-change: typecheck, 158 TypeScript tests, web/desktop frontend isolation, 6 Chromium scenarios, 12 native Linux tests, Windows GNU production-origin/permissions compilation and full native-file/Python interoperability passed. npm audit: zero vulnerabilities; RustSec: zero vulnerability advisories, two informational non-Windows graph warnings documented in the Windows report. Full installed Windows/physical-device gates remain open.
+
+Native inactivity regression: exact deadline, activity extension, interval changes and no revival of expired sessions pass in the twelfth Rust test. Native session/status commands run off the Windows event thread; timeout revocation uses an independent clock, avoiding a blocked file write delaying lock. Physical lifecycle tests remain open.
+
+Windows runner execution exposed an ACL setup failure (SetSecurityInfo error 5); native handles now include READ_CONTROL and verify the exact protected DACL after assignment. The Windows rerun is pending.
