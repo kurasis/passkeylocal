@@ -1,0 +1,17 @@
+{
+  "architecture": "x86_64-pc-windows-msvc",
+  "signing": "unsigned",
+  "cargoLock": "c0e443ff84cd20edc3d9e5e5be715024e2a13a455508a7203ecb8c79b1340547",
+  "node": "v22.23.3",
+  "sourceCommit": "2ebf75fbfd49291bd3cb678aada7e1167fcd3c34",
+  "version": "0.1.0",
+  "sha256": "a5d8e4f709cb0b8e7e59614fbf7e77b0ee0b2b5c118e1aa29c526a7f1afe199d",
+  "fileSafePreview": "unavailable: AppContainer/LPAC isolation proof BLOCKED",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "windowsHello": "unavailable: physical TPM/provider/Kensington proof BLOCKED",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "product": "PassKey Local"
+}
