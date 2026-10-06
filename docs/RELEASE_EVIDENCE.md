@@ -234,3 +234,5 @@ Post-change: typecheck, 158 TypeScript tests, web/desktop frontend isolation, 6 
 Native inactivity regression: exact deadline, activity extension, interval changes and no revival of expired sessions pass in the twelfth Rust test. Native session/status commands run off the Windows event thread; timeout revocation uses an independent clock, avoiding a blocked file write delaying lock. Physical lifecycle tests remain open.
 
 Windows runner execution exposed an ACL setup failure (SetSecurityInfo error 5); native handles now include READ_CONTROL and verify the exact protected DACL after assignment. The Windows rerun is pending.
+
+Windows runner run 37413908839: native Clippy, 12 Windows tests (real replacement + protected ACL verification) and full Python interoperability passed. Windows frontend build exposed an existing file-URL/path conversion bug, now fixed with fileURLToPath. Packaged installer checks remain pending.

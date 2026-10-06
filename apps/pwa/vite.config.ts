@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -22,7 +23,7 @@ function serviceWorker(): Plugin {
     name: 'passkey-local-sw',
     apply: 'build',
     generateBundle(_opts, bundle) {
-      const publicDir = new URL('./public/', import.meta.url).pathname;
+      const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
       const hash = createHash('sha256');
       // The shell is cached under '/', never '/index.html': Cloudflare Pages
       // answers '/index.html' with a redirect to '/', and a redirected
@@ -62,9 +63,9 @@ return {
   publicDir: desktop ? false : 'public',
   define: { __APP_VERSION__: JSON.stringify(pkg.version), __DESKTOP__: JSON.stringify(desktop) },
   resolve: { alias: {
-    crypto: new URL('./src/worker/node-crypto-stub.ts', import.meta.url).pathname,
-    '@platform': new URL(desktop ? '../desktop/src/platform.ts' : './src/platform.ts', import.meta.url).pathname,
-    '@platform-storage': new URL(desktop ? '../desktop/src/worker-storage.ts' : './src/worker/platform-storage.ts', import.meta.url).pathname
+    crypto: fileURLToPath(new URL('./src/worker/node-crypto-stub.ts', import.meta.url)),
+    '@platform': fileURLToPath(new URL(desktop ? '../desktop/src/platform.ts' : './src/platform.ts', import.meta.url)),
+    '@platform-storage': fileURLToPath(new URL(desktop ? '../desktop/src/worker-storage.ts' : './src/worker/platform-storage.ts', import.meta.url))
   } },
   server: desktop ? { port: 1420, strictPort: true } : undefined,
   worker: { format: 'es' },
