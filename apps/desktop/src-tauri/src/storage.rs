@@ -425,9 +425,13 @@ impl Store {
                 let sha: String = arg(&args, "sha256")?;
                 let expected: Option<u64> = arg(&args, "expectedGeneration")?;
                 let epoch: Option<u64> = arg(&args, "passwordEpoch")?;
-                Ok(serde_json::to_value(
-                    self.commit(bytes, sha, expected, epoch, false)?,
-                )?)
+                Ok(serde_json::to_value(self.commit(
+                    bytes,
+                    sha,
+                    expected,
+                    epoch,
+                    args.get("confirmedReplacement") == Some(&Value::Bool(true)),
+                )?)?)
             }
             "restoreBlob" => {
                 let blob_id: String = arg(&args, "blobId")?;
@@ -1151,6 +1155,19 @@ mod tests {
             b"synthetic recoverable"
         );
         assert!(s.dispatch(&t, "commit", json!({"bytes":b"synthetic bad hash","sha256":hash(b"different"),"expectedGeneration":3})).is_err());
+        fs::write(
+            s.path("current.kdbx").unwrap(),
+            b"damaged external replacement",
+        )
+        .unwrap();
+        s.dispatch(&t, "commit", json!({"bytes":b"authenticated synthetic adoption", "sha256":hash(b"authenticated synthetic adoption"), "expectedGeneration":3, "passwordEpoch":2, "confirmedReplacement":true})).unwrap();
+        fs::remove_file(s.path("current.kdbx").unwrap()).unwrap();
+        assert_eq!(
+            save(&mut s, &t, b"unconfirmed missing head", Some(4))
+                .unwrap_err()
+                .code,
+            "CONFLICT"
+        );
     }
     #[cfg(windows)]
     #[test]

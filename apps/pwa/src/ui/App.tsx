@@ -88,6 +88,7 @@ export function App() {
   }, [client, loadUnlocked, t]);
 
   const lockNow = useCallback(() => {
+    draftSave.current = null;
     closeResolve.current?.(false);
     closeResolve.current = null;
     setClosePrompt(false);

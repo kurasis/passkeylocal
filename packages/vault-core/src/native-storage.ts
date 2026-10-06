@@ -31,7 +31,7 @@ export class NativeVaultStorage implements VaultStore {
   }
   listBlobs(): Promise<BlobInfo[]> { return this.call('listBlobs'); }
   commit(req: CommitRequest): Promise<HeadRecord> {
-    return this.call('commit', { bytes: Array.from(req.bytes), sha256: req.sha256, expectedGeneration: req.expectedGeneration, passwordEpoch: req.passwordEpoch });
+    return this.call('commit', { bytes: Array.from(req.bytes), sha256: req.sha256, expectedGeneration: req.expectedGeneration, passwordEpoch: req.passwordEpoch, confirmedReplacement: req.confirmedReplacement });
   }
   restoreBlob(blobId: string, expectedGeneration: number | null): Promise<HeadRecord> { return this.call('restoreBlob', { blobId, expectedGeneration }); }
   pruneRollback(): Promise<number> { return this.call('pruneRollback'); }

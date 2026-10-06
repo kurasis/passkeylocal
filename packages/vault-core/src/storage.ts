@@ -75,6 +75,8 @@ export interface CommitRequest {
   expectedGeneration: number | null;
   /** Defaults to the current head's epoch (or 0 for the first head). */
   passwordEpoch?: number;
+  /** Explicitly confirmed/authenticated file adoption; native damaged-head recovery only. */
+  confirmedReplacement?: boolean;
   now?: Date;
 }
 

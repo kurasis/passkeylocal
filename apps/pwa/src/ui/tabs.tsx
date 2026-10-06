@@ -51,7 +51,7 @@ export function BackupsTab(props: {
       <h2>{t('verifyBackup')}</h2>
       <VerifyControl onVerified={props.onChanged} />
       <h2>{t('storageTitle')}</h2>
-      <p>{t(`persistence_${props.persistence.replace(/-/g, '_')}` as 'persistence_unavailable')}</p>
+      <p>{desktop ? t('desktopStorageExplain') : t(`persistence_${props.persistence.replace(/-/g, '_')}` as 'persistence_unavailable')}</p>
       {props.storageUnhealthy && <Banner kind="error">{t('storageUnhealthy')}</Banner>}
       <h2>{t('restoreTitle')}</h2>
       {restore ? (
@@ -76,6 +76,7 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
   const [offline, setOffline] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (desktop) return setOffline(true);
     const sw = navigator.serviceWorker;
     if (!sw) return setOffline(false);
     sw.getRegistration().then((r) => setOffline(!!r?.active), () => setOffline(false));

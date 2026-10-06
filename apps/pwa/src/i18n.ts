@@ -6,6 +6,7 @@
 import { createContext, useContext } from 'react';
 
 const en = {
+  desktopStorageExplain: "Your encrypted vault is stored in your Windows user data folder, independently of browser storage. Keep a verified backup on another device.",
   desktopDiscardClose: "Discard and close",
   desktopCloseTitle: "Save changes before closing?",
   desktopCloseExplain: "Save and close, discard the draft and close, or cancel to keep working.",
@@ -283,6 +284,7 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const ru: Record<MessageKey, string> = {
+  desktopStorageExplain: "Зашифрованное хранилище сохранено в папке данных пользователя Windows, независимо от браузера. Храните проверенную копию на другом устройстве.",
   desktopDiscardClose: "Отбросить и закрыть",
   desktopCloseTitle: "Сохранить изменения перед закрытием?",
   desktopCloseExplain: "Сохраните и закройте, отбросьте черновик или отмените закрытие, чтобы продолжить работу.",

@@ -329,6 +329,7 @@ export class VaultController {
       expectedGeneration: head ? head.generation : null,
       // A restored file may use another password: older blobs belong to an older epoch.
       passwordEpoch: head ? head.passwordEpoch + 1 : 0,
+      confirmedReplacement: !!head && opts.confirmReplace,
       now: this.now()
     });
     this.checkLive(token);
