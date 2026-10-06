@@ -5,7 +5,7 @@
   "identifier": "com.passkeylocal.vault",
   "build": {
     "beforeDevCommand": "npm run dev -w @passkey-local/pwa -- --mode desktop --port 1420 --strictPort",
-    "beforeBuildCommand": "npm run desktop:frontend",
+    "beforeBuildCommand": "npm run frontend -w @passkey-local/desktop",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist-desktop"
   },

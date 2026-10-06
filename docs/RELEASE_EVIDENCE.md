@@ -236,3 +236,5 @@ Native inactivity regression: exact deadline, activity extension, interval chang
 Windows runner execution exposed an ACL setup failure (SetSecurityInfo error 5); native handles now include READ_CONTROL and verify the exact protected DACL after assignment. The Windows rerun is pending.
 
 Windows runner run 37413908839: native Clippy, 12 Windows tests (real replacement + protected ACL verification) and full Python interoperability passed. Windows frontend build exposed an existing file-URL/path conversion bug, now fixed with fileURLToPath. Packaged installer checks remain pending.
+
+Windows run 37414339835 additionally passed both frontend builds, bundle isolation and independent recovery tests. The Tauri build hook workspace selection was corrected and validated from apps/desktop; the installer rerun is pending.
