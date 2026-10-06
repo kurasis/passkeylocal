@@ -340,6 +340,22 @@ fn lock_native(app: &tauri::AppHandle) {
     let _ = app.emit_to("main", "native-lock", ());
 }
 
+fn navigation_allowed(url: &tauri::Url, development: bool) -> bool {
+    if !url.username().is_empty() || url.password().is_some() {
+        return false;
+    }
+    let packaged =
+        url.port().is_none() && url.host_str() == Some("localhost") && url.scheme() == "tauri"
+            || url.port().is_none()
+                && url.host_str() == Some("tauri.localhost")
+                && url.scheme() == "http";
+    packaged
+        || development
+            && url.scheme() == "http"
+            && url.host_str() == Some("localhost")
+            && url.port() == Some(1420)
+}
+
 unsafe extern "system" fn windows_events(
     hwnd: windows_sys::Win32::Foundation::HWND,
     message: u32,
@@ -430,13 +446,7 @@ pub fn run() {
                 .on_navigation(|url| {
                     // Initial packaged load and dev server only. No record URL
                     // can navigate the privileged WebView or open a popup.
-                    let local = url.scheme() == "tauri" && url.host_str() == Some("localhost")
-                        || url.scheme() == "http" && url.host_str() == Some("tauri.localhost");
-                    local
-                        || cfg!(debug_assertions)
-                            && url.scheme() == "http"
-                            && url.host_str() == Some("localhost")
-                            && url.port() == Some(1420)
+                    navigation_allowed(url, cfg!(debug_assertions))
                 })
                 .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
                 .build()?;
@@ -488,4 +498,45 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("PassKey Local desktop could not start");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::navigation_allowed;
+    #[test]
+    fn navigation_rejects_other_ports_credentials_and_remote_origins() {
+        for input in [
+            "tauri://localhost/index.html",
+            "http://tauri.localhost/index.html",
+        ] {
+            assert!(navigation_allowed(
+                &tauri::Url::parse(input).unwrap(),
+                false
+            ));
+        }
+        for input in [
+            "http://tauri.localhost:9090/",
+            "tauri://localhost:9090/",
+            "http://user@tauri.localhost/",
+            "http://tauri.localhost.evil.example/",
+            "https://tauri.localhost/",
+            "https://example.com/",
+            "file:///C:/vault.kdbx",
+            "data:text/html,hello",
+            "http://localhost:1420/",
+        ] {
+            assert!(
+                !navigation_allowed(&tauri::Url::parse(input).unwrap(), false),
+                "{input}"
+            );
+        }
+        assert!(navigation_allowed(
+            &tauri::Url::parse("http://localhost:1420/").unwrap(),
+            true
+        ));
+        assert!(!navigation_allowed(
+            &tauri::Url::parse("http://localhost:1421/").unwrap(),
+            true
+        ));
+    }
 }

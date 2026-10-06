@@ -1,12 +1,12 @@
 # Cloudflare Pages upload archives
 
-Download [passkeylocal-cloudflare-pages-620cd70.zip](passkeylocal-cloudflare-pages-620cd70.zip)
+Download [passkeylocal-cloudflare-pages-9909aa8.zip](passkeylocal-cloudflare-pages-9909aa8.zip)
 by opening the file on GitHub and choosing **Download raw file** (the download
 icon), then upload the ZIP through Cloudflare Pages **Direct Upload**.
 
 This production build comes from source commit
-[`620cd70`](https://github.com/kurasis/passkeylocal/commit/620cd70)
-and includes the redesigned UI, Colorful / Light / Dark themes and Face ID /
+[`9909aa8`](https://github.com/kurasis/passkeylocal/commit/9909aa8)
+and includes the shared-code integration fixes, redesigned UI, Colorful / Light / Dark themes and Face ID /
 passkey unlock. See [design previews](../../docs/DESIGN.md). The archive has `index.html`, `_headers`,
 `sw.js`, the manifest, icons and compiled assets at the site root. No build
 command or Node.js runtime is needed on the server.
@@ -15,13 +15,15 @@ The adjacent `.zip.sha256` file contains the archive checksum. To verify a
 download with a SHA-256 tool:
 
 ```sh
-sha256sum -c passkeylocal-cloudflare-pages-620cd70.zip.sha256
+sha256sum -c passkeylocal-cloudflare-pages-9909aa8.zip.sha256
 ```
 
 Use HTTPS and a stable hostname; passkeys and local vault data belong to that
 origin. Turn off Cloudflare Web Analytics and Rocket Loader, and enable
 **Always Use HTTPS**. See [deployment instructions](../../docs/DEPLOYMENT.md)
 for security headers, updates and domain migration.
+
+The Windows installer is distributed separately through the Windows Actions workflow; do not upload an `.exe` to Cloudflare Pages.
 
 These are versioned build artifacts. After changing application code, build
 again and add a new archive named for its source commit; an older archive does

@@ -238,3 +238,5 @@ Windows runner execution exposed an ACL setup failure (SetSecurityInfo error 5);
 Windows runner run 37413908839: native Clippy, 12 Windows tests (real replacement + protected ACL verification) and full Python interoperability passed. Windows frontend build exposed an existing file-URL/path conversion bug, now fixed with fileURLToPath. Packaged installer checks remain pending.
 
 Windows run 37414339835 additionally passed both frontend builds, bundle isolation and independent recovery tests. The Tauri build hook workspace selection was corrected and validated from apps/desktop; the installer rerun is pending.
+
+Windows run 37414850933 built the executable/NSIS installer, but packaged CDP smoke failed to attach. Installer distribution stays gated. Added synthetic-only diagnostics and a native origin/port/URL-credentials regression test; Windows execution remains pending.

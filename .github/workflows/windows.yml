@@ -40,7 +40,9 @@ jobs:
         shell: pwsh
         run: |
           rustup show
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install --require-hashes -r tools/vault-recovery/requirements.lock -r tools/vault-recovery/requirements-dev.lock
       - run: npm run typecheck
       - run: npm test
@@ -52,6 +54,7 @@ jobs:
         shell: pwsh
         run: |
           cargo build --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --example storage_fixture_driver
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:RECOVERY_PYTHON = "python"
           node apps/desktop/test/interop.ts
       - name: Build both independent frontend outputs and check target isolation
@@ -89,6 +92,14 @@ jobs:
             ~/.cargo/git
             apps/desktop/src-tauri/target
           key: windows-native-1.90-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}-${{ github.sha }}-bundle
+      - name: Upload synthetic smoke diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Windows-smoke-diagnostics-${{ github.sha }}
+          path: apps/desktop/artifacts/smoke-failure.*
+          if-no-files-found: ignore
+          retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: PassKey-Local-Windows-x64-${{ github.sha }}-unsigned
