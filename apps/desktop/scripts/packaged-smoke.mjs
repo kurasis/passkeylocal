@@ -85,7 +85,7 @@ try {
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
   await page.getByRole('button', { name: 'Add entry', exact: true }).click();
   await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Synthetic Windows smoke');
-  await page.getByRole('textbox', { name: 'Username', exact: true }).fill('synthetic-user');
+  await page.getByLabel('Username or email', { exact: true }).fill('synthetic-user');
   await page.getByLabel('Password', { exact: true }).fill('synthetic-entry-secret');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.getByRole('heading', { name: 'Synthetic Windows smoke', exact: true }).waitFor();

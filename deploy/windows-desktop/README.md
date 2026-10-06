@@ -1,6 +1,6 @@
 # Windows desktop test installers
 
-**Current status:** installed-app smoke has not passed, so no gated installer download is available yet. GitHub access is restored; the Runtime 150 CI debugging correction awaits a Windows rerun.
+**Current status:** installed-app smoke has not passed, so no gated installer download is available yet. Installed launch/create/unlock/privacy checks pass; the corrected entry-field test locator awaits the final save/lock rerun.
 
 Open the [Windows desktop workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml), select a successful run, and download the **PassKey-Local-Windows-x64-…-unsigned** ZIP under **Artifacts**. Sign in to the GitHub account with access to this private repository. Extract the ZIP and use `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`.
 
