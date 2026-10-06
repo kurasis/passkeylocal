@@ -87,3 +87,46 @@ test("native lock redacts names/search/details and refuses a late metadata reply
   ).toHaveCount(0);
   await expect(page.getByRole("searchbox")).toHaveCount(0);
 });
+
+test("pending search survives a language change and lock still redacts", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", {
+      name: "Synthetic private canary 00000",
+      exact: false,
+    }),
+  ).toBeVisible();
+  await page.evaluate(() =>
+    (window as unknown as { uiTest: { setDelay(): void } }).uiTest.setDelay(),
+  );
+  await page.getByRole("searchbox").fill("00002");
+  await page.waitForTimeout(100);
+  await page.evaluate(() =>
+    (window as unknown as { uiTest: { russian(): void } }).uiTest.russian(),
+  );
+  await expect(
+    page.getByRole("button", {
+      name: "Заблокировать файловый сейф",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.evaluate(() =>
+    (window as unknown as { uiTest: { release(): void } }).uiTest.release(),
+  );
+  await expect(
+    page.getByRole("button", {
+      name: "Synthetic private canary 00002",
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await page.evaluate(() =>
+    (window as unknown as { uiTest: { lock(): void } }).uiTest.lock(),
+  );
+  await expect(page.getByRole("searchbox")).toHaveCount(0);
+  await expect(
+    page.getByText("Synthetic private canary", { exact: false }),
+  ).toHaveCount(0);
+});

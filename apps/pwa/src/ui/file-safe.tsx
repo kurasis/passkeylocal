@@ -220,6 +220,8 @@ const words = {
 };
 export function FileSafe({ api }: { api: FileSafeApi }) {
   const lang = useLang();
+  const languageRef = useRef(lang);
+  languageRef.current = lang;
   const w = words[lang];
   const [status, setStatus] = useState<SafeStatus | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -329,13 +331,13 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         redact();
         setStatus(null);
         setMessage(
-          lang === "ru"
+          languageRef.current === "ru"
             ? "Файловый сейф недоступен. Хранилище паролей доступно."
             : "File safe unavailable. Password vault remains available.",
         );
       }
     }
-  }, [api, redact, lang]);
+  }, [api, redact]);
   const reload = useCallback(async () => {
     const request = ++pageRequest.current;
     const epoch = generation.current;

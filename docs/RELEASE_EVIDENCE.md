@@ -273,3 +273,5 @@ The first hosted Python jobs exposed a test-runner assumption: pytest adds the s
 The Windows test run also exposed a fixture manifest read using the host code page; new fixture/report tests now read UTF-8 explicitly. Production format/report I/O already uses explicit UTF-8 bytes.
 
 Final review added Windows console/superscript device-name sanitization for independent extraction (COM¹/²/³, LPT¹/²/³, CONIN$/CONOUT$) and regression cases. Resource evidence now records actual hosted CPU/RAM/disks plus separate native encryption/verification timings; physical TPM/reader testing remains explicitly absent. These are follow-up verification changes, not a preview/Hello implementation.
+
+A final metadata UI regression reproduced language switching invalidating pending search while resetting the token reference. Status/lock subscription now stays stable across language changes, while status errors use the current language. The new scenario verifies pending search completion and subsequent redaction after switching to Russian. This is tested against the prior implementation before applying the fix.

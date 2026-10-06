@@ -129,12 +129,19 @@ Object.assign(window, {
       unlocked = false;
       lock();
     },
+    russian() {
+      renderTest("ru");
+    },
   },
 });
-createRoot(document.getElementById("root")!).render(
-  <I18nContext.Provider value={{ lang: "en", t: translator("en") }}>
-    <main>
-      <FileSafe api={api} />
-    </main>
-  </I18nContext.Provider>,
-);
+const uiRoot = createRoot(document.getElementById("root")!);
+function renderTest(lang: "en" | "ru") {
+  uiRoot.render(
+    <I18nContext.Provider value={{ lang, t: translator(lang) }}>
+      <main>
+        <FileSafe api={api} />
+      </main>
+    </I18nContext.Provider>,
+  );
+}
+renderTest("en");
