@@ -1,8 +1,10 @@
 # Windows desktop test installers
 
-Tested build: [successful run 37424185908](https://github.com/kurasis/passkeylocal/actions/runs/37424185908), [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37424185908/artifacts/11395251579). Code head `edb9405`; tested PR merge source `e88ba87c9ac0c96a0042928b2b0240b6ece4f17a`.
+Tested build with restore completion and 6 / 12 / 24 hour inactivity choices: [successful run 37430858051](https://github.com/kurasis/passkeylocal/actions/runs/37430858051), [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37430858051/artifacts/11397316873). Code head `8ee765b`; tested PR merge source `e78bcad6edee0509e536fdffe0ad9e8b1bc1ffa1`.
 
-Installer SHA-256: `70725fd831a40e3c1ac9f89eac90283e51e947c4caa820391207e3b28218640d` (217,415,126 bytes), independently verified after download. [Build metadata](build-e88ba87.json), [installed-app evidence](smoke-e88ba87.json) and [locked window](windows-locked-e88ba87.png) are retained here. Lock hashes describe Windows CRLF checkout bytes; equivalent LF files on Linux have different byte hashes.
+Installer SHA-256: `df5de92db41ebae11e0e5f60c26b1246b1000b7335dd814e720e4bf92d331b62` (217,413,328 bytes), independently verified after download. [Build metadata](build-e78bcad.json), [installed-app evidence](smoke-e78bcad.json) and [locked window](windows-locked-e78bcad.png) are retained here. Native preference values were read back after UI selection and retained after reload. Lock hashes describe Windows CRLF checkout bytes; equivalent LF files on Linux have different byte hashes.
+
+The latest web archive additionally abbreviates Russian hour labels as `ч.`; that wording-only adjustment does not change the tested lock behavior. Previous installer metadata remains in this folder.
 
 Open the [Windows desktop workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml), select a successful run, and download the **PassKey-Local-Windows-x64-…-unsigned** ZIP under **Artifacts**. Sign in to the GitHub account with access to this private repository. Extract the ZIP and use `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`.
 

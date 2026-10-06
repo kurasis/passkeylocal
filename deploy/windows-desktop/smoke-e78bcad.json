@@ -1,0 +1,28 @@
+{
+  "sourceCommit": "e78bcad6edee0509e536fdffe0ad9e8b1bc1ffa1",
+  "runtime": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "installer": "per-user silent install completed on hosted runner",
+  "installedExecutableSha256": "3b3201f25501f6fc891adc7d1b94472d735fad8e39e99ae5a1b3bb73c3de4683",
+  "automation": "Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch",
+  "fixture": "synthetic fresh vault with one entry",
+  "status": "PASS",
+  "evidence": [
+    "actual per-user NSIS installation",
+    "installed executable equals built binary",
+    "packaged asset origin",
+    "WebView2 password saving/autofill disabled with native readback",
+    "React UI",
+    "real Tauri IPC and revocable session",
+    "crypto worker/Argon2 WASM",
+    "native KDBX save",
+    "6/12/24 hour preferences with native readback and reload",
+    "password lock and fallback",
+    "unproved Hello denied",
+    "no foreign requests"
+  ],
+  "limits": [
+    "native dialogs not automated",
+    "clean offline machine and standard-user installation not exercised",
+    "physical offline/TPM/Kensington/Safari not tested"
+  ]
+}

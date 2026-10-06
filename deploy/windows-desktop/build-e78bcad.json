@@ -1,0 +1,15 @@
+{
+  "cargoLock": "86388450567d9683526a226ccf4c332842e23be4f2f89fcc2474bbbc0d96823a",
+  "signing": "unsigned",
+  "product": "PassKey Local",
+  "node": "v22.23.3",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "architecture": "x86_64-pc-windows-msvc",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "sourceCommit": "e78bcad6edee0509e536fdffe0ad9e8b1bc1ffa1",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "version": "0.1.0",
+  "sha256": "df5de92db41ebae11e0e5f60c26b1246b1000b7335dd814e720e4bf92d331b62",
+  "windowsHello": "unavailable: physical TPM/provider/Kensington proof BLOCKED",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN"
+}
