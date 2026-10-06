@@ -41,6 +41,6 @@ export function DesktopBackupStatus() {
     void poll(); const interval = setInterval(() => void poll(), 5000);
     return () => { live = false; clearInterval(interval); };
   }, []);
-  if (!desktop) return null;
-  return <Banner kind={status === 'failed' ? 'error' : status === 'verified' ? 'info' : 'warn'}>{t(`desktopBackup_${status}` as 'desktopBackup_unconfigured')}</Banner>;
+  if (!desktop || status === 'verified') return null;
+  return <Banner kind={status === 'failed' ? 'error' : 'warn'}>{t(`desktopBackup_${status}` as 'desktopBackup_unconfigured')}</Banner>;
 }

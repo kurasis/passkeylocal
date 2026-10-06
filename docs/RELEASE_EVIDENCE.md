@@ -138,7 +138,7 @@ release.
 | DATA-11 Older backup restored | passed (Node, fake IndexedDB) | Candidate labelled `older-revision`; adoption refused without confirmation; adopted file gets a new lineage, revision bumped once, previous head kept as rollback. |
 | DATA-12 Failed migration / SW update | partial | Service worker caches only build assets, installs only if every asset is cached, waits for an explicit "Update now" (no unconditional `skipWaiting`), deletes only its own old caches after activation, and never touches IndexedDB. Schema upgrades are additive and no code path deletes the database (static test). An injected failed update: not run. |
 
-Lock policy: `AutoLock` (30 s / 1 / 2 / 5 / 10 / 30 / 60 min, default 2, no
+Lock policy: `AutoLock` (30 s / 1 / 2 / 5 / 10 / 30 / 60 min / 6 / 12 / 24 h, default 2 min, no
 "never"; `check()` locks on return even when timers were suspended) and session
 tokens (lock during a save or unlock discards the late result) are unit-tested.
 Lifecycle in desktop Chromium (e2e): an app switch (hidden, then visible) keeps
@@ -240,3 +240,11 @@ Installed-app smoke passed: per-user NSIS installation, installed/built executab
 Runtime 150+ ignores environment debugger overrides on elevated hosts ([Wry issue](https://github.com/tauri-apps/wry/issues/1782)). The disposable CI runner uses app-specific HKLM debugging policy with readback and cleanup; the installer/release configuration has no debugging switch. Bundle-type executable patching is disabled because there is no updater, allowing strict byte comparison.
 
 These are unsigned experimental builds. Windows Hello remains unavailable; physical TPM/Kensington/Safari, clean offline/standard-user installation and the full lifecycle/fault/upgrade matrix remain open. No production release is claimed.
+
+## 2026-10-06 — restore completion and long inactivity options
+
+The owner requested 6, 12 and 24 hour inactivity options; the default remains two minutes with no "never" option. Both the shared worker and Windows native preference validation accept these choices. Background time still counts towards expiry.
+
+Successful backup replacement previously left a consumed preview and its replacement button visible; a second click returned `INVALID_STATE` even though replacement had succeeded. The shared control now clears the consumed preview and acknowledgement, disables cancellation while committing, and the Backups tab closes the form and announces that the replacement was saved. A fresh restore starts with no stale success message. Successful native byte verification no longer displays a permanent global banner; Settings retains the concise external-backup saved status without claiming master-password recovery verification.
+
+Local checks passed: typecheck; 161 TypeScript tests (96 adapter, 39 core, 26 worker/UI); 14 Linux native tests, including all three extended preference values and restart persistence; both frontend builds and target isolation. Fake-clock tests cover each long deadline with suspended timers and idempotent expiry. Worker tests read the selected values through a fresh handler. Windows GNU production Clippy compilation passed. The new restore Chromium regression was first run against the previous production build and failed at the missing completion status, reproducing the original behavior. A new browser deadline scenario also caught an existing language-change bug: replacing the lock callback recreated AutoLock without rearming it. The arming effect now tracks that callback. All eight production Chromium scenarios now pass, including repeated replacement/reload and 24 hour expiry after switching to Russian. Windows hosted checks are pending at this commit. The installed Windows smoke now selects all three long intervals through the real UI, reads back native persistence and checks the selection after reload.

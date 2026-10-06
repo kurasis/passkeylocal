@@ -145,7 +145,7 @@ export function App() {
   useEffect(() => {
     if (phase === 'unlocked') autoLock.current?.arm();
     else autoLock.current?.disarm();
-  }, [phase, prefs.lockIntervalMs]);
+  }, [phase, prefs.lockIntervalMs, lockNow]);
 
   useEffect(() => {
     const redact = (on: boolean) => document.documentElement.classList.toggle('redacted', on);

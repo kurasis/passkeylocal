@@ -703,7 +703,11 @@ impl Store {
         }
         let valid = match key.as_str() {
             "lockIntervalMs" => value.as_u64().is_some_and(|v| {
-                [30000, 60000, 120000, 300000, 600000, 1800000, 3600000].contains(&v)
+                [
+                    30000, 60000, 120000, 300000, 600000, 1800000, 3600000, 21600000, 43200000,
+                    86400000,
+                ]
+                .contains(&v)
             }),
             "language" => value
                 .as_str()
@@ -966,6 +970,38 @@ mod tests {
             .is_err());
         s.invalidate();
         assert!(s.dispatch(&t, "readHead", json!({})).is_err());
+    }
+    #[test]
+    fn long_inactivity_preferences_survive_restart() {
+        for ms in [21600000_u64, 43200000, 86400000] {
+            let dir = tempfile::tempdir().unwrap();
+            let mut s = Store::open(dir.path()).unwrap();
+            let t = s.begin();
+            s.dispatch(
+                &t,
+                "setPreference",
+                json!({"key": "lockIntervalMs", "value": ms}),
+            )
+            .unwrap();
+            assert_eq!(s.lock_interval(), Duration::from_millis(ms));
+            assert!(s
+                .dispatch(
+                    &t,
+                    "setPreference",
+                    json!({"key": "lockIntervalMs", "value": 0})
+                )
+                .is_err());
+            drop(s);
+            let mut reopened = Store::open(dir.path()).unwrap();
+            assert_eq!(reopened.lock_interval(), Duration::from_millis(ms));
+            let t = reopened.begin();
+            assert_eq!(
+                reopened
+                    .dispatch(&t, "getPreference", json!({"key": "lockIntervalMs"}))
+                    .unwrap(),
+                json!(ms)
+            );
+        }
     }
     #[test]
     fn every_write_boundary_keeps_current_or_recoverable_ciphertext() {

@@ -2,14 +2,14 @@
  * Lock policy (SECURITY_AND_FORMAT.md section 4).
  *
  * Inactivity locks after the chosen interval (30 s, 1, 2, 5, 10, 30 or 60
- * minutes; default 2; no "never"). Switching apps does not lock by itself (a
+ * minutes, 6, 12 or 24 hours; default 2 minutes; no "never"). Switching apps does not lock by itself (a
  * documented deviation, see docs/RELEASE_EVIDENCE.md): time spent hidden
  * counts as inactivity, and the app calls `check` when it becomes visible
  * again, so a suspended background timer cannot keep a vault open past the
  * interval.
  */
 
-export const LOCK_INTERVALS_MS = [30_000, 60_000, 120_000, 300_000, 600_000, 1_800_000, 3_600_000] as const;
+export const LOCK_INTERVALS_MS = [30_000, 60_000, 120_000, 300_000, 600_000, 1_800_000, 3_600_000, 21_600_000, 43_200_000, 86_400_000] as const;
 export type LockIntervalMs = (typeof LOCK_INTERVALS_MS)[number];
 export const DEFAULT_LOCK_INTERVAL_MS: LockIntervalMs = 120_000;
 
