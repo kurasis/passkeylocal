@@ -21,6 +21,8 @@ import { VaultScreens, type VaultView } from './vault.tsx';
 import { useServiceWorkerUpdate } from './sw-update.ts';
 import { Icon, type IconName } from './icons.tsx';
 import { ThemeMenu } from './theme.tsx';
+import { configureNativeClose, desktop, nativeActivity, subscribeNativeLock } from '@platform';
+import { DesktopBackupStatus } from './desktop.tsx';
 
 type Tab = 'vault' | 'favorites' | 'backups' | 'settings';
 
@@ -89,6 +91,42 @@ export function App() {
     void refresh();
   }, [client, refresh]);
 
+  useEffect(() => subscribeNativeLock(lockNow), [lockNow]);
+  useEffect(() => configureNativeClose(async () => {
+    if (phase !== 'unlocked') return true;
+    if (view.name === 'edit') {
+      if (!window.confirm(t('desktopCloseDraft'))) return false;
+    }
+    const o = await client.call('overview');
+    if (o.unsaved) {
+      if (window.confirm(t('desktopCloseSave'))) {
+        try { await client.call('retrySave'); } catch { return false; }
+      } else if (!window.confirm(t('desktopCloseDiscard'))) return false;
+    }
+    client.lock();
+    return true;
+  }), [phase, view, client, t]);
+
+  useEffect(() => {
+    if (!desktop) return;
+    const shortcut = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key.toLowerCase() === 'l') { event.preventDefault(); lockNow(); }
+      if (phase !== 'unlocked') return;
+      if (event.ctrlKey && event.key.toLowerCase() === 'f') {
+        event.preventDefault(); setTab('vault'); setView({ name: 'list' });
+        requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[type="search"]')?.focus());
+      }
+      if (event.ctrlKey && event.key.toLowerCase() === 'n' && !overview?.readOnly) {
+        event.preventDefault(); setTab('vault'); setView({ name: 'edit', uuid: null });
+      }
+      if (event.ctrlKey && event.key.toLowerCase() === 's') {
+        event.preventDefault(); document.querySelector<HTMLFormElement>('main form')?.requestSubmit();
+      }
+    };
+    window.addEventListener('keydown', shortcut);
+    return () => window.removeEventListener('keydown', shortcut);
+  }, [phase, overview, lockNow]);
+
   const autoLock = useRef<AutoLock | null>(null);
   useEffect(() => {
     autoLock.current = new AutoLock(() => lockNow(), isLockInterval(prefs.lockIntervalMs) ? prefs.lockIntervalMs : DEFAULT_LOCK_INTERVAL_MS);
@@ -114,7 +152,7 @@ export function App() {
       autoLock.current?.check();
       redact(false);
     };
-    const onActivity = () => autoLock.current?.touch();
+    const onActivity = () => { autoLock.current?.touch(); nativeActivity(); };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', onPageHide);
     window.addEventListener('pageshow', onPageShow);
@@ -175,6 +213,7 @@ export function App() {
     body = (
       <>
         <UnsavedBanner overview={overview} reload={reload} />
+        <DesktopBackupStatus />
         {tab !== 'backups' && <BackupStatusBanner status={status} />}
         {(tab === 'vault' || tab === 'favorites') && (
           <VaultScreens overview={overview} favoritesOnly={tab === 'favorites'} view={view} go={setView} reload={reload} />
@@ -241,7 +280,7 @@ export function App() {
                   <Icon name={({ vault: 'vault', favorites: 'star', backups: 'backup', settings: 'settings' } as Record<Tab, IconName>)[id]} /><span>{label}</span>
                 </button>
               ))}
-              <div className="nav-note"><Icon name="shield" /><strong>{t('localOnly')}</strong><span>{t('navPrivacy')}</span></div>
+              <div className="nav-note"><Icon name="shield" /><strong>{t('localOnly')}</strong><span>{t(desktop ? 'desktopPrivacy' : 'navPrivacy')}</span></div>
             </nav>
           )}
         </div>

@@ -10,6 +10,7 @@ export class BiometricError extends Error {
 }
 
 export async function biometricAvailable(): Promise<boolean> {
+  if (__DESKTOP__) return false;
   if (!globalThis.isSecureContext || !globalThis.PublicKeyCredential || !navigator.credentials) return false;
   // Secure-context IP loopbacks still cannot be WebAuthn relying-party domains.
   if (/^[\d.]+$/.test(location.hostname) || location.hostname.includes(':')) return false;

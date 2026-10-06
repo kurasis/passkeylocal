@@ -36,7 +36,7 @@ import {
   requestPersistence,
   type RestoreCandidate,
   type UnlockedSession,
-  type VaultStorage
+  type VaultStore
 } from '@passkey-local/vault-core';
 import type { Args, EntryDetail, Op, Preferences, Result, SafeError } from '../protocol.ts';
 import { BiometricVault } from './biometric.ts';
@@ -89,11 +89,11 @@ export function toSafeError(e: unknown): SafeError {
 
 export class VaultWorkerHandlers {
   private readonly controller: VaultController;
-  private readonly storage: VaultStorage;
+  private readonly storage: VaultStore;
   private candidate: RestoreCandidate | null = null;
   private readonly biometric: BiometricVault;
 
-  constructor(storage: VaultStorage, controller = new VaultController(storage)) {
+  constructor(storage: VaultStore, controller = new VaultController(storage)) {
     this.storage = storage;
     this.controller = controller;
     this.biometric = new BiometricVault(storage, controller);

@@ -7,6 +7,8 @@ import { useT } from '../i18n.ts';
 import type { Preferences } from '../protocol.ts';
 import { ExportControl, RestoreControl, VerifyControl } from './backup-tools.tsx';
 import { BiometricSettings } from './biometric.tsx';
+import { DesktopSettings } from './desktop.tsx';
+import { desktop } from '@platform';
 import { ThemePicker } from './theme.tsx';
 import { Banner, Busy, PasswordInput, errorText, newPasswordProblem, useApp, useFormatDate } from './common.tsx';
 
@@ -131,7 +133,7 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
         <p className="muted">{t('historyPolicy')}</p>
         <p className="muted">{offline ? t('offlineReady') : t('offlineNotReady')}</p>
       </div>
-      <BiometricSettings disabled={busy} />
+      {desktop ? <DesktopSettings /> : <BiometricSettings disabled={busy} />}
       <h2>{t('changePassword')}</h2>
       <form
         className="stack"

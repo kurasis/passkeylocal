@@ -15,7 +15,11 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "fixtures:generate": "node tests/interop/generate-fixtures.ts"
+    "fixtures:generate": "node tests/interop/generate-fixtures.ts",
+    "desktop:frontend": "npm run frontend -w @passkey-local/desktop",
+    "desktop:dev": "npm run dev -w @passkey-local/desktop",
+    "desktop:build": "npm run build -w @passkey-local/desktop",
+    "desktop:test": "npm run native:test -w @passkey-local/desktop"
   },
   "overrides": {
     "@xmldom/xmldom": "0.9.12"

@@ -224,3 +224,7 @@ headless) on Linux x64, through an outbound HTTPS proxy.
   Safari or CSP testing exposes further problems.
 - Licence: GPL-3.0-only (`LICENSE`).
 - No independent security audit has been performed.
+
+## 2026-10-06 — additive Windows integration
+
+See [Windows baseline](windows/BASELINE.md), [acceptance ledger](windows/ACCEPTANCE.md) and [Hello security decision](windows/HELLO_SECURITY_DESIGN.md). Baseline TypeScript 158 tests/build/typecheck and Python 76 tests passed; native Linux algorithm tests and real file-service/shared-engine/full Python parity passed. Physical Windows installation/TPM/Kensington/Safari are not claimed. Windows workflow artifacts are unsigned test builds, not published releases.

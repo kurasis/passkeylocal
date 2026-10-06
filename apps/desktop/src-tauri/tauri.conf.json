@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PassKey Local",
+  "version": "0.1.0",
+  "identifier": "com.passkeylocal.vault",
+  "build": {
+    "beforeDevCommand": "npm run dev -w @passkey-local/pwa -- --mode desktop --port 1420 --strictPort",
+    "beforeBuildCommand": "npm run desktop:frontend",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist-desktop"
+  },
+  "app": {
+    "windows": [{ "label": "main", "create": false, "title": "PassKey Local", "width": 1100, "height": 760, "minWidth": 620, "minHeight": 480, "devtools": false }],
+    "security": {
+      "csp": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src ipc: http://ipc.localhost; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'",
+      "capabilities": ["main"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "category": "Utility",
+    "shortDescription": "Local encrypted KDBX password vault",
+    "copyright": "PassKey Local contributors",
+    "icon": ["icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": { "type": "offlineInstaller", "silent": true },
+      "nsis": { "installMode": "currentUser", "displayLanguageSelector": false }
+    }
+  }
+}

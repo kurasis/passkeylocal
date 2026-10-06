@@ -50,16 +50,32 @@ function serviceWorker(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [react(), serviceWorker()],
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
-  resolve: { alias: { crypto: new URL('./src/worker/node-crypto-stub.ts', import.meta.url).pathname } },
+function desktopHtml(): Plugin {
+  return { name: 'desktop-html', transformIndexHtml: (html) => html.replace(/\s*<link[^>]+(?:manifest|icon)[^>]*>/g, '') };
+}
+
+export default defineConfig(({ mode }) => {
+const desktop = mode === 'desktop';
+return {
+  plugins: [react(), ...desktop ? [desktopHtml()] : [serviceWorker()]],
+  base: desktop ? './' : '/',
+  publicDir: desktop ? false : 'public',
+  define: { __APP_VERSION__: JSON.stringify(pkg.version), __DESKTOP__: JSON.stringify(desktop) },
+  resolve: { alias: {
+    crypto: new URL('./src/worker/node-crypto-stub.ts', import.meta.url).pathname,
+    '@platform': new URL(desktop ? '../desktop/src/platform.ts' : './src/platform.ts', import.meta.url).pathname,
+    '@platform-storage': new URL(desktop ? '../desktop/src/worker-storage.ts' : './src/worker/platform-storage.ts', import.meta.url).pathname
+  } },
+  server: desktop ? { port: 1420, strictPort: true } : undefined,
   worker: { format: 'es' },
   build: {
+    outDir: desktop ? '../desktop/dist-desktop' : 'dist',
+    emptyOutDir: true,
     target: 'es2022',
     sourcemap: false,
     // Inline assets would need data: URLs, which the CSP does not allow.
     assetsInlineLimit: 0,
     modulePreload: { polyfill: false }
   }
+};
 });

@@ -101,3 +101,7 @@ development or tests.
 ## Licence
 
 GNU General Public License v3.0 only (`GPL-3.0-only`); see [LICENSE](LICENSE).
+
+## Windows desktop (experimental)
+
+The same frontend and KDBX engine now have a Tauri 2 target in `apps/desktop`, with native encrypted file storage and backups. See [Windows instructions and acceptance limits](docs/windows/IMPLEMENTATION.md). Windows Hello is unavailable until the physical TPM/Kensington protection proof succeeds. Existing PWA and independent Python recovery remain separate usable targets.

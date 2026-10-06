@@ -8,6 +8,7 @@ import type { MessageKey, Translate } from '../i18n.ts';
 import { useLang, useT } from '../i18n.ts';
 import { VaultRequestError, type VaultClient } from '../vault-client.ts';
 import type { FileOut } from '../protocol.ts';
+import { desktop, exportNativeFile, openNativeExternal } from '@platform';
 
 export interface AppApi {
   client: VaultClient;
@@ -53,6 +54,7 @@ export type HandoffOutcome = 'export-offered' | 'export-cancelled' | 'export-fai
  * file was offered; durability is established by verification later.
  */
 export async function handOffFile(file: FileOut): Promise<HandoffOutcome> {
+  if (desktop) return exportNativeFile(file);
   const blob = new File([file.bytes as BlobPart], file.fileName, { type: 'application/octet-stream' });
   const nav = globalThis.navigator as Navigator & { canShare?: (d: ShareData) => boolean };
   const coarse = globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
@@ -103,6 +105,7 @@ export function urlPolicy(raw: string): { kind: 'https' | 'http'; href: string }
 }
 
 export function openExternal(href: string): void {
+  if (desktop) { openNativeExternal(href); return; }
   const w = window.open(href, '_blank', 'noopener,noreferrer');
   if (w) w.opener = null;
 }

@@ -1,0 +1,33 @@
+[package]
+name = "passkey-local-desktop"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+license = "GPL-3.0-only"
+
+[lib]
+name = "passkey_local_desktop"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10.9"
+uuid = { version = "1.18", features = ["v4"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
+fs2 = "0.4.3"
+
+[target.'cfg(windows)'.dependencies]
+tauri = { version = "=2.12.1", features = [] }
+tauri-plugin-single-instance = "=2.5.2"
+raw-window-handle = "0.6.2"
+rfd = { version = "=0.17.2", default-features = false }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_UI_Controls", "Win32_Storage_FileSystem", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Threading", "Win32_System_Memory", "Win32_System_RemoteDesktop", "Win32_System_Power", "Win32_UI_WindowsAndMessaging", "Win32_UI_Shell"] }
+
+[build-dependencies]
+tauri-build = { version = "=2.7.1", features = [] }
+
+[dev-dependencies]
+tempfile = "3.23"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

@@ -490,6 +490,9 @@ export class VaultStorage {
   }
 }
 
+/** The existing ciphertext contract, without IndexedDB implementation details. */
+export type VaultStore = Pick<VaultStorage, keyof VaultStorage>;
+
 export type PersistenceStatus = 'persisted' | 'not-persisted' | 'unavailable';
 
 /** Ask the browser to make storage persistent (DATA-06). Denial is a status, not an error. */
