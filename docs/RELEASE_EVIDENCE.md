@@ -240,3 +240,5 @@ Windows runner run 37413908839: native Clippy, 12 Windows tests (real replacemen
 Windows run 37414339835 additionally passed both frontend builds, bundle isolation and independent recovery tests. The Tauri build hook workspace selection was corrected and validated from apps/desktop; the installer rerun is pending.
 
 Windows run 37414850933 built the executable/NSIS installer, but packaged CDP smoke failed to attach. Installer distribution stays gated. Added synthetic-only diagnostics and a native origin/port/URL-credentials regression test; Windows execution remains pending.
+
+Windows run 37416273642: all 13 native tests passed; packaged CDP attachment remains failed. The next harness tests actual NSIS installation and compiled/installed byte equality, and checks native WebView2 autosave/autofill readback. Profile isolation/autosave protection cross-compile with Clippy; runtime acceptance remains pending.

@@ -3,8 +3,10 @@
  * no test provider, debug server or driver is installed with the product.
  */
 import assert from 'node:assert/strict';
-import { spawn, execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { spawn, execFileSync, execFile } from 'node:child_process';
+import { existsSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { promisify } from 'node:util';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { chromium } from '@playwright/test';
@@ -14,7 +16,15 @@ assert.equal(process.platform, 'win32');
 assert.equal(process.env.GITHUB_ACTIONS, 'true', 'Run only on an ephemeral GitHub-hosted Windows runner');
 const data = join(process.env.LOCALAPPDATA, 'com.passkeylocal.vault');
 assert(!existsSync(join(data, 'current.kdbx')), 'Smoke must not use an existing user vault');
-const exe = resolve('apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release/passkey-local-desktop.exe');
+const release = resolve('apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release');
+const installers = readdirSync(join(release, 'bundle/nsis')).filter((name) => name.endsWith('-setup.exe'));
+assert.equal(installers.length, 1, 'One installer must be tested');
+await promisify(execFile)(join(release, 'bundle/nsis', installers[0]), ['/S'], { timeout: 180000 });
+const exe = join(process.env.LOCALAPPDATA, 'PassKey Local', 'passkey-local-desktop.exe');
+assert(existsSync(exe), 'Per-user installer must install the app');
+const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const installedHash = digest(await readFile(exe));
+assert.equal(installedHash, digest(await readFile(join(release, 'passkey-local-desktop.exe'))), 'Installed executable must match the compiled source binary');
 const password = 'synthetic-Windows-smoke-2026-🔑';
 const child = spawn(exe, [], { env: { ...process.env, WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: '--remote-debugging-port=9222' }, stdio: ['ignore', 'pipe', 'pipe'] });
 let browser, page;
@@ -38,6 +48,13 @@ try {
     if (['tauri.localhost', 'ipc.localhost', 'localhost', '127.0.0.1'].includes(url.hostname) || url.protocol === 'tauri:') return route.continue();
     foreignRequests++; return route.abort();
   });
+  await page.waitForFunction(() => !!window.__TAURI_INTERNALS__?.invoke);
+  const privacy = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('native_status'));
+  assert.equal(privacy.browserPrivacyVerified, true, 'Password saving and autofill disabled with native readback');
+  const nativeWindow = JSON.parse(execFileSync('powershell.exe', ['-NoProfile', '-Command', `Get-Process -Id ${child.pid} | Select-Object MainWindowHandle,MainWindowTitle,Responding | ConvertTo-Json`], { encoding: 'utf8', timeout: 10000 }));
+  assert.notEqual(nativeWindow.MainWindowHandle, 0, 'A visible native main window must exist');
+  assert.equal(nativeWindow.MainWindowTitle, 'PassKey Local');
+  assert.equal(nativeWindow.Responding, true);
   await page.getByRole('button', { name: 'Create a new vault', exact: true }).click();
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByLabel('Repeat master password', { exact: true }).fill(password);
@@ -76,9 +93,10 @@ try {
   await page.screenshot({ path: 'apps/desktop/artifacts/windows-locked-smoke.png' });
   await writeFile('apps/desktop/artifacts/packaged-smoke.json', JSON.stringify({
     sourceCommit: process.env.GITHUB_SHA, runtime: await page.evaluate(() => navigator.userAgent),
+    installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    evidence: ['packaged asset origin', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', 'password lock and fallback', 'unproved Hello denied', 'no foreign requests'],
-    limits: ['native dialogs not automated', 'clean-machine installer not exercised', 'physical offline/TPM/Kensington/Safari not tested']
+    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', 'password lock and fallback', 'unproved Hello denied', 'no foreign requests'],
+    limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');
   console.log('PASS: packaged Windows assets, real IPC/worker/Argon2, verified native save and lock; Hello remains unavailable.');
 } catch (error) {

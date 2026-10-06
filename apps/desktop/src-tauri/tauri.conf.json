@@ -10,7 +10,7 @@
     "frontendDist": "../dist-desktop"
   },
   "app": {
-    "windows": [{ "label": "main", "create": false, "title": "PassKey Local", "width": 1100, "height": 760, "minWidth": 620, "minHeight": 480, "devtools": false }],
+    "windows": [{ "label": "main", "create": false, "visible": false, "title": "PassKey Local", "width": 1100, "height": 760, "minWidth": 620, "minHeight": 480, "devtools": false }],
     "security": {
       "csp": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src ipc: http://ipc.localhost; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'",
       "capabilities": ["main"]
@@ -25,7 +25,7 @@
     "icon": ["icons/icon.ico"],
     "windows": {
       "webviewInstallMode": { "type": "offlineInstaller", "silent": true },
-      "nsis": { "installMode": "currentUser", "displayLanguageSelector": false }
+      "nsis": { "installMode": "currentUser", "displayLanguageSelector": false, "installerHooks": "nsis-hooks.nsh" }
     }
   }
 }

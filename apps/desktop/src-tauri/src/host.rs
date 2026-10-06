@@ -7,7 +7,7 @@ use serde_json::Value;
 use std::{
     path::PathBuf,
     sync::{
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         mpsc::{self, SyncSender},
         Mutex,
     },
@@ -20,6 +20,7 @@ struct NativeState {
     active: Mutex<Option<String>>,
     serial: AtomicU64,
     inactivity: Mutex<Inactivity>,
+    browser_privacy: AtomicBool,
     backup: SyncSender<()>,
 }
 impl NativeState {
@@ -165,9 +166,15 @@ fn native_activity(window: WebviewWindow, state: State<'_, NativeState>) -> Resu
 #[tauri::command]
 async fn native_status(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
     trusted(&window)?;
-    tauri::async_runtime::spawn_blocking(move || Ok(store(&app.state::<NativeState>())?.status()))
-        .await
-        .map_err(|_| Error::new("UNAVAILABLE"))?
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<NativeState>();
+        let mut status = store(&state)?.status();
+        status["browserPrivacyVerified"] =
+            Value::Bool(state.browser_privacy.load(Ordering::Acquire));
+        Ok(status)
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))?
 }
 #[tauri::command]
 async fn pick_import(window: WebviewWindow) -> Result<Option<Vec<u8>>> {
@@ -410,6 +417,10 @@ pub fn run() {
         ])
         .setup(|app| {
             let root: PathBuf = app.path().app_local_data_dir()?;
+            // Keep Chromium profile files and its sandbox permissions outside
+            // the protected ciphertext-only managed directory.
+            let browser_profile = root.with_file_name("com.passkeylocal.vault-webview");
+            io::reject_links(&browser_profile).map_err(|e| std::io::Error::other(e.code))?;
             let state = Store::open(&root).map_err(|e| std::io::Error::other(e.code))?;
             let inactivity = Inactivity::new(state.lock_interval());
             let (wake, jobs) = mpsc::sync_channel(1);
@@ -418,6 +429,7 @@ pub fn run() {
                 active: Mutex::new(None),
                 serial: AtomicU64::new(0),
                 inactivity: Mutex::new(inactivity),
+                browser_privacy: AtomicBool::new(false),
                 backup: wake,
             });
             let backup_app = app.handle().clone();
@@ -443,6 +455,8 @@ pub fn run() {
                 .first()
                 .ok_or("main window configuration unavailable")?;
             let window = tauri::WebviewWindowBuilder::from_config(app, config)?
+                .data_directory(browser_profile)
+                .general_autofill_enabled(false)
                 .on_navigation(|url| {
                     // Initial packaged load and dev server only. No record URL
                     // can navigate the privileged WebView or open a popup.
@@ -450,6 +464,45 @@ pub fn run() {
                 })
                 .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
                 .build()?;
+            // Show only after disabling and reading back password saving and
+            // autofill, so WebView2 cannot persist master/entry form values.
+            let privacy_window = window.clone();
+            let privacy_app = app.handle().clone();
+            window.with_webview(move |platform| {
+                use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Settings4;
+                use windows_core::{Interface, BOOL};
+                let configured = unsafe {
+                    (|| -> windows_core::Result<bool> {
+                        let settings = platform
+                            .controller()
+                            .CoreWebView2()?
+                            .Settings()?
+                            .cast::<ICoreWebView2Settings4>()?;
+                        settings.SetIsPasswordAutosaveEnabled(false)?;
+                        settings.SetIsGeneralAutofillEnabled(false)?;
+                        let mut password = BOOL(1);
+                        let mut autofill = BOOL(1);
+                        settings.IsPasswordAutosaveEnabled(&mut password)?;
+                        settings.IsGeneralAutofillEnabled(&mut autofill)?;
+                        Ok(!password.as_bool() && !autofill.as_bool())
+                    })()
+                    .unwrap_or(false)
+                };
+                if !configured {
+                    eprintln!("WebView2 privacy settings unavailable; vault window stays closed");
+                    privacy_app.exit(1);
+                    return;
+                }
+                privacy_app
+                    .state::<NativeState>()
+                    .browser_privacy
+                    .store(true, Ordering::Release);
+                if privacy_window.show().is_err() {
+                    privacy_app.exit(1);
+                    return;
+                }
+                let _ = privacy_window.set_focus();
+            })?;
             let hwnd = window.hwnd()?;
             let pointer = Box::into_raw(Box::new(app.handle().clone()));
             unsafe {

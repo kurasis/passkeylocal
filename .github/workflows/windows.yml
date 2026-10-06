@@ -35,7 +35,9 @@ jobs:
             ~/.cargo/git
             apps/desktop/src-tauri/target
           key: windows-native-1.90-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}-${{ github.sha }}
-          restore-keys: windows-native-1.90-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}-
+          restore-keys: |
+            windows-native-1.90-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}-
+            windows-native-1.90-
       - name: Pinned toolchain and dependencies
         shell: pwsh
         run: |
