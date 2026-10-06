@@ -755,6 +755,9 @@ impl SafeManager {
             &check,
         );
         self.exists.store(s.exists(), Ordering::Release);
+        if result.is_ok() {
+            self.queue_backup(&s);
+        }
         s.lock();
         result
     }

@@ -673,6 +673,10 @@ fn locked_recovery_candidate_survives_periodic_cleanup_but_not_another_lock() {
     let m = SafeManager::open(&base).unwrap();
     let token = m.access("password".into(), true).unwrap();
     let package = m.backup(&token, &copies).unwrap();
+    m.configure_backup(&token, &copies, 10).unwrap();
+    m.backups.retry().unwrap();
+    m.backups.run_due();
+    assert!(m.status().unwrap().backup.pending_snapshot.is_none());
     m.lock();
     let c = m.verify_candidate(&package, "password".into()).unwrap();
     m.dispose_locked();
@@ -684,6 +688,10 @@ fn locked_recovery_candidate_survives_periodic_cleanup_but_not_another_lock() {
         &|| {},
     )
     .unwrap();
+    assert_eq!(
+        m.status().unwrap().backup.pending_snapshot.as_deref(),
+        c["snapshot_id"].as_str()
+    );
     let c = m.verify_candidate(&package, "password".into()).unwrap();
     m.lock();
     assert!(m
