@@ -214,3 +214,24 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 /* Native close guard is shared UI; no inline styles or third-party assets. */
 .desktop-close-overlay { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1.5rem; background: rgb(0 0 0 / .55); }
 .desktop-close-dialog { width: min(100%, 28rem); }
+
+/* The desktop file safe shares the existing three themes and form styles. */
+.module-navigation { display: flex; flex-wrap: wrap; gap: .6rem; padding: .8rem 1.2rem; }
+.module-navigation button[aria-current="page"], .file-safe-sidebar button[aria-current="page"] { outline: 2px solid var(--accent); }
+.file-safe-workspace { max-width: 1200px; margin: auto; }
+.file-safe-access { max-width: 650px; margin: auto; }
+.file-safe-heading, .file-safe-toolbar, .file-safe-filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.file-safe-heading { justify-content: space-between; }
+.file-safe-layout { display: grid; grid-template-columns: minmax(170px, 220px) minmax(0, 1fr); gap: 1rem; }
+.file-safe-sidebar { align-self: start; max-height: 640px; overflow: auto; }
+.file-safe-sidebar button { text-align: left; overflow-wrap: anywhere; }
+.file-safe-content { min-width: 0; }
+.file-safe-filters label:first-child { flex: 1; }
+.file-safe-viewport { height: 420px; overflow: auto; padding: 0 .75rem; }
+.file-safe-row { display: flex; align-items: center; gap: .7rem; border-bottom: 1px solid var(--border); }
+.file-safe-row input { flex: none; }
+.file-safe-file { display: flex; flex: 1; flex-direction: column; align-items: start; min-width: 0; padding: .5rem; text-align: left; }
+.file-safe-file strong, .file-safe-file span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-safe-file span { font-size: .8rem; opacity: .75; }
+.file-safe-version { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
+@media (max-width: 760px) { .file-safe-layout { grid-template-columns: 1fr; } .file-safe-sidebar { max-height: 260px; } }

@@ -15,6 +15,8 @@ $metadata = @{
   product='PassKey Local'; version='0.1.0'; sourceCommit=$env:GITHUB_SHA;
   architecture='x86_64-pc-windows-msvc'; signing='unsigned'; sha256=$hash;
   webview2='Evergreen offline installer bundled; clean-machine runtime test NOT RUN';
+  fileSafe='experimental native streaming storage and independent Python recovery';
+  fileSafePreview='unavailable: AppContainer/LPAC isolation proof BLOCKED';
   windowsHello='unavailable: physical TPM/provider/Kensington proof BLOCKED';
   packagedSmoke='PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits';
   node=(& node --version); rust=(& rustc --version);
@@ -24,3 +26,8 @@ $metadata = @{
 $metadata | ConvertTo-Json | Set-Content "$out/build.json" -Encoding utf8
 Copy-Item 'docs/windows/ACCEPTANCE.md' "$out/ACCEPTANCE.md"
 Add-Content "$out/ACCEPTANCE.md" "`n## Artifact-specific hosted evidence`n`nInstalled-app smoke: PASS for source $env:GITHUB_SHA. Workflow: https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID. See packaged-smoke.json for the actual runtime and exercised scenarios. This result supersedes pending smoke notes in the source report; the complete physical/standard-user/offline acceptance gates remain open.`n" -Encoding utf8
+
+Copy-Item 'docs/file-safe/ACCEPTANCE.md' "$out/FILE_SAFE_ACCEPTANCE.md"
+Copy-Item 'docs/file-safe/DEPENDENCIES.md' "$out/FILE_SAFE_DEPENDENCIES.md"
+
+Copy-Item -Recurse -Force 'docs/file-safe/licenses' "$out/file-safe-licenses"

@@ -26,6 +26,7 @@ import {
   createVault,
   kdbx,
   moveToRecycleBin,
+  openVault,
   restoreHistory,
   serializeVerified,
   setFavorite,
@@ -37,8 +38,9 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..');
-const interopDir = join(here, 'fixtures');
-const securityDir = join(repo, 'tests', 'security', 'fixtures');
+const fixtureRoot = process.env.INTEROP_FIXTURE_OUTPUT ?? repo;
+const interopDir = join(fixtureRoot, 'tests', 'interop', 'fixtures');
+const securityDir = join(fixtureRoot, 'tests', 'security', 'fixtures');
 mkdirSync(interopDir, { recursive: true });
 mkdirSync(securityDir, { recursive: true });
 
@@ -96,6 +98,9 @@ const manifest: ManifestItem[] = [];
 async function emit(name: string, db: Kdbx, password: string, description: string, extra: Partial<ManifestItem> = {}) {
   pinTimes(db);
   const { bytes, sha256 } = await serializeVerified(db);
+  // Fresh credentials must match the declared fixture password, independently
+  // of the mutable credential object used for serialization.
+  await openVault(bytes, password);
   writeFileSync(join(interopDir, `${name}.kdbx`), bytes);
   writeFileSync(join(interopDir, `${name}.expected.json`), JSON.stringify(toRecoveryModel(db), null, 2) + '\n');
   manifest.push({ file: `${name}.kdbx`, password, sha256, description, ...extra });
@@ -192,6 +197,8 @@ let fullDb: Kdbx;
   // Existing weak password (below the creation minimum) must still be recoverable.
   const w = createVault({ password: MAIN_PASSWORD });
   createEntry(w.db, input({ title: 'weak', password: 'w' }));
+  // Constructor hashing may still be pending; finish it before replacing it.
+  await w.db.credentials.ready;
   await w.db.credentials.setPassword(kdbx().ProtectedValue.fromString('weak'));
   await emit('password-weak-existing', w.db, 'weak', 'Existing file with a weak (4 character) password; recovery must accept it.');
 }

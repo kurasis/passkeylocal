@@ -9,6 +9,10 @@ license = "GPL-3.0-only"
 name = "passkey_local_desktop"
 
 [dependencies]
+libsodium-rs = "=0.2.5"
+hkdf = "=0.12.4"
+base64 = "=0.22.1"
+zeroize = { version = "=1.9.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10.9"

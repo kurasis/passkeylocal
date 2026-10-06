@@ -68,3 +68,4 @@ export function configureNativeClose(canClose: () => Promise<boolean>): () => vo
   });
   return () => { live = false; void stop.then((dispose) => dispose()); };
 }
+export { fileSafe } from './file-safe.ts';

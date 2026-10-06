@@ -1,0 +1,73 @@
+{
+  "format": "synthetic-file-safe-corpus/v1",
+  "password": "  пароль🔐é  ",
+  "files": [
+    {
+      "name": "../CON.0.txt",
+      "size": "0",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "deleted": false
+    },
+    {
+      "name": "../CON.1.txt",
+      "size": "1",
+      "sha256": "559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd",
+      "deleted": false
+    },
+    {
+      "name": "../CON.2.txt",
+      "size": "1048575",
+      "sha256": "59ffea4dc5a1a4383c2b0aa9f6dc51e84d688ccd166870128c536e47f33fe088",
+      "deleted": true
+    },
+    {
+      "name": "../CON.3.txt",
+      "size": "1048576",
+      "sha256": "11030261d987f0966338a7afb2fb76b1503b1683d72ffc4ffacd111bc298722f",
+      "deleted": false
+    },
+    {
+      "name": "../CON.4.txt",
+      "size": "1048577",
+      "sha256": "676b68aade90989e1bd45319dd8c23b33a93580a940cfe1f6faf056b807210f9",
+      "deleted": false
+    },
+    {
+      "name": "../CON.5.txt",
+      "size": "2097171",
+      "sha256": "f89942f2a45dc1abb703bc15498a94963ea2067f848ef85cfb8a20d5784aa5c2",
+      "deleted": false
+    }
+  ],
+  "producers": {
+    "rust": {
+      "versions": 7,
+      "ciphertext_files": {
+        "HEAD.json": "12090482a53cea213f5d2ab3c41ecea2d735b39887edac44461e6118977e6aba",
+        "catalogs/179e8aac449f5524ac5d81ac0d29a52a.cat": "5735a66c4ecbec4309ad169f222255954bde6367ef49bd1e93a512b2627b4a02",
+        "keys/370d91743cff0078810a407c9af6fcf6.key": "1c80c541f0ca572bd0a4f97e5b9af54c9148899db227003f5cfe6b6fd550a39d",
+        "objects/26a655f3fd9fbf0219688845a0b540b8.obj": "70731acfb2557a45a70caea9ea21029031909f0f78bc9adb461f5fda817b5b8d",
+        "objects/418919cde8a103038649d3ca0c3f608c.obj": "b4c904f39c5876092a9e8ce848bd2c95d41dc518aeacec4223f7e55db3b4da7d",
+        "objects/4a0eead3d9ce7565b26752aed90f76bd.obj": "297487a5071728b9796c06a20313e6812d93b8799181dbbb5cf93f62a5fb5c3f",
+        "objects/7943cd02f1ffb362a542be45e080b2e0.obj": "f3bc37682dc3966adeac7fd58a17432b9de902bbaab4b69ef47bd915a401f8ac",
+        "objects/908f70e194a3df1b9b8498e2ddb51fac.obj": "b009036d9187a139d1cdf9934aaf6dd6d41fb5d9c7376529d0f123fa9ffccbfb",
+        "objects/af082abdb9a63bf21e83c69beb047fe7.obj": "9ed365df435363b79708b81353714ee945a973821154b0da109d1f08d98dc467",
+        "objects/dd82c344d93a91ec8528bb715bf2dc99.obj": "2d02f35ee4d16494230b8715685eb290f6166d2ad89552947f94485db71654d4"
+      }
+    },
+    "python": {
+      "versions": 6,
+      "ciphertext_files": {
+        "HEAD.json": "12299e10e5705796548deed6193dab71297335b61f265c3588ed63c28002d81b",
+        "catalogs/81d2ee8d1f88394084ff2a13afbecf69.cat": "2ff1f0181f4112f7bea7fc20fece15883ba62e4331e1be3ca9faebdb8263e20b",
+        "keys/5480c377cde9fe8b2c359175a487621c.key": "87b6d9b299af66416565eccd993ed83fd4b66d78818912553ecb31884ed53b46",
+        "objects/220bbc859f855f5a6e094e4274eccf6e.obj": "a4baa78b0c6cbdbd50b5cbf628037f121427907b478c17ad886d0dfcafe481ad",
+        "objects/31fb50cd2a372e3a244fd6184217ec72.obj": "dd8298f6bb1ba42f88f5e127d0f3e9dba8b55daa01d330b0ad683107d8eb7591",
+        "objects/84dbb96756b0ca26497a9c802d2035fd.obj": "0090337fdf4510812b29427c84dae707e706ee5d89a6f7fcf2bf2fdb7f9eaac6",
+        "objects/9e78c2bf70dd54dffda5ab185ccdcfcf.obj": "a8145e5e4694fdd14ec411519560172507054405d194e10f057e3de2cc3ad588",
+        "objects/b412c9f12d9511f85f82e1515203f3d3.obj": "5ea9beb9203a28f07ed6b641f5cee51e6320b306e2c30d5bd2564deb63613ea3",
+        "objects/d8aedd435a5cbae4cd84d062619b06fe.obj": "770dc715a85d224605272a08dd9cb4b372f13961d72f5446a9dd50f0193081e6"
+      }
+    }
+  }
+}

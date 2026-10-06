@@ -20,6 +20,7 @@
     "active": true,
     "targets": ["nsis"],
     "category": "Utility",
+    "resources": { "../../../docs/file-safe/licenses/": "file-safe-licenses/" },
     "shortDescription": "Local encrypted KDBX password vault",
     "copyright": "PassKey Local contributors",
     "icon": ["icons/icon.ico"],

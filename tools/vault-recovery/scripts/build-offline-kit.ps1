@@ -20,6 +20,10 @@ Copy-Item -Force "$repo/docs/RECOVERY_GUIDE.md" $OutDir
 New-Item -ItemType Directory -Force -Path "$OutDir/samples" | Out-Null
 Copy-Item -Force "$repo/tests/interop/fixtures/full.kdbx", "$repo/tests/interop/fixtures/full.expected.json", "$repo/tests/interop/fixtures/manifest.json" "$OutDir/samples"
 
+Copy-Item -Recurse -Force "$repo/tests/file-safe/fixtures/rust" "$OutDir/samples/file-safe-rust"
+Copy-Item -Force "$repo/docs/file-safe/RECOVERY.md" $OutDir
+Copy-Item -Recurse -Force "$repo/docs/file-safe/licenses" "$OutDir/third-party-licenses"
+
 Get-ChildItem -Recurse -File $OutDir | Get-FileHash -Algorithm SHA256 |
     ForEach-Object { "{0}  {1}" -f $_.Hash.ToLower(), (Resolve-Path -Relative $_.Path) } |
     Set-Content -Encoding utf8 "$OutDir/SHA256SUMS.txt"

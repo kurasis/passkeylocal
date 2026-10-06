@@ -17,6 +17,8 @@ assert.equal(process.env.GITHUB_ACTIONS, 'true', 'Run only on an ephemeral GitHu
 assert.equal(process.env.RUNNER_ENVIRONMENT, 'github-hosted', 'Machine policy changes are restricted to disposable hosted runners');
 const data = join(process.env.LOCALAPPDATA, 'com.passkeylocal.vault');
 assert(!existsSync(join(data, 'current.kdbx')), 'Smoke must not use an existing user vault');
+const safeData = join(process.env.LOCALAPPDATA, 'com.passkeylocal.file-safe');
+assert(!existsSync(join(safeData, 'ACTIVE.json')), 'File-safe smoke must not use existing user data');
 const release = resolve('apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release');
 const installers = readdirSync(join(release, 'bundle/nsis')).filter((name) => name.endsWith('-setup.exe'));
 assert.equal(installers.length, 1, 'One installer must be tested');
@@ -108,6 +110,30 @@ try {
     try { await window.__TAURI_INTERNALS__.invoke('hello_unlock'); return false; } catch { return true; }
   });
   assert(helloDenied, 'Unproved Hello provider cannot yield secrets');
+  // Exercise the installed file-safe UI while the password database is locked.
+  powershell(`[void](New-Object -ComObject WScript.Shell).AppActivate(${child.pid})`);
+  await page.getByRole('button', { name: 'File Safe', exact: true }).click();
+  const safePassword = 'synthetic-independent-file-safe-2026';
+  await page.getByLabel('File-safe master password', { exact: true }).fill(safePassword);
+  await page.getByLabel('Repeat password', { exact: true }).fill(safePassword);
+  await page.getByRole('button', { name: 'Create file safe', exact: true }).click();
+  await page.getByRole('button', { name: 'Lock file safe', exact: true }).waitFor();
+  await page.getByLabel('Folder name', { exact: true }).fill('Synthetic file-safe folder');
+  await page.getByRole('button', { name: 'New folder', exact: true }).click();
+  await page.getByRole('button', { name: '▸ Synthetic file-safe folder', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Passwords', exact: true }).click();
+  await page.getByLabel('Master password', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'File Safe', exact: true }).click();
+  await page.getByRole('button', { name: 'Lock file safe', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Lock all', exact: true }).click();
+  await page.getByLabel('File-safe master password', { exact: true }).waitFor();
+  assert(!await page.getByRole('button', { name: '▸ Synthetic file-safe folder', exact: true }).count());
+  await page.getByLabel('File-safe master password', { exact: true }).fill(safePassword);
+  await page.getByRole('button', { name: 'Unlock file safe', exact: true }).click();
+  await page.getByRole('button', { name: '▸ Synthetic file-safe folder', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Lock file safe', exact: true }).click();
+  await page.getByLabel('File-safe master password', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Passwords', exact: true }).click();
   const saved = new Uint8Array(await readFile(join(data, 'current.kdbx')));
   const opened = await openVault(saved, password);
   assert.equal(listEntries(opened.db).filter((e) => !e.inRecycleBin).length, 1);
@@ -120,7 +146,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'no foreign requests'],
+    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');
   console.log('PASS: packaged Windows assets, real IPC/worker/Argon2, verified native save and lock; Hello remains unavailable.');
