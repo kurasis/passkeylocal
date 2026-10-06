@@ -49,6 +49,9 @@ test('configured Hello offers OS actions, preserves cancellation and handles pol
   await expect(hello.getByText('Windows Hello заблокирован политикой Windows.', { exact: false })).toBeVisible();
   await expect(verify).toBeDisabled();
   await expect(hello.getByRole('button', { name: 'Параметры входа Windows', exact: true })).toBeEnabled();
+  await page.evaluate(() => (window as any).helloTest.failSettings());
+  await hello.getByRole('button', { name: 'Параметры входа Windows', exact: true }).click();
+  await expect(hello.getByText('Действие Windows не удалось выполнить.', { exact: false })).toBeVisible();
 });
 
 test('pending Hello diagnostic cannot be duplicated or reappear after locking', async ({ page }) => {

@@ -19,7 +19,13 @@ resource test is intentionally ignored in this local unit run), Windows GNU
 cross-target Clippy with warnings denied, both production frontend builds and
 target isolation. Seven isolated UI tests pass, including actual app-shell
 geometry at 320/640/900/1311/1920 pixels and 125% zoom, configured/cancel/policy
-Hello states and stale-result refusal after lock. Those services are synthetic
+Hello states, visible OS-action failures and stale-result refusal after lock.
+The OS-settings failure regression first failed when an unrelated availability
+refresh immediately erased the error; it passes after restricting that refresh
+to completed settings actions. A browser control using the original CSS also
+reproduced sidebar overlap (top 112 px versus module bottom 160.19 px); the
+fixed sidebar starts at 198.19 px at the same 1311-pixel viewport.
+Those services are synthetic
 doubles and are not biometric-device evidence. All eight production PWA e2e
 scenarios also pass, including CSP/offline/passkeys/themes/restore/long timeout.
 The updated installed Windows smoke is pending for this change; results and

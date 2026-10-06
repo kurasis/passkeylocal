@@ -58,15 +58,17 @@ export function DesktopHelloSettings() {
     inFlight.current = true;
     const attempt = ++epoch.current;
     setBusy(true); setResult(null); setFailed(false);
+    let completed = false;
     try {
       if (verify) {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
       } else await openNativeHelloSettings();
+      completed = true;
     } catch { if (epoch.current === attempt) setFailed(true); }
     finally {
       inFlight.current = false;
-      if (epoch.current === attempt) { setBusy(false); if (!verify) void refresh(); }
+      if (epoch.current === attempt) { setBusy(false); if (!verify && completed) void refresh(); }
     }
   };
   const configuration = status?.helloConfiguration ?? (failed ? 'unknown' : 'not-probed');

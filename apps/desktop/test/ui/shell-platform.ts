@@ -12,6 +12,7 @@ let checks = 0;
 let verifies = 0;
 let release: (() => void) | null = null;
 let defer = false;
+let settingsFail = false;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
   checks++;
   return { available: false, enrolled: false, reason: 'protected-key-proof-required', helloConfiguration: configuration, mode: 'off' };
@@ -21,11 +22,12 @@ export async function verifyNativeHello(): Promise<HelloVerification> {
   if (defer) await new Promise<void>((resolve) => { release = resolve; });
   return { result: verification, purpose: 'diagnostic-only', unlocked: false, enrolled: false };
 }
-export async function openNativeHelloSettings() { settingsOpened++; }
+export async function openNativeHelloSettings() { settingsOpened++; if (settingsFail) throw new Error('Synthetic OS settings failure'); }
 Object.assign(window, { helloTest: {
   configure(value: HelloConfiguration) { configuration = value; },
   outcome(value: HelloVerificationResult) { verification = value; },
   defer() { defer = true; },
+  failSettings() { settingsFail = true; },
   release() { release?.(); },
   counts() { return { settingsOpened, checks, verifies }; },
 } });
