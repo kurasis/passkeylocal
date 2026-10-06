@@ -1,13 +1,14 @@
 # Cloudflare Pages upload archives
 
-Download [passkeylocal-cloudflare-pages-9909aa8.zip](passkeylocal-cloudflare-pages-9909aa8.zip)
+Download [passkeylocal-cloudflare-pages-aba862b.zip](passkeylocal-cloudflare-pages-aba862b.zip)
 by opening the file on GitHub and choosing **Download raw file** (the download
 icon), then upload the ZIP through Cloudflare Pages **Direct Upload**.
 
 This production build comes from source commit
-[`9909aa8`](https://github.com/kurasis/passkeylocal/commit/9909aa8)
-and includes the shared-code integration fixes, redesigned UI, Colorful / Light / Dark themes and Face ID /
-passkey unlock. See [design previews](../../docs/DESIGN.md). The archive has `index.html`, `_headers`,
+[`aba862b`](https://github.com/kurasis/passkeylocal/commit/aba862b)
+and includes the restore completion fix, 6 / 12 / 24 hour inactivity choices,
+continued auto-lock after changing language, Colorful / Light / Dark themes and
+Face ID / passkey unlock. See [design previews](../../docs/DESIGN.md). The archive has `index.html`, `_headers`,
 `sw.js`, the manifest, icons and compiled assets at the site root. No build
 command or Node.js runtime is needed on the server.
 
@@ -15,7 +16,7 @@ The adjacent `.zip.sha256` file contains the archive checksum. To verify a
 download with a SHA-256 tool:
 
 ```sh
-sha256sum -c passkeylocal-cloudflare-pages-9909aa8.zip.sha256
+sha256sum -c passkeylocal-cloudflare-pages-aba862b.zip.sha256
 ```
 
 Use HTTPS and a stable hostname; passkeys and local vault data belong to that
