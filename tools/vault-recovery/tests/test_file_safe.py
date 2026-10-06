@@ -38,7 +38,7 @@ def cli(command, path, *args, password=PW):
 @pytest.mark.parametrize("producer", ["rust", "python"])
 def test_independent_fixture_verify_and_extraction(producer, tmp_path):
     snapshot = Snapshot(FIXTURES / producer, PW)
-    expected = json.loads((FIXTURES / "manifest.json").read_text())["files"]
+    expected = json.loads((FIXTURES / "manifest.json").read_text(encoding="utf-8"))["files"]
     for actual, wanted in zip(snapshot.catalog["files"], expected, strict=True):
         assert (
             actual["name"] == wanted["name"] and actual["deleted"] == wanted["deleted"]
@@ -71,7 +71,7 @@ def test_independent_fixture_verify_and_extraction(producer, tmp_path):
         "--include-trash",
     )
     assert r.returncode == 0, r.stderr
-    report = json.loads((destination / "recovery-report.json").read_text())
+    report = json.loads((destination / "recovery-report.json").read_text(encoding="utf-8"))
     assert report["status"] == "COMPLETE"
     assert len(report["files"]) == out["versions"]
     versions = {v["id"]: v for f in snapshot.catalog["files"] for v in f["versions"]}
@@ -117,7 +117,7 @@ def test_corrupt_objects_never_publish_unverified_plaintext(mode, tmp_path):
     output = tmp_path / "out"
     r = cli("extract", package, "--output", str(output), "--acknowledge-plaintext")
     assert r.returncode == 3, r.stderr
-    report = json.loads((output / "recovery-report.json").read_text())
+    report = json.loads((output / "recovery-report.json").read_text(encoding="utf-8"))
     assert report["status"] == "PARTIAL"
     assert not report["files"]
     assert list(output.iterdir()) == [output / "recovery-report.json"]
