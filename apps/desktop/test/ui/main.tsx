@@ -31,6 +31,9 @@ const files: SafeFile[] = Array.from({ length: 10000 }, (_, i) => ({
   ],
 }));
 let unlocked = true;
+let nativeGeneration = 0;
+let deferLockedStatus = false;
+let statusWaiters: Array<() => void> = [];
 let lock = () => {};
 let delay = false;
 let release = () => {};
@@ -38,11 +41,13 @@ const token = "a".repeat(32);
 const root = { id: "f".repeat(32), parent_id: null, name: "" };
 const api: FileSafeApi = {
   async status() {
+    if (!unlocked && deferLockedStatus)
+      await new Promise<void>((resolve) => statusWaiters.push(resolve));
     return {
       exists: true,
       unlocked,
       token: unlocked ? token : null,
-      generation: "0",
+      generation: String(nativeGeneration),
       busy: false,
       interval_ms: 120000,
       progress: { stage: "", done: 0, total: 0 },
@@ -58,16 +63,21 @@ const api: FileSafeApi = {
       preview: "unavailable",
     } satisfies SafeStatus;
   },
-  async access() {
+  async access(_password, _create, expectedGeneration) {
+    if (expectedGeneration !== String(nativeGeneration))
+      throw { code: "CANCELLED" };
+    nativeGeneration++;
     unlocked = true;
     return token;
   },
   async lock() {
     unlocked = false;
+    nativeGeneration++;
     lock();
   },
   async lockAll() {
     unlocked = false;
+    nativeGeneration++;
     lock();
   },
   subscribeLock(callback) {
@@ -128,7 +138,19 @@ Object.assign(window, {
     },
     lock() {
       unlocked = false;
+      nativeGeneration++;
       lock();
+    },
+    deferStatus() {
+      deferLockedStatus = true;
+    },
+    pendingStatus() {
+      return statusWaiters.length;
+    },
+    releaseStatus() {
+      deferLockedStatus = false;
+      for (const resolve of statusWaiters) resolve();
+      statusWaiters = [];
     },
     russian() {
       renderTest("ru");

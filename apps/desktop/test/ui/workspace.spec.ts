@@ -1,4 +1,41 @@
 import { test, expect } from "@playwright/test";
+
+test("fresh password admission waits for native status after a lock", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const firstFile = page.getByRole("button", {
+    name: "Synthetic private canary 00000",
+    exact: false,
+  });
+  await expect(firstFile).toBeVisible();
+  await page.evaluate(() =>
+    (window as unknown as { uiTest: { deferStatus(): void } }).uiTest.deferStatus(),
+  );
+  await page.getByRole("button", { name: "Lock file safe", exact: true }).click();
+  await page
+    .getByLabel("File-safe master password", { exact: true })
+    .fill("synthetic password");
+  const unlock = page.getByRole("button", {
+    name: "Unlock file safe",
+    exact: true,
+  });
+  await expect(unlock).toBeDisabled();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (window as unknown as { uiTest: { pendingStatus(): number } }).uiTest.pendingStatus(),
+      ),
+    )
+    .toBeGreaterThan(0);
+  await page.evaluate(() =>
+    (window as unknown as { uiTest: { releaseStatus(): void } }).uiTest.releaseStatus(),
+  );
+  await expect(unlock).toBeEnabled();
+  await unlock.click();
+  await expect(firstFile).toBeVisible();
+});
+
 test("10,000-entry synthetic metadata UI is paged, virtualized and keyboard scrollable", async ({
   page,
 }) => {

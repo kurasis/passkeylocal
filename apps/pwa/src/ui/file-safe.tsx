@@ -244,6 +244,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
   const [working, setWorking] = useState(false);
+  const [admissionReady, setAdmissionReady] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [detail, setDetail] = useState<string | null>(null);
   const [folderName, setFolderName] = useState("");
@@ -257,6 +258,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const tokenRef = useRef<string | null>(null);
   const redact = useCallback(() => {
     generation.current++;
+    // The old status cannot authorize a new password after native revocation.
+    setAdmissionReady(false);
     tokenRef.current = null;
     setToken(null);
     setPage(null);
@@ -326,6 +329,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       tokenRef.current = result.token;
       setToken(result.token);
       setStatus(result);
+      setAdmissionReady(true);
     } catch {
       if (live.current && epoch === generation.current) {
         redact();
@@ -531,7 +535,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               setMessage(w.mismatched);
               return;
             }
-            if (!status) return;
+            if (!status || !admissionReady) return;
             const pw = password;
             const expectedGeneration = status.generation;
             setPassword("");
@@ -567,7 +571,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               />
             </label>
           )}
-          <button type="submit" disabled={busy || !status || !password}>
+          <button
+            type="submit"
+            disabled={busy || !status || !admissionReady || !password}
+          >
             {busy ? w.working : status?.exists ? w.unlock : w.create}
           </button>
           <button type="button" className="secondary" disabled>
