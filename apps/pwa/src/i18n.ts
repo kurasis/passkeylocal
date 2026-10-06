@@ -506,7 +506,7 @@ const ru: Record<MessageKey, string> = {
   lockAfter: 'Блокировать после бездействия',
   seconds: '{n} секунд',
   minutes: '{n} мин',
-  hours: '{n} часов',
+  hours: '{n} ч.',
   language: 'Язык',
   languageAuto: 'Язык устройства',
   theme: 'Тема',

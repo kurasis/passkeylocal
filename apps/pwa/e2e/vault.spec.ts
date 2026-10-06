@@ -406,7 +406,7 @@ test('6, 12 and 24 hour inactivity choices persist and the 24 hour deadline lock
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
   const ruInterval = page.getByRole('combobox', { name: 'Блокировать после бездействия', exact: true });
-  for (const n of [6, 12, 24]) await expect(ruInterval.getByRole('option', { name: `${n} часов`, exact: true })).toHaveCount(1);
+  for (const n of [6, 12, 24]) await expect(ruInterval.getByRole('option', { name: `${n} ч.`, exact: true })).toHaveCount(1);
   await page.clock.fastForward(86_399_000);
   await expect(ruInterval).toBeVisible();
   await page.clock.fastForward(1000);
