@@ -28,6 +28,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Restore native check cache (no privileged signing/release job)
+        id: native_cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
@@ -81,7 +82,7 @@ jobs:
       - name: Independent recovery corpus
         run: python -m pytest -q -p no:cacheprovider tools/vault-recovery/tests tests/interop tests/security
       - name: Save native compilation cache (tests still gate packaging)
-        if: success() || failure()
+        if: (success() || failure()) && steps.native_cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: |
@@ -90,7 +91,10 @@ jobs:
             apps/desktop/src-tauri/target
           key: windows-native-1.90-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}-${{ github.sha }}
       - name: Build Windows per-user NSIS installer with offline WebView2 runtime
-        run: npm run desktop:build
+        shell: pwsh
+        run: |
+          apps/desktop/scripts/prepare-webview2.ps1
+          npm run desktop:build
       - name: Packaged application process and main-window smoke
         shell: pwsh
         run: node apps/desktop/scripts/packaged-smoke.mjs
