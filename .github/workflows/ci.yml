@@ -41,6 +41,8 @@ jobs:
         run: npm run build -w @passkey-local/pwa
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
+      - name: File-safe metadata UI (synthetic API double, no OS claims)
+        run: npx playwright test --config apps/desktop/test/ui/playwright.config.ts
       - name: Browser tests against the built app served with the real headers
         run: npm run e2e -w @passkey-local/pwa
 
@@ -120,7 +122,24 @@ jobs:
           cmd /c "kit-venv\Scripts\python -m vault_recovery verify tests/interop/fixtures/full.kdbx --password-stdin < pw.bin"
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Remove-Item pw.bin
+          [System.IO.File]::WriteAllBytes("pw.bin", [System.Text.Encoding]::UTF8.GetBytes("  пароль🔐é  "))
+          cmd /c "kit-venv\Scripts\python -m vault_recovery.file_safe.cli verify dist/vault-recovery-kit/samples/file-safe-rust --password-stdin < pw.bin"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Remove-Item pw.bin
       - uses: actions/upload-artifact@v4
         with:
           name: vault-recovery-offline-kit-win-amd64-py312
           path: dist/vault-recovery-kit
+
+  file-safe-native:
+    name: File-safe Linux streaming and fresh independent recovery
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --require-hashes -r tools/vault-recovery/requirements.lock
+      - run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
+      - run: cargo build --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --example file_safe_fixture_driver
+      - run: python tests/file-safe/interop.py --large

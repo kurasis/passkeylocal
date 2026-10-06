@@ -1,3 +1,7 @@
+use crate::file_safe::{
+    commands::*,
+    manager::{SafeHost, SafeManager},
+};
 use crate::{
     filesystem as io, hello,
     inactivity::Inactivity,
@@ -46,14 +50,14 @@ impl NativeState {
         let _ = self.backup.try_send(());
     }
 }
-fn trusted(window: &WebviewWindow) -> Result<()> {
+pub(crate) fn trusted(window: &WebviewWindow) -> Result<()> {
     if window.label() != "main" {
         return Err(Error::new("INVALID_STATE"));
     }
     // Capabilities additionally deny remote origins and unknown windows.
     Ok(())
 }
-fn focused(window: &WebviewWindow) -> Result<()> {
+pub(crate) fn focused(window: &WebviewWindow) -> Result<()> {
     trusted(window)?;
     if window.is_focused().unwrap_or(false) {
         Ok(())
@@ -310,7 +314,7 @@ fn open_external(window: WebviewWindow, url: String) -> Result<()> {
 }
 
 // Only HWND identity crosses into the blocking picker thread. It is not IPC.
-struct WindowParent(usize);
+pub(crate) struct WindowParent(pub(crate) usize);
 impl raw_window_handle::HasWindowHandle for WindowParent {
     fn window_handle(
         &self,
@@ -336,7 +340,11 @@ impl raw_window_handle::HasDisplayHandle for WindowParent {
     }
 }
 
-fn lock_native(app: &tauri::AppHandle) {
+pub(crate) fn lock_native(app: &tauri::AppHandle) {
+    if let Ok(safe) = app.state::<SafeHost>().get() {
+        safe.revoke();
+    }
+    let _ = app.emit_to("main", "file-safe-lock", ());
     let state = app.state::<NativeState>();
     if let Ok(mut active) = state.active.lock() {
         state.serial.fetch_add(1, Ordering::SeqCst);
@@ -345,6 +353,12 @@ fn lock_native(app: &tauri::AppHandle) {
     // No filesystem mutex is needed to revoke access/redact immediately.
     // Already-authorized ciphertext writes may finish without revealing UI.
     let _ = app.emit_to("main", "native-lock", ());
+    let cleanup_app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Ok(safe) = cleanup_app.state::<SafeHost>().get() {
+            safe.dispose_locked();
+        }
+    });
 }
 
 fn navigation_allowed(url: &tauri::Url, development: bool) -> bool {
@@ -413,7 +427,23 @@ pub fn run() {
             open_external,
             hello_enroll,
             hello_unlock,
-            hello_revoke
+            hello_revoke,
+            file_safe_status,
+            file_safe_access,
+            file_safe_lock,
+            lock_all,
+            file_safe_activity,
+            file_safe_interval,
+            file_safe_page,
+            file_safe_change,
+            file_safe_import,
+            file_safe_cancel,
+            file_safe_export,
+            file_safe_rotate,
+            file_safe_backup,
+            file_safe_recover,
+            file_safe_retry_backup,
+            file_safe_import_results
         ])
         .setup(|app| {
             let root: PathBuf = app.path().app_local_data_dir()?;
@@ -423,6 +453,26 @@ pub fn run() {
             io::reject_links(&browser_profile).map_err(|e| std::io::Error::other(e.code))?;
             let state = Store::open(&root).map_err(|e| std::io::Error::other(e.code))?;
             let inactivity = Inactivity::new(state.lock_interval());
+            let safe_root = root.with_file_name("com.passkeylocal.file-safe");
+            let safe_manager = match SafeManager::open(&safe_root) {
+                Ok(safe) => Some(std::sync::Arc::new(safe)),
+                Err(_) => {
+                    eprintln!(
+                        "File-safe service unavailable; password-vault access remains available"
+                    );
+                    None
+                }
+            };
+            app.manage(SafeHost {
+                manager: safe_manager,
+            });
+            let safe_backup_app = app.handle().clone();
+            std::thread::spawn(move || loop {
+                std::thread::sleep(Duration::from_secs(1));
+                if let Ok(safe) = safe_backup_app.state::<SafeHost>().get() {
+                    safe.backups.run_due();
+                }
+            });
             let (wake, jobs) = mpsc::sync_channel(1);
             app.manage(NativeState {
                 store: Mutex::new(state),
@@ -523,6 +573,12 @@ pub fn run() {
             let timer_app = app.handle().clone();
             std::thread::spawn(move || loop {
                 std::thread::sleep(Duration::from_secs(1));
+                if let Ok(safe) = timer_app.state::<SafeHost>().get() {
+                    if safe.expire() {
+                        let _ = timer_app.emit_to("main", "file-safe-lock", ());
+                    }
+                    safe.dispose_locked();
+                }
                 let state = timer_app.state::<NativeState>();
                 // Match begin/check lock order and revoke under the same guard;
                 // an old timeout observation cannot revoke a newer session.

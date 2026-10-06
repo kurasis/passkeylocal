@@ -12,16 +12,19 @@ license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "pykeepass==4.2.0",
+    "PyNaCl==1.6.2",
+    "cryptography==50.0.2",
 ]
 
 [project.scripts]
 vault-recovery = "vault_recovery.cli:main"
+file-safe-recover = "vault_recovery.file_safe.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-vault_recovery = ["schema/*.json"]
+vault_recovery = ["schema/*.json", "file_safe/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "../../tests/interop", "../../tests/security"]

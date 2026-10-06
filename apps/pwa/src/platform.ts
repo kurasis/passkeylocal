@@ -11,3 +11,4 @@ export async function retryNativeBackup(): Promise<void> { /* Not applicable to 
 export async function setNativeRetention(_retention: number): Promise<void> { /* Not applicable to browsers. */ }
 export function configureNativeClose(_canClose: () => Promise<boolean>): () => void { return () => {}; }
 export function nativeActivity(): void { /* Browser auto-lock already observes activity. */ }
+export const fileSafe: import('./file-safe-protocol.ts').FileSafeApi | null = null;

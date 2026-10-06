@@ -21,8 +21,9 @@ import { VaultScreens, type VaultView } from './vault.tsx';
 import { useServiceWorkerUpdate } from './sw-update.ts';
 import { Icon, type IconName } from './icons.tsx';
 import { ThemeMenu } from './theme.tsx';
-import { configureNativeClose, desktop, nativeActivity, subscribeNativeLock } from '@platform';
+import { configureNativeClose, desktop, nativeActivity, subscribeNativeLock, fileSafe } from '@platform';
 import { DesktopBackupStatus } from './desktop.tsx';
+import { FileSafe } from './file-safe.tsx';
 
 type Tab = 'vault' | 'favorites' | 'backups' | 'settings';
 
@@ -37,6 +38,7 @@ export function App() {
   const [persistence, setPersistence] = useState('unavailable');
   const [unhealthy, setUnhealthy] = useState(false);
   const [tab, setTab] = useState<Tab>('vault');
+  const [module, setModule] = useState<'passwords' | 'files'>('passwords');
   const [view, setView] = useState<VaultView>({ name: 'list' });
   const [notice, setNotice] = useState<string | null>(null);
   const [fatal, setFatal] = useState<string | null>(null);
@@ -120,7 +122,11 @@ export function App() {
   useEffect(() => {
     if (!desktop) return;
     const shortcut = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key.toLowerCase() === 'l') { event.preventDefault(); lockNow(); }
+      if (event.ctrlKey && event.key.toLowerCase() === 'l') { event.preventDefault(); if (module === 'files') void fileSafe?.lock(); else lockNow(); }
+      if (module === 'files') {
+        if (event.ctrlKey && event.key.toLowerCase() === 'f') { event.preventDefault(); document.querySelector<HTMLInputElement>('input[type="search"]')?.focus(); }
+        return;
+      }
       if (phase !== 'unlocked') return;
       if (event.ctrlKey && event.key.toLowerCase() === 'f') {
         event.preventDefault(); setTab('vault'); setView({ name: 'list' });
@@ -135,7 +141,7 @@ export function App() {
     };
     window.addEventListener('keydown', shortcut);
     return () => window.removeEventListener('keydown', shortcut);
-  }, [phase, overview, lockNow]);
+  }, [phase, overview, lockNow, module]);
 
   const autoLock = useRef<AutoLock | null>(null);
   useEffect(() => {
@@ -162,7 +168,7 @@ export function App() {
       autoLock.current?.check();
       redact(false);
     };
-    const onActivity = () => { autoLock.current?.touch(); nativeActivity(); };
+    const onActivity = () => { if (module === 'passwords') { autoLock.current?.touch(); nativeActivity(); } };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', onPageHide);
     window.addEventListener('pageshow', onPageShow);
@@ -176,7 +182,7 @@ export function App() {
       window.removeEventListener('pointerdown', onActivity);
       window.removeEventListener('keydown', onActivity);
     };
-  }, [lockNow]);
+  }, [lockNow, module]);
 
   useEffect(() => {
     void refresh();
@@ -234,7 +240,8 @@ export function App() {
     );
   }
 
-  const unlocked = phase === 'unlocked' && overview && prefs.onboardingBackupVerified;
+  if (module === 'files' && fileSafe) body = <FileSafe api={fileSafe} />;
+  const unlocked = module === 'passwords' && phase === 'unlocked' && overview && prefs.onboardingBackupVerified;
 
   return (
     <I18nContext.Provider value={{ t, lang }}>
@@ -260,6 +267,11 @@ export function App() {
               </button>
             </Banner>
           )}
+          {desktop && fileSafe && <div className="module-navigation" role="navigation" aria-label={lang === 'ru' ? 'Хранилища' : 'Vault modules'}>
+            <button type="button" className="secondary" aria-current={module === 'passwords' ? 'page' : undefined} onClick={() => setModule('passwords')}>{lang === 'ru' ? 'Пароли' : 'Passwords'}</button>
+            <button type="button" className="secondary" aria-current={module === 'files' ? 'page' : undefined} onClick={() => setModule('files')}>{lang === 'ru' ? 'Файловый сейф' : 'File Safe'}</button>
+            <button type="button" className="secondary" onClick={() => { lockNow(); void fileSafe?.lockAll(); }}>{lang === 'ru' ? 'Заблокировать всё' : 'Lock all'}</button>
+          </div>}
           <main>{body}</main>
           {desktop && closePrompt && <div className="desktop-close-overlay"><section className="card stack desktop-close-dialog" role="dialog" aria-modal="true" aria-labelledby="desktop-close-title">
             <h2 id="desktop-close-title">{t('desktopCloseTitle')}</h2><p>{t('desktopCloseExplain')}</p>
