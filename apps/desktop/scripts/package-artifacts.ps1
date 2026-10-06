@@ -17,7 +17,8 @@ $metadata = @{
   webview2='Evergreen offline installer bundled; clean-machine runtime test NOT RUN';
   fileSafe='experimental native streaming storage and independent Python recovery';
   fileSafePreview='unavailable: AppContainer/LPAC isolation proof BLOCKED';
-  windowsHello='unavailable: physical TPM/provider/Kensington proof BLOCKED';
+  windowsHello='vault unlock unavailable: protected-key provider and physical TPM proof BLOCKED';
+  windowsHelloDiagnostics='WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action';
   packagedSmoke='PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits';
   node=(& node --version); rust=(& rustc --version);
   npmLock=(Get-FileHash 'package-lock.json' -Algorithm SHA256).Hash.ToLowerInvariant();

@@ -6,6 +6,9 @@ export async function pickNativeFile(): Promise<File | null> { return null; }
 export async function exportNativeFile(_file: { bytes: Uint8Array; fileName: string }): Promise<'export-offered' | 'export-cancelled' | 'export-failed'> { return 'export-failed'; }
 export function openNativeExternal(_url: string): void { /* Browser adapter uses window.open. */ }
 export async function nativeStatus(): Promise<{ backup: string; hello: string; retention?: number }> { return { backup: 'unconfigured', hello: 'unavailable' }; }
+export async function nativeHelloStatus(): Promise<import('./hello-protocol.ts').HelloStatus> { return { available: false, enrolled: false, reason: 'protected-key-proof-required', helloConfiguration: 'not-probed', mode: 'off' }; }
+export async function verifyNativeHello(): Promise<import('./hello-protocol.ts').HelloVerification> { return { result: 'unknown', purpose: 'diagnostic-only', unlocked: false, enrolled: false }; }
+export async function openNativeHelloSettings(): Promise<void> { /* Not applicable to browsers. */ }
 export async function configureNativeBackup(): Promise<void> { /* Not applicable to browsers. */ }
 export async function retryNativeBackup(): Promise<void> { /* Not applicable to browsers. */ }
 export async function setNativeRetention(_retention: number): Promise<void> { /* Not applicable to browsers. */ }

@@ -44,6 +44,9 @@ export async function exportNativeFile(file: { bytes: Uint8Array; fileName: stri
 }
 export function openNativeExternal(url: string): void { void invoke('open_external', { url }).catch(() => {}); }
 export async function nativeStatus(): Promise<{ backup: string; hello: string; retention?: number }> { return invoke('native_status'); }
+export async function nativeHelloStatus(): Promise<import('../../pwa/src/hello-protocol.ts').HelloStatus> { return invoke('hello_status'); }
+export async function verifyNativeHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloVerification> { return invoke('hello_verify'); }
+export async function openNativeHelloSettings(): Promise<void> { await invoke('hello_settings'); }
 export async function configureNativeBackup(): Promise<void> { await invoke('configure_backup'); }
 export async function retryNativeBackup(): Promise<void> { await invoke('retry_backup'); }
 export async function setNativeRetention(retention: number): Promise<void> { await invoke('backup_retention', { retention }); }

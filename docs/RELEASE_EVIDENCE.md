@@ -1,5 +1,38 @@
 # Release evidence and gate status
 
+## Desktop layout and Windows Hello actions (2026-10-06)
+
+The desktop sidebar previously used a fixed 112-pixel top offset, which put it
+over the new module switcher. Header/module controls now span both grid columns;
+sidebar and content occupy separate columns beneath them in document flow.
+Long Russian labels and wrapping header actions remain within the viewport.
+
+Windows Settings now has an actual WinRT Hello configuration report, a refresh
+button, a diagnostic fingerprint/PIN OS prompt owned by the trusted HWND, and
+an action opening the fixed Windows sign-in settings destination. Consent is
+not used to release a secret. The UI accurately separates configured Hello
+from the still-unimplemented protected vault-unlock provider; no claim about
+reader model/TPM/ESS is made from a successful availability or consent result.
+
+Local PASS: typecheck, 161 TypeScript tests, 32 native tests (the existing 5 GiB
+resource test is intentionally ignored in this local unit run), Windows GNU
+cross-target Clippy with warnings denied, both production frontend builds and
+target isolation. Seven isolated UI tests pass, including actual app-shell
+geometry at 320/640/900/1311/1920 pixels and 125% zoom, configured/cancel/policy
+Hello states, visible OS-action failures and stale-result refusal after lock.
+The OS-settings failure regression first failed when an unrelated availability
+refresh immediately erased the error; it passes after restricting that refresh
+to completed settings actions. A browser control using the original CSS also
+reproduced sidebar overlap (top 112 px versus module bottom 160.19 px); the
+fixed sidebar starts at 198.19 px at the same 1311-pixel viewport.
+Those services are synthetic
+doubles and are not biometric-device evidence. All eight production PWA e2e
+scenarios also pass, including CSP/offline/passkeys/themes/restore/long timeout.
+The updated installed Windows smoke is pending for this change; results and
+exact artifact provenance will be added once complete. See
+[Hello implementation limits](windows/HELLO_SECURITY_DESIGN.md).
+
+
 This is the gate ledger required by `docs/spec/ACCEPTANCE_TESTS.md`. Every gate
 is **passed**, **partial**, **failed**, **not run** or **blocked**, with the
 evidence or the reason. "Passed" means an automated test or a recorded manual

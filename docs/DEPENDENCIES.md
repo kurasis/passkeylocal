@@ -5,6 +5,15 @@ Recorded 2026-10-04. All versions are pinned exactly; npm uses `package-lock.jso
 Dependency updates must be reviewed by hand and must rerun the full interop and
 tamper suites; no automatic deploy of dependency-bot changes.
 
+Windows diagnostics addition (2026-10-06): `windows` 0.62.2 and
+`windows-future` 0.3.2 are exact direct dependencies for WinRT
+UserConsentVerifier/desktop HWND interop and async completion. They already
+existed transitively in the locked desktop graph. These Microsoft maintained
+bindings use the OS implementation, introduce no cryptographic primitive or
+secret store, and are MIT/Apache-2.0 licensed. Hello consent is a diagnostic
+only, never authorization to release a vault key. The web target has no native
+dependency or IPC in its compiled output.
+
 ## Browser side (`packages/vault-adapter`)
 
 | Package | Version | Role | Notes |
