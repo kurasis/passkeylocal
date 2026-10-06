@@ -162,6 +162,8 @@ def test_catalog_graph_keys_and_exact_counters():
 
 def test_output_names_and_no_overwrite(tmp_path):
     assert safe_component("CON", "a" * 32).startswith("_CON--")
+    for name in ["COM¹.txt", "lpt².csv", "COM³", "CONIN$.txt", "conout$.log"]:
+        assert safe_component(name, "a" * 32).startswith("_"), name
     assert "/" not in safe_component("../a/b", "a" * 32)
     assert len(safe_component("😀" * 100, "a" * 32).encode()) < 255
     output = tmp_path / "out"

@@ -168,8 +168,10 @@ def safe_component(name: str, opaque: str) -> str:
         "PRN",
         "AUX",
         "NUL",
-        *(f"COM{i}" for i in range(1, 10)),
-        *(f"LPT{i}" for i in range(1, 10)),
+        "CONIN$",
+        "CONOUT$",
+        *(f"COM{i}" for i in [*range(1, 10), "¹", "²", "³"]),
+        *(f"LPT{i}" for i in [*range(1, 10), "¹", "²", "³"]),
     }:
         name = "_" + name
     # Full opaque suffix prevents case/Unicode collisions, including history.

@@ -253,6 +253,7 @@ fn five_gib_streaming_gate() {
         &ok,
     )
     .unwrap();
+    let encryption_seconds = start.elapsed().as_secs_f64();
     assert_eq!(n, size);
     let v = Version {
         id: id(),
@@ -263,6 +264,7 @@ fn five_gib_streaming_gate() {
         created_at: stamp(),
         media_hint: String::new(),
     };
+    let verification_start = std::time::Instant::now();
     decrypt_object(
         &mut open_read(&path).unwrap(),
         &mut std::io::sink(),
@@ -272,8 +274,15 @@ fn five_gib_streaming_gate() {
     )
     .unwrap();
     eprintln!(
-        "Verified 5 GiB in {:?}; bounded 1 MiB frames",
-        start.elapsed()
+        "FILE_SAFE_RESOURCE {}",
+        serde_json::json!({
+            "plaintext_bytes": size.to_string(),
+            "encryption_seconds": encryption_seconds,
+            "verification_seconds": verification_start.elapsed().as_secs_f64(),
+            "total_seconds": start.elapsed().as_secs_f64(),
+            "frame_bytes": CHUNK,
+            "status": "PASS"
+        })
     );
 }
 

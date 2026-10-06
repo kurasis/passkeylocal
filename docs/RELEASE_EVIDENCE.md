@@ -271,3 +271,5 @@ Local validation: 31 Linux native tests passed / one explicit resource test excl
 
 The first hosted Python jobs exposed a test-runner assumption: pytest adds the source tree to its own import path, but child CLI processes do not inherit it. The new CLI test helper/fresh fixture extractor now set their source PYTHONPATH explicitly, matching the existing KDBX helper. Offline kit verification already passed with its packaged source path. This changes test launch wiring, not format or crypto behavior.
 The Windows test run also exposed a fixture manifest read using the host code page; new fixture/report tests now read UTF-8 explicitly. Production format/report I/O already uses explicit UTF-8 bytes.
+
+Final review added Windows console/superscript device-name sanitization for independent extraction (COM¹/²/³, LPT¹/²/³, CONIN$/CONOUT$) and regression cases. Resource evidence now records actual hosted CPU/RAM/disks plus separate native encryption/verification timings; physical TPM/reader testing remains explicitly absent. These are follow-up verification changes, not a preview/Hello implementation.
