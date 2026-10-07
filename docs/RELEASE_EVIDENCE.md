@@ -40,9 +40,39 @@ unowned UI open. General CI [37606331048](https://github.com/kurasis/passkeyloca
 passed all ten jobs for the initial PR head `33d27d0`.
 
 Local Windows GNU Clippy with warnings denied and all eight portable proof-runner
-regressions **PASS**. Final Windows execution and the corrected target retest are
-initially **NOT RUN**; new CI results will be recorded after execution. The first
-failed/cancelled attempt remains a historical failure, not a successful proof.
+regressions **PASS**. Final Windows execution **PASS** in the run below. The
+corrected target retest remains **NOT RUN**. The first failed/cancelled attempt
+remains a historical failure, not a successful proof.
+
+General CI [37608090880](https://github.com/kurasis/passkeylocal/actions/runs/37608090880)
+and Windows CI [37608090808](https://github.com/kurasis/passkeylocal/actions/runs/37608090808)
+**PASS** for final head `2e6b5d6f906ec6b9668046352333f642f0e23717`, tested PR merge
+`f382542806af13eeab6455b6d5154a7ec6c1b291`. All 11 PR checks passed;
+[PR #9](https://github.com/kurasis/passkeylocal/pull/9) merged automatically.
+Actual main merge `685f42e8a8f56d24296c50baf56f10833e571c51` has the identical
+tested Git tree. Windows executed 44 native tests, including actual owned-key
+HWND context, creation/silent-reopened handle decryption, stale-generation
+rejection at the private-call boundary and fixture deletion. The existing 5 GiB
+test was ignored in the unit run but separately executed and passed. Fresh
+native KDBX/Python parity, encrypted-file interop/full 10,000-file restore/search
+(83.2139661 s / 0.2071379 s) and independent recovery (88 passed / 15 skipped)
+passed. General CI passed all 10 jobs, including 161 TypeScript tests, 11 isolated
+UI scenarios, eight production PWA e2e scenarios and cross-platform recovery.
+
+The hosted 5 GiB gate passed in 41.0743134 s with sampled peak working set
+10,555,392 bytes (24.2063635 s encryption / 16.0916477 s verification).
+NSIS installation and packaged smoke **PASS**. Both installed native experiments
+embed the exact build source and stop at `device-not-present` before app-key
+creation; all eligibility flags remain false. No successful target Passport
+unwrap, TPM binding or physical prompt-freshness proof is supplied by this CI.
+Downloaded installer: 217,836,722 bytes, SHA-256
+`d1736ae54140e26d94ff2531289891e1e8898fff15b2f5eaec00ed9e30df4672`, independently
+matched to the original checksum sidecar and build metadata. Build, smoke,
+resource and signed official WebView2 metadata name the tested source.
+[Windows download/evidence folder](../deploy/windows-desktop/README.md) is updated.
+The existing Cloudflare ZIP still matches all ten current production files and
+its checksum sidecar; web source is unchanged. Physical TPM/freshness/process/
+account acceptance and actual vault enrollment/unlock remain **BLOCKED**.
 
 ## Source-correlated silent decrypt and authorized capability diagnostic (2026-10-07)
 
