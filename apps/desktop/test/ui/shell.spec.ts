@@ -349,6 +349,7 @@ test('TPM diagnostic needs no Hello enrollment and cannot enable real unlock', a
   await hello.getByText('Технический отчёт', { exact: true }).click();
   const report = JSON.parse(await hello.locator('pre').innerText());
   expect(report.purpose).toBe('synthetic-tpm-inner');
+  expect(report.tpm).toMatchObject({ exportPolicy: 0, keyUsage: 1 });
   expect(report.checks).toHaveLength(11);
   expect(report.exportChecks.every((c: { result: string }) => c.result === 'refused')).toBe(true);
   expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false, false, false]);

@@ -123,7 +123,7 @@ export async function proveNativeTpmInner(): Promise<HelloKeyProof> {
   if (defer) await new Promise<void>((resolve) => { release = resolve; });
   const capability = await nativeTpmCapability(); tpmCapabilities--;
   return { ...capability, purpose: 'synthetic-tpm-inner', outcome: proofCleanupFailed ? 'blocked' : 'tpm-inner-roundtrip-passed',
-    tpm: { ...capability.tpm, keyNameBytes: 34, exportPolicy: 0, keyUsage: 2 },
+    tpm: { ...capability.tpm, keyNameBytes: 34, exportPolicy: 0, keyUsage: 1 },
     exportChecks: (['rsa-private', 'rsa-full-private', 'pkcs8-private'] as const).map((format) => ({ format, result: 'refused', nativeCode: '0x80090010' })),
     checks: [...capability.checks, ...(['tpm-key-create', 'tpm-key-policy', 'tpm-key-readback', 'tpm-public-wrap', 'tpm-unwrap-first', 'tpm-reopen-unwrap', 'tpm-negative-controls', 'private-export'] as const).map((test) => ({ test, status: 'passed' as const })),
       { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
