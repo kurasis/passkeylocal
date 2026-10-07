@@ -63,7 +63,10 @@ name/path, ciphertext, secret, algorithm or provider from the renderer.
   in Passport; all production decrypts still use `NCryptDecrypt` on the original
   Passport key. This is not a software private-key fallback. Test full-buffer
   private decrypts, not size queries that may bypass authorization checks.
-- Reopen the app key before each private operation. Silent attempts before and
+- Reopen the app key for each silent operation. Authorized decrypts use the
+  flags-zero creation handle, whose parent HWND is set before finalization;
+  key context and the fresh-gesture request are set again for every decrypt.
+  Check the exact mandatory stored policy on each selected handle. Silent attempts before and
   after each authorized decrypt must return `NTE_SILENT_CONTEXT`. Unexpected
   success or any other error stops the proof. Normal decrypts request
   `PinCacheIsGestureRequired`, use owned-window context and must match the random
@@ -194,23 +197,32 @@ prompt does not establish an authorized private unwrap or a successful secret
 comparison. The owner result is not independently reproduced by CI.
 
 Code review found that the authorized decrypt used a key handle opened with
-`NCRYPT_SILENT_FLAG`, even though `NCryptDecrypt` itself allowed UI. Align these
-two calls: silent attempts still open and decrypt with the silent flag, whereas
-authorized attempts open with flags zero and decrypt with OAEP only. Set the
-native parent HWND on the provider before a UI-permitted key open and on the
-returned key before decrypt. Re-read the mandatory stored key policy and request
-a fresh gesture as before. A rejected provider HWND property is a blocker,
-reported as `decrypt-provider-window-handle`; authorized/silent opens have
-distinct operation names. Never retry an unsupported context without ownership.
+`NCRYPT_SILENT_FLAG`, even though `NCryptDecrypt` itself allowed UI. Authorized
+decrypts now borrow the original flags-zero creation handle, whose native parent
+HWND was set before finalization. Set the key's context and fresh-gesture request
+again before each decrypt, and re-read its exact mandatory policy. Silent probes
+continue reopening independent handles and use silent decrypt, without a gesture
+request. Borrowing the original handle never duplicates ownership or frees it
+early. It remains alive until exact app-key cleanup.
+
+A real Windows API test rejected the attempted provider-level parent HWND with
+`NTE_NOT_SUPPORTED`. That route was removed, rather than opening with permitted
+UI before a parent could be set. The final route uses key-level HWND context;
+it performs no authorized key open and no provider-level HWND setup. Native
+session identity is checked again immediately before the private call, including
+after context/gesture setters. Session interruption returns no accepted result
+and never skips cleanup.
 
 The [NCryptOpenKey documentation](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenkey)
 describes the silent flag as a request to suppress KSP UI. The
 [parent HWND property](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers#ncrypt_window_handle_property)
-defines ownership for provider UI. The pinned KeePassWinHello candidate opens
+defines ownership for key UI. The pinned KeePassWinHello candidate opens
 its authorized key with flags zero, but uses different padding, so that source
 does not prove this target supports OAEP. The SDK does not promise that a
-silent-open handle caused the owner's parameter error; this is a controlled
-parameter correction, **not a confirmed root cause or target fix**.
+silent-open handle caused the owner's parameter error; using the owned creation
+handle is a controlled parameter correction, **not a confirmed root cause or
+target fix**. Repeated prompts on that handle, silent attempts on reopened
+handles and fresh-process behavior still require independent physical proof.
 
 Repeat **Test OAEP with confirmation** in the latest installer and share the
 full JSON, including build source and failed operation, and whether any Windows

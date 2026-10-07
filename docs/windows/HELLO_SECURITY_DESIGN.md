@@ -3,9 +3,11 @@
 The owner also reports a completed fingerprint prompt during the separate
 `fbd4347` capability test, followed by actual authorized OAEP decrypt parameter
 failure. The prompt's originating native operation is unknown, and no secret
-comparison passed. Authorized key opens now allow UI with a provider parent HWND
-set beforehand; silent opens remain silent. This fixes the experiment's mixed
-UI modes without changing padding or eligibility, and still needs target proof.
+comparison passed. Authorized decrypts now use the owned flags-zero creation
+handle, with key context/gesture requirements reset per call; silent probes
+reopen independent handles. Provider-level HWND setup was rejected by a real
+Windows API test and removed. No authorized open occurs before parent ownership
+can be set. Padding/eligibility are unchanged, and target proof is still needed.
 
 The source-correlated owner report from build `0a3bf26` reaches actual silent
 `NCryptDecrypt` and returns `NTE_INVALID_PARAMETER`; this is not authorization
