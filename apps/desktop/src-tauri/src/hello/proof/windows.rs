@@ -16,6 +16,55 @@ use zeroize::Zeroizing;
 const CACHE_TYPE: PCWSTR = w!("NgcCacheType");
 static PENDING_DELETE: Mutex<Option<Vec<u16>>> = Mutex::new(None);
 
+/// Selected only by the fixed native experiment, never by IPC arguments.
+/// The primary proof and authorized OAEP action always retain OAEP/SHA-256.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RsaPadding {
+    OaepSha256,
+    Pkcs1Compatibility,
+}
+impl RsaPadding {
+    fn for_experiment(experiment: Experiment) -> Self {
+        match experiment {
+            Experiment::Pkcs1Compatibility => Self::Pkcs1Compatibility,
+            _ => Self::OaepSha256,
+        }
+    }
+    fn info(self) -> Option<BCRYPT_OAEP_PADDING_INFO> {
+        match self {
+            Self::OaepSha256 => Some(BCRYPT_OAEP_PADDING_INFO {
+                pszAlgId: BCRYPT_SHA256_ALGORITHM,
+                ..Default::default()
+            }),
+            Self::Pkcs1Compatibility => None,
+        }
+    }
+    fn encrypt_flags(self) -> BCRYPT_FLAGS {
+        match self {
+            Self::OaepSha256 => BCRYPT_PAD_OAEP,
+            Self::Pkcs1Compatibility => BCRYPT_PAD_PKCS1,
+        }
+    }
+    fn decrypt_flags(self) -> NCRYPT_FLAGS {
+        match self {
+            Self::OaepSha256 => NCRYPT_PAD_OAEP_FLAG,
+            Self::Pkcs1Compatibility => NCRYPT_PAD_PKCS1_FLAG,
+        }
+    }
+    fn encrypt_operation(self) -> &'static str {
+        match self {
+            Self::OaepSha256 => "public-oaep-sha256-encrypt",
+            Self::Pkcs1Compatibility => "public-pkcs1-v1_5-encrypt",
+        }
+    }
+    fn decrypt_operation(self) -> &'static str {
+        match self {
+            Self::OaepSha256 => "authorized-oaep-sha256-decrypt",
+            Self::Pkcs1Compatibility => "authorized-pkcs1-v1_5-decrypt",
+        }
+    }
+}
+
 struct Handle(usize);
 impl Drop for Handle {
     fn drop(&mut self) {
@@ -96,7 +145,7 @@ fn private_key<'a>(
 fn decrypt_current(
     key: NCRYPT_KEY_HANDLE,
     ciphertext: &[u8],
-    padding: &BCRYPT_OAEP_PADDING_INFO,
+    padding: Option<&BCRYPT_OAEP_PADDING_INFO>,
     plaintext: &mut [u8],
     actual: &mut u32,
     flags: NCRYPT_FLAGS,
@@ -113,7 +162,7 @@ fn decrypt_current(
         NCryptDecrypt(
             key,
             Some(ciphertext),
-            Some((padding as *const BCRYPT_OAEP_PADDING_INFO).cast()),
+            padding.map(|info| (info as *const BCRYPT_OAEP_PADDING_INFO).cast()),
             Some(plaintext),
             actual,
             flags,
@@ -127,6 +176,7 @@ fn decrypt_current(
 fn wrap_public_key(
     key: NCRYPT_KEY_HANDLE,
     secret: &[u8; 32],
+    scheme: RsaPadding,
 ) -> std::result::Result<Vec<u8>, Failure> {
     // Bounded RSA public blob: header, exponent and 2048-bit modulus. Never
     // request a private/full-private blob or persist/return the public blob.
@@ -176,21 +226,23 @@ fn wrap_public_key(
     .map_err(|e| failed(e).at("public-key-import"))?;
     // Declared after the algorithm: release this key before its provider.
     let public = PublicKey(public);
-    let padding = Probe::padding();
+    let padding = scheme.info();
     let mut ciphertext = vec![0; 256];
     unsafe {
         BCryptEncrypt(
             public.0,
             Some(secret),
-            Some((&padding as *const BCRYPT_OAEP_PADDING_INFO).cast()),
+            padding
+                .as_ref()
+                .map(|info| (info as *const BCRYPT_OAEP_PADDING_INFO).cast()),
             None,
             Some(&mut ciphertext),
             &mut actual,
-            BCRYPT_PAD_OAEP,
+            scheme.encrypt_flags(),
         )
     }
     .ok()
-    .map_err(|e| failed(e).at("public-oaep-sha256-encrypt"))?;
+    .map_err(|e| failed(e).at(scheme.encrypt_operation()))?;
     if actual != 256 {
         return Err(Failure::failed().at("public-ciphertext-length"));
     }
@@ -205,6 +257,7 @@ struct Probe<'a> {
     hwnd: usize,
     secret: Zeroizing<[u8; 32]>,
     ciphertext: Vec<u8>,
+    scheme: RsaPadding,
     current: &'a dyn Fn() -> bool,
 }
 fn failed(error: windows_core::Error) -> Failure {
@@ -369,11 +422,9 @@ impl Probe<'_> {
         }
         Ok(())
     }
+    #[cfg(test)]
     fn padding() -> BCRYPT_OAEP_PADDING_INFO {
-        BCRYPT_OAEP_PADDING_INFO {
-            pszAlgId: BCRYPT_SHA256_ALGORITHM,
-            ..Default::default()
-        }
+        RsaPadding::OaepSha256.info().unwrap()
     }
     fn decrypt(&self, silent: bool) -> std::result::Result<(), Failure> {
         let selected = private_key(
@@ -417,20 +468,20 @@ impl Probe<'_> {
         }
         // Use an actual output buffer. A size-only query can succeed without
         // authorizing a private-key operation and is not an unwrap proof.
-        let padding = Self::padding();
+        let padding = self.scheme.info();
         let mut plaintext = Zeroizing::new([0u8; 256]);
         let mut actual = 0;
         let flags = if silent {
-            NCRYPT_PAD_OAEP_FLAG | NCRYPT_SILENT_FLAG
+            self.scheme.decrypt_flags() | NCRYPT_SILENT_FLAG
         } else {
-            NCRYPT_PAD_OAEP_FLAG
+            self.scheme.decrypt_flags()
         };
         // Context/gesture setup may have outlived a lock. Check again before
         // starting any private operation, even within this report stage.
         let result = decrypt_current(
             NCRYPT_KEY_HANDLE(key.0),
             &self.ciphertext,
-            &padding,
+            padding.as_ref(),
             plaintext.as_mut_slice(),
             &mut actual,
             flags,
@@ -439,7 +490,7 @@ impl Probe<'_> {
         if silent {
             return require_silent_refusal(result);
         }
-        result.map_err(|e| failed(e).at("authorized-oaep-sha256-decrypt"))?;
+        result.map_err(|e| failed(e).at(self.scheme.decrypt_operation()))?;
         if actual != 32 || !libsodium_rs::utils::memcmp(&plaintext[..32], self.secret.as_slice()) {
             return Err(Failure::failed().at("decrypt-secret-mismatch"));
         }
@@ -550,7 +601,8 @@ impl Provider for Probe<'_> {
                 }
             }
             Stage::PublicWrap => {
-                self.ciphertext = wrap_public_key(NCRYPT_KEY_HANDLE(self.key.0), &self.secret)?;
+                self.ciphertext =
+                    wrap_public_key(NCRYPT_KEY_HANDLE(self.key.0), &self.secret, self.scheme)?;
             }
             Stage::PrivateExport => self.export_denied()?,
             Stage::SilentBefore | Stage::SilentAfterFirst | Stage::SilentAfterSecond => {
@@ -605,11 +657,14 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool, experiment: Experiment) -> R
         hwnd,
         secret,
         ciphertext: Vec::new(),
+        scheme: RsaPadding::for_experiment(experiment),
         current: &current,
     };
     Ok(match experiment {
         Experiment::SecurityProof => exercise(&mut probe, &current),
-        Experiment::AuthorizedOaepCapability => exercise_selected(&mut probe, &current, experiment),
+        Experiment::AuthorizedOaepCapability | Experiment::Pkcs1Compatibility => {
+            exercise_selected(&mut probe, &current, experiment)
+        }
     })
 }
 
@@ -709,7 +764,7 @@ mod tests {
             .unwrap();
             NCryptFinalizeKey(key, NCRYPT_FLAGS(0)).unwrap();
             let secret = Zeroizing::new([0x6bu8; 32]);
-            let ciphertext = wrap_public_key(key, &secret).unwrap();
+            let ciphertext = wrap_public_key(key, &secret, RsaPadding::OaepSha256).unwrap();
             let padding = Probe::padding();
             for silent in [false, true] {
                 let selected =
@@ -750,7 +805,7 @@ mod tests {
             let error = decrypt_current(
                 NCRYPT_KEY_HANDLE(0),
                 &[0],
-                &padding,
+                Some(&padding),
                 untouched.as_mut_slice(),
                 &mut length,
                 NCRYPT_PAD_OAEP_FLAG,
@@ -769,7 +824,7 @@ mod tests {
             assert!(decrypt_current(
                 NCRYPT_KEY_HANDLE(0),
                 &[0],
-                &padding,
+                Some(&padding),
                 untouched.as_mut_slice(),
                 &mut length,
                 NCRYPT_PAD_OAEP_FLAG,
@@ -829,7 +884,7 @@ mod tests {
             .unwrap();
             NCryptFinalizeKey(key, NCRYPT_FLAGS(0)).unwrap();
             let secret = Zeroizing::new([0x5au8; 32]);
-            let mut ciphertext = wrap_public_key(key, &secret).unwrap();
+            let mut ciphertext = wrap_public_key(key, &secret, RsaPadding::OaepSha256).unwrap();
             let padding = Probe::padding();
             let mut plaintext = Zeroizing::new([0u8; 256]);
             let mut actual = 0;
@@ -877,6 +932,70 @@ mod tests {
                 Some("silent-oaep-sha256-decrypt")
             );
             assert!(require_silent_refusal(Err(NTE_SILENT_CONTEXT.into())).is_ok());
+            // The separately selected legacy diagnostic uses SDK PKCS#1
+            // encryption/decryption with null padding info. Compare both
+            // schemes on the same real API key: wrong-scheme decrypts fail.
+            assert!(
+                RsaPadding::for_experiment(Experiment::SecurityProof) == RsaPadding::OaepSha256
+            );
+            assert!(
+                RsaPadding::for_experiment(Experiment::AuthorizedOaepCapability)
+                    == RsaPadding::OaepSha256
+            );
+            let legacy = RsaPadding::for_experiment(Experiment::Pkcs1Compatibility);
+            assert!(legacy == RsaPadding::Pkcs1Compatibility);
+            assert!(legacy.info().is_none());
+            let legacy_ciphertext = wrap_public_key(key, &secret, legacy).unwrap();
+            decrypt_current(
+                key,
+                &legacy_ciphertext,
+                None,
+                plaintext.as_mut_slice(),
+                &mut actual,
+                legacy.decrypt_flags(),
+                &|| true,
+            )
+            .unwrap()
+            .unwrap();
+            assert_eq!(actual, 32);
+            assert!(libsodium_rs::utils::memcmp(
+                &plaintext[..32],
+                secret.as_slice()
+            ));
+            assert!(decrypt_current(
+                key,
+                &ciphertext,
+                None,
+                plaintext.as_mut_slice(),
+                &mut actual,
+                legacy.decrypt_flags(),
+                &|| true
+            )
+            .unwrap()
+            .is_err());
+            assert!(decrypt(
+                &legacy_ciphertext,
+                &padding,
+                plaintext.as_mut_slice(),
+                &mut actual
+            )
+            .is_err());
+            // No scheme can bypass the actual private-call generation guard.
+            let mut untouched = Zeroizing::new([0x7au8; 256]);
+            let mut untouched_length = 123;
+            let stale = decrypt_current(
+                key,
+                &legacy_ciphertext,
+                None,
+                untouched.as_mut_slice(),
+                &mut untouched_length,
+                legacy.decrypt_flags(),
+                &|| false,
+            )
+            .unwrap_err();
+            assert_eq!(stale.status, Outcome::Interrupted);
+            assert_eq!(untouched_length, 123);
+            assert!(untouched.iter().all(|byte| *byte == 0x7a));
             let wrong_hash = BCRYPT_OAEP_PADDING_INFO {
                 pszAlgId: BCRYPT_SHA1_ALGORITHM,
                 ..Default::default()

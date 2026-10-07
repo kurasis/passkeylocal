@@ -86,7 +86,9 @@ references are [NCryptDecrypt](https://learn.microsoft.com/en-us/windows/win32/a
 and the [current SDK ncrypt.h](https://github.com/microsoft/win32metadata/blob/main/generation/WinSDK/RecompiledIdlHeaders/um/ncrypt.h).
 The provider-specific `NgcCacheType` property is a candidate observed in
 [KeePassWinHello](https://github.com/Angelelz/KeePassWinHello/blob/581faa6d67eff58af8b6b8240a860f2cbd5925b0/src/AuthProviders/WinHelloProvider.cs),
-not a public SDK guarantee. No deprecated alias or weaker padding is tried.
+not a public SDK guarantee. Neither OAEP action tries a deprecated alias or
+weaker padding after a failure. The separate legacy compatibility action below
+is explicitly selected and cannot substitute for either OAEP action.
 The candidate's presence/readback does not prove its security semantics.
 
 ## Reported target failure and public-wrap correction (2026-10-07)
@@ -230,6 +232,64 @@ prompt appeared. RSA-OAEP/SHA-256, public-only BCrypt wrap, secret comparison,
 export policy, primary silent refusal requirements and native cleanup/epoch/
 single-flight guards are unchanged. No PKCS#1 v1.5, SHA-1 or software-private-key
 fallback is introduced. Vault enrollment/unlock remains unavailable.
+
+## Creation-handle target result and legacy compatibility discovery (2026-10-07)
+
+The next [owner-supplied report](../../deploy/windows-desktop/hello-target-f382542.json)
+names delivered PR #9 source `f382542806af13eeab6455b6d5154a7ec6c1b291`.
+The authorized OAEP action passes configuration, provider open, key creation,
+policy/readback and public wrap, but actual `authorized-oaep-sha256-decrypt`
+again fails with `NTE_INVALID_PARAMETER` (`0x80090027`). Cleanup passes; skipped
+silent/export/second-decrypt checks remain NOT RUN and eligibility stays false.
+The creation-handle correction therefore did **not** resolve the target failure.
+This report includes no observation about a new fingerprint prompt; the earlier
+reported prompt belongs to the `fbd4347` run. Neither report proves which exact
+parameter is rejected or that Passport universally lacks OAEP.
+
+Three pinned implementation references use RSA-PKCS#1 v1.5 with null padding
+information for Passport private decrypt: the existing
+[KeePassWinHello reference](https://github.com/Angelelz/KeePassWinHello/blob/581faa6d67eff58af8b6b8240a860f2cbd5925b0/src/AuthProviders/WinHelloProvider.cs),
+[Keyguard](https://github.com/AChep/keyguard-app/blob/7a08ecb9724125fd114eeb606e592413ca0c9d40/desktopLibNative/src/src/biometrics/windows.rs),
+and [ByteNess/keyring](https://github.com/ByteNess/keyring/blob/199d6f55ce4706c00e12b0ab0ce9f00e939b2745/winhello/wrap.go).
+These are candidate implementations, not a Microsoft contract or independent
+security review. Keyguard also creates decrypt-only RSA-2048 keys with mandatory
+cache policy, so these references do not justify permitting signing. The SDK's
+NCrypt algorithm enumeration reports algorithm classes/names, not supported
+OAEP hashes or padding combinations.
+
+The new **Test PKCS#1 compatibility** button invokes the separate argument-free
+`hello_pkcs1_compatibility` command. It creates its own unique app test key using
+the same Passport provider, exact authorization/export policy, public-only
+BCrypt wrap, 32 random synthetic bytes and bounded real private-decrypt buffer.
+Only this explicitly chosen experiment uses SDK PKCS#1 v1.5 padding and null
+padding info. It attempts one authorized decrypt and constant-time comparison,
+then deletes its own key. Native focus/trust, single-flight, generation and
+cleanup guards still apply.
+
+The report identifies `purpose: synthetic-pkcs1-compatibility`,
+`algorithm: rsa-pkcs1-v1_5` and `outcome: compatibility-passed` only if comparison
+and cleanup succeed. Errors distinguish `public-pkcs1-v1_5-encrypt` and
+`authorized-pkcs1-v1_5-decrypt`; cancellation/interruption stop and run cleanup.
+Silent/export/second-decrypt stages remain NOT RUN, all four physical gates
+remain open, and eligibility/enrollment/unlock remain false. New OAEP reports
+name `algorithm: rsa-oaep-sha256`; older reports without the additive field
+remain readable.
+
+This is **legacy compatibility discovery, not an approved vault wrapping
+construction**. PKCS#1 v1.5 is more vulnerable to padding-oracle attacks than
+OAEP; compatibility cannot approve production use. No vault credential/envelope
+is supplied, no caller-controlled ciphertext/padding is accepted, and no
+plaintext is returned/persisted. Existing OAEP actions retain their padding and
+stop on failure; neither invokes compatibility as a fallback. A compatibility
+pass alongside the reported OAEP failure supports a target padding-path
+difference, without resolving every provider parameter or enabling enrollment.
+
+Fully close the old process and install the latest Windows build. In Settings
+click **Test PKCS#1 compatibility** once and share its full JSON and whether a
+system prompt appeared. Do not repeat the unchanged OAEP action solely to
+reproduce the recorded failure. A test-only software CNG regression checks both
+schemes on the same RSA key, rejects cross-scheme decrypts and stale-generation
+output, without claiming Passport/TPM/gesture evidence.
 
 ## What a successful report does not establish
 

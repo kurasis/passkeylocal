@@ -1,5 +1,42 @@
 # Release evidence and gate status
 
+## Repeated authorized OAEP failure and explicit legacy compatibility (2026-10-07)
+
+The [owner report](../deploy/windows-desktop/hello-target-f382542.json) from
+published source `f382542806af13eeab6455b6d5154a7ec6c1b291` again fails actual
+`authorized-oaep-sha256-decrypt` with `0x80090027` after public wrap and policy
+readback pass. Cleanup passes. The owned creation-handle change did not resolve
+the target failure; this report adds no new prompt observation. Skipped checks
+remain NOT RUN and eligibility/enrollment/unlock remain false. It is reported
+target evidence, not an independently executed cloud hardware test.
+
+Added a separate argument-free `hello_pkcs1_compatibility` action, based on
+pinned Passport clients using SDK PKCS#1 v1.5, to discover a target padding-path
+difference using only a random synthetic secret. It shares exact app-owned key
+policy, public-only wrap, one authorized private decrypt, cleanup and native
+focus/single-flight/session guards. Its report names the legacy algorithm and
+distinct compatibility purpose/outcome; it does not approve that scheme for
+vault protection, pass skipped checks, return plaintext or enable enrollment.
+Both OAEP actions retain OAEP/SHA-256 and never invoke this as a fallback.
+
+Added portable regressions for explicit compatibility versus OAEP outcomes,
+every stage failure/deletion failure, cancellation and invalidation around the
+private call. Extended the real test-only Windows software CNG regression to
+compare both schemes on the same key, reject cross-scheme decrypts and leave
+stale-generation output untouched. Added isolated UI regressions for explicit
+legacy labels, unchanged eligibility/skipped gates, no automatic invocation,
+shared busy state, cleanup failure, narrow layout and discard after Lock all.
+Installed Windows smoke now checks the third fixed command and exact source
+identifier stops before key creation when Hello is absent.
+
+Local typecheck, Windows GNU Clippy with warnings denied, all nine portable
+proof-runner regressions, 13 isolated UI scenarios and both production frontend
+builds/target isolation **PASS**. Windows API execution/installed smoke and
+general CI: **PENDING**. Target PKCS#1 compatibility:
+**NOT RUN**. Per-key TPM, fresh authorization, fresh process and account/machine
+acceptance and actual enrollment/unlock: **BLOCKED**. See
+[the experiment limits](windows/HELLO_KEY_PROBE.md).
+
 ## Authorized OAEP failure and owned creation handle (2026-10-07)
 
 Owner evidence from published source `fbd4347fa0e1507a25885e26fc4d0df66c19f1fe`:

@@ -139,3 +139,46 @@ test('OAEP capability shares single flight and discards a result after Lock all'
   await expect(page.getByText('Подтверждена только поддержка алгоритма;', { exact: false })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ capabilities: 1, proofs: 0, verifies: 0 });
 });
+
+test('PKCS#1 compatibility needs its own action and never claims OAEP or unlock eligibility', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  // The OAEP action cannot silently run the legacy experiment.
+  await hello.getByRole('button', { name: 'Проверить OAEP с подтверждением', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).helloTest.counts().compatibilities)).toBe(0);
+  await hello.getByRole('button', { name: 'Проверить совместимость PKCS#1', exact: true }).click();
+  await expect(hello.getByText('Подтверждена только совместимость со старым алгоритмом;', { exact: false })).toBeVisible();
+  await expect(hello.getByText('Шифрование тестового секрета (RSA-PKCS#1 v1.5, только совместимость)', { exact: true })).toBeVisible();
+  await expect(hello.locator('.hello-proof-checks')).not.toContainText('OAEP');
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report).toMatchObject({ purpose: 'synthetic-pkcs1-compatibility', algorithm: 'rsa-pkcs1-v1_5', outcome: 'compatibility-passed', eligible: false, enrolled: false, unlocked: false });
+  for (const stage of ['silent-before', 'unwrap-second', 'private-export']) {
+    expect(report.checks.find((check: { test: string }) => check.test === stage).status).toBe('not-run');
+  }
+  expect(report.remaining).toHaveLength(4);
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ capabilities: 1, compatibilities: 1, proofs: 0, verifies: 0 });
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await hello.getByRole('button', { name: 'Проверить совместимость PKCS#1', exact: true }).click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+});
+
+test('PKCS#1 compatibility shares single flight and discards late results after Lock all', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  const compatibility = page.getByRole('button', { name: 'Проверить совместимость PKCS#1', exact: true });
+  await compatibility.click();
+  for (const name of ['Проверить совместимость PKCS#1', 'Проверить OAEP с подтверждением', 'Проверить защищённый ключ', 'Проверить отпечаток или PIN']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
+  }
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.getByText('Подтверждена только совместимость со старым алгоритмом;', { exact: false })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ compatibilities: 1, capabilities: 0, proofs: 0, verifies: 0 });
+});

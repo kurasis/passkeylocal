@@ -1,5 +1,15 @@
 # Windows Hello eligibility decision
 
+The source-correlated `f382542` target retest still fails actual authorized
+OAEP decrypt with `NTE_INVALID_PARAMETER` on the owned creation handle. That
+change did not solve the target failure. A separately selected synthetic
+PKCS#1 v1.5 compatibility action investigates the padding-path difference
+suggested by pinned Passport-client implementations. It cannot approve this
+legacy scheme for vault access, pass skipped gates or act as an OAEP fallback.
+No vault material is used. Both OAEP actions retain their algorithms and actual
+enrollment/unlock remains blocked. See [the recorded result and compatibility
+procedure](HELLO_KEY_PROBE.md#creation-handle-target-result-and-legacy-compatibility-discovery-2026-10-07).
+
 The owner also reports a completed fingerprint prompt during the separate
 `fbd4347` capability test, followed by actual authorized OAEP decrypt parameter
 failure. The prompt's originating native operation is unknown, and no secret

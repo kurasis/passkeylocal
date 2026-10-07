@@ -17,6 +17,7 @@ let proofOutcome: HelloKeyProof['outcome'] = 'blocked';
 let proofCleanupFailed = false;
 let proofs = 0;
 let capabilities = 0;
+let compatibilities = 0;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
   checks++;
   return { available: false, enrolled: false, reason: 'protected-key-proof-required', helloConfiguration: configuration, mode: 'off' };
@@ -45,6 +46,15 @@ export async function testNativeHelloOaep(): Promise<HelloKeyProof> {
       { test: 'unwrap-first', status: 'passed' }, { test: 'private-export', status: 'not-run' },
       { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
 }
+export async function testNativeHelloPkcs1(): Promise<HelloKeyProof> {
+  compatibilities++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  return { version: 1, purpose: 'synthetic-pkcs1-compatibility', algorithm: 'rsa-pkcs1-v1_5', eligible: false, unlocked: false, enrolled: false,
+    outcome: 'compatibility-passed', remaining: ['per-key-tpm-proof', 'fresh-authorization-proof', 'fresh-process-proof', 'account-machine-copy-proof'],
+    checks: [{ test: 'public-wrap', status: 'passed' }, { test: 'silent-before', status: 'not-run' },
+      { test: 'unwrap-first', status: 'passed' }, { test: 'unwrap-second', status: 'not-run' }, { test: 'private-export', status: 'not-run' },
+      { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
+}
 Object.assign(window, { helloTest: {
   configure(value: HelloConfiguration) { configuration = value; },
   outcome(value: HelloVerificationResult) { verification = value; },
@@ -53,5 +63,5 @@ Object.assign(window, { helloTest: {
   proofOutcome(value: HelloKeyProof['outcome']) { proofOutcome = value; },
   failCleanup() { proofCleanupFailed = true; },
   release() { release?.(); },
-  counts() { return { settingsOpened, checks, verifies, proofs, capabilities }; },
+  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities }; },
 } });
