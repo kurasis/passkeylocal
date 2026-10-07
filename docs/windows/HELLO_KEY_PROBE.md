@@ -181,6 +181,44 @@ open and all eligibility/enrollment/unlock flags false. It establishes only
 that this target can decrypt the chosen algorithm in the authorized call path.
 It cannot replace the primary proof's required silent-access refusal.
 
+## Authorized failure and UI-mode alignment (2026-10-07)
+
+The owner reports seeing and completing a fingerprint prompt during the
+independent capability test from source
+`fbd4347fa0e1507a25885e26fc4d0df66c19f1fe`. The report passes public wrap but
+fails the actual `authorized-oaep-sha256-decrypt` with `0x80090027`;
+cleanup passes and all enrollment/unlock eligibility stays false. The report
+does not identify which native operation displayed that prompt; app-key
+finalization can request consent before decryption. Thus seeing a successful
+prompt does not establish an authorized private unwrap or a successful secret
+comparison. The owner result is not independently reproduced by CI.
+
+Code review found that the authorized decrypt used a key handle opened with
+`NCRYPT_SILENT_FLAG`, even though `NCryptDecrypt` itself allowed UI. Align these
+two calls: silent attempts still open and decrypt with the silent flag, whereas
+authorized attempts open with flags zero and decrypt with OAEP only. Set the
+native parent HWND on the provider before a UI-permitted key open and on the
+returned key before decrypt. Re-read the mandatory stored key policy and request
+a fresh gesture as before. A rejected provider HWND property is a blocker,
+reported as `decrypt-provider-window-handle`; authorized/silent opens have
+distinct operation names. Never retry an unsupported context without ownership.
+
+The [NCryptOpenKey documentation](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenkey)
+describes the silent flag as a request to suppress KSP UI. The
+[parent HWND property](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers#ncrypt_window_handle_property)
+defines ownership for provider UI. The pinned KeePassWinHello candidate opens
+its authorized key with flags zero, but uses different padding, so that source
+does not prove this target supports OAEP. The SDK does not promise that a
+silent-open handle caused the owner's parameter error; this is a controlled
+parameter correction, **not a confirmed root cause or target fix**.
+
+Repeat **Test OAEP with confirmation** in the latest installer and share the
+full JSON, including build source and failed operation, and whether any Windows
+prompt appeared. RSA-OAEP/SHA-256, public-only BCrypt wrap, secret comparison,
+export policy, primary silent refusal requirements and native cleanup/epoch/
+single-flight guards are unchanged. No PKCS#1 v1.5, SHA-1 or software-private-key
+fallback is introduced. Vault enrollment/unlock remains unavailable.
+
 ## What a successful report does not establish
 
 Per-key TPM attestation/non-migration, reliable fresh prompt enforcement,

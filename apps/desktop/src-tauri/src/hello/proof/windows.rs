@@ -43,6 +43,36 @@ impl Drop for PublicKey {
     }
 }
 
+/// A private operation's UI mode applies to both opening and decrypting.
+/// Set a native parent before a UI-permitted open, not only afterwards on
+/// the returned key. Unsupported provider context is a blocker, not a retry
+/// without ownership. Production callers always use the fixed Passport KSP.
+fn open_test_key(
+    provider: NCRYPT_PROV_HANDLE,
+    name: PCWSTR,
+    hwnd: usize,
+    silent: bool,
+) -> std::result::Result<Handle, Failure> {
+    let (flags, operation) = if silent {
+        (NCRYPT_SILENT_FLAG, "decrypt-key-open-silent")
+    } else {
+        unsafe {
+            NCryptSetProperty(
+                NCRYPT_HANDLE(provider.0),
+                NCRYPT_WINDOW_HANDLE_PROPERTY,
+                &hwnd.to_le_bytes(),
+                NCRYPT_FLAGS(0),
+            )
+        }
+        .map_err(|e| failed(e).at("decrypt-provider-window-handle"))?;
+        (NCRYPT_FLAGS(0), "decrypt-key-open-authorized")
+    };
+    let mut key = NCRYPT_KEY_HANDLE(0);
+    unsafe { NCryptOpenKey(provider, &mut key, name, CERT_KEY_SPEC(0), flags) }
+        .map_err(|e| failed(e).at(operation))?;
+    Ok(Handle(key.0))
+}
+
 /// Encrypt using only the app key's public RSA component. Passport remains
 /// the sole owner of the private key and the sole production decrypt provider.
 /// Public encryption needs no Hello authorization or private-key operation.
@@ -259,19 +289,13 @@ impl Probe {
         }
         Ok(u32::from_le_bytes(bytes))
     }
-    fn open(&self) -> std::result::Result<Handle, Failure> {
-        let mut key = NCRYPT_KEY_HANDLE(0);
-        unsafe {
-            NCryptOpenKey(
-                NCRYPT_PROV_HANDLE(self.provider.0),
-                &mut key,
-                PCWSTR(self.name.as_ptr()),
-                CERT_KEY_SPEC(0),
-                NCRYPT_SILENT_FLAG,
-            )
-        }
-        .map_err(failed)?;
-        Ok(Handle(key.0))
+    fn open(&self, silent: bool) -> std::result::Result<Handle, Failure> {
+        open_test_key(
+            NCRYPT_PROV_HANDLE(self.provider.0),
+            PCWSTR(self.name.as_ptr()),
+            self.hwnd,
+            silent,
+        )
     }
     fn context(&self, key: &Handle) -> std::result::Result<(), Failure> {
         let message: Vec<u8> =
@@ -305,7 +329,7 @@ impl Probe {
         }
     }
     fn decrypt(&self, silent: bool) -> std::result::Result<(), Failure> {
-        let key = self.open().map_err(|e| e.at("decrypt-key-open-silent"))?;
+        let key = self.open(silent)?;
         // Check stored policy again on the reopened key; a handle flag alone
         // is not a durable authorization policy. No secret key leaves CNG.
         let mut cache = [0; 4];
@@ -498,7 +522,7 @@ impl Provider for Probe {
             }
             Err(error) => {
                 if self
-                    .open()
+                    .open(true)
                     .is_err_and(|error| error.code == Some(NTE_BAD_KEYSET.0 as u32))
                 {
                     // Failure before finalization may leave only a live
@@ -537,6 +561,142 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool, experiment: Experiment) -> R
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn owned_authorized_and_silent_opens_interoperate_without_relaxing_refusal() {
+        // A named, app-owned software key and a hidden native window exercise
+        // real Windows object lifetime, provider HWND context, reopen/decrypt
+        // and cleanup. They supply no Passport, prompt or TPM evidence.
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            CreateWindowExW, DestroyWindow, HWND_MESSAGE,
+        };
+        struct TestWindow(windows_sys::Win32::Foundation::HWND);
+        impl Drop for TestWindow {
+            fn drop(&mut self) {
+                unsafe {
+                    DestroyWindow(self.0);
+                }
+            }
+        }
+        struct TestKey {
+            handle: Handle,
+        }
+        impl TestKey {
+            fn delete(&mut self) -> windows_core::Result<()> {
+                unsafe { NCryptDeleteKey(NCRYPT_KEY_HANDLE(self.handle.0), NCRYPT_SILENT_FLAG.0) }?;
+                self.handle.0 = 0;
+                Ok(())
+            }
+        }
+        impl Drop for TestKey {
+            fn drop(&mut self) {
+                if self.handle.0 != 0 {
+                    let _ = self.delete();
+                }
+            }
+        }
+        unsafe {
+            let window = TestWindow(CreateWindowExW(
+                0,
+                w!("STATIC").as_ptr(),
+                w!("PassKey Local synthetic test").as_ptr(),
+                0,
+                0,
+                0,
+                0,
+                0,
+                HWND_MESSAGE,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null(),
+            ));
+            assert!(!window.0.is_null());
+            let mut provider = NCRYPT_PROV_HANDLE(0);
+            NCryptOpenStorageProvider(&mut provider, MS_KEY_STORAGE_PROVIDER, 0).unwrap();
+            let _provider = Handle(provider.0);
+            let name: Vec<u16> = format!("PassKeyLocal.UnitTest.{}", uuid::Uuid::new_v4())
+                .encode_utf16()
+                .chain(Some(0))
+                .collect();
+            let mut key = NCRYPT_KEY_HANDLE(0);
+            NCryptCreatePersistedKey(
+                provider,
+                &mut key,
+                BCRYPT_RSA_ALGORITHM,
+                PCWSTR(name.as_ptr()),
+                CERT_KEY_SPEC(0),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            let mut owned_key = TestKey {
+                handle: Handle(key.0),
+            };
+            NCryptSetProperty(
+                NCRYPT_HANDLE(key.0),
+                NCRYPT_LENGTH_PROPERTY,
+                &2048u32.to_le_bytes(),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            NCryptSetProperty(
+                NCRYPT_HANDLE(key.0),
+                NCRYPT_EXPORT_POLICY_PROPERTY,
+                &0u32.to_le_bytes(),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            NCryptFinalizeKey(key, NCRYPT_FLAGS(0)).unwrap();
+            let secret = Zeroizing::new([0x6bu8; 32]);
+            let ciphertext = wrap_public_key(key, &secret).unwrap();
+            let padding = Probe::padding();
+            for silent in [false, true] {
+                let reopened =
+                    open_test_key(provider, PCWSTR(name.as_ptr()), window.0 as usize, silent)
+                        .unwrap();
+                let mut plaintext = Zeroizing::new([0u8; 256]);
+                let mut actual = 0;
+                let flags = if silent {
+                    NCRYPT_PAD_OAEP_FLAG | NCRYPT_SILENT_FLAG
+                } else {
+                    NCRYPT_PAD_OAEP_FLAG
+                };
+                let result = NCryptDecrypt(
+                    NCRYPT_KEY_HANDLE(reopened.0),
+                    Some(&ciphertext),
+                    Some((&padding as *const BCRYPT_OAEP_PADDING_INFO).cast()),
+                    Some(plaintext.as_mut_slice()),
+                    &mut actual,
+                    flags,
+                );
+                assert!(result.is_ok());
+                assert_eq!(actual, 32);
+                assert!(libsodium_rs::utils::memcmp(
+                    &plaintext[..32],
+                    secret.as_slice()
+                ));
+                if silent {
+                    assert_eq!(
+                        require_silent_refusal(result).unwrap_err().operation,
+                        Some("silent-decrypt-unexpected-success")
+                    );
+                }
+            }
+            owned_key.delete().unwrap();
+            for (silent, operation) in [
+                (false, "decrypt-key-open-authorized"),
+                (true, "decrypt-key-open-silent"),
+            ] {
+                let error =
+                    match open_test_key(provider, PCWSTR(name.as_ptr()), window.0 as usize, silent)
+                    {
+                        Ok(_) => panic!("Deleted synthetic key unexpectedly reopened"),
+                        Err(error) => error,
+                    };
+                assert_eq!(error.operation, Some(operation));
+                assert_eq!(error.code, Some(NTE_BAD_KEYSET.0 as u32));
+            }
+        }
+    }
 
     #[test]
     fn exported_public_wrap_uses_oaep_sha256_and_rejects_corruption() {

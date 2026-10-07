@@ -1,5 +1,12 @@
 # Windows Hello eligibility decision
 
+The owner also reports a completed fingerprint prompt during the separate
+`fbd4347` capability test, followed by actual authorized OAEP decrypt parameter
+failure. The prompt's originating native operation is unknown, and no secret
+comparison passed. Authorized key opens now allow UI with a provider parent HWND
+set beforehand; silent opens remain silent. This fixes the experiment's mixed
+UI modes without changing padding or eligibility, and still needs target proof.
+
 The source-correlated owner report from build `0a3bf26` reaches actual silent
 `NCryptDecrypt` and returns `NTE_INVALID_PARAMETER`; this is not authorization
 denial. The separate, explicit OAEP capability experiment may attempt one

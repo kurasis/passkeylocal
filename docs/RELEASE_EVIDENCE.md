@@ -1,5 +1,35 @@
 # Release evidence and gate status
 
+## Authorized OAEP failure and matched key-open UI mode (2026-10-07)
+
+Owner evidence from published source `fbd4347fa0e1507a25885e26fc4d0df66c19f1fe`:
+the owner saw and completed a fingerprint prompt during the capability test;
+public wrap PASS, actual `authorized-oaep-sha256-decrypt` FAIL with
+`0x80090027`, test-key deletion PASS, all eligibility flags false. Silent/export/
+second-decrypt checks were NOT RUN by design. The prompt's originating native
+call is not established; key finalization may prompt, so this does not prove
+the private unwrap was authorized or OAEP/SHA-256 is supported. This is a
+reported physical result, not independently executed CI.
+
+Review found that authorized decrypt reopened its key silently. The corrected
+path sets a native provider parent HWND, opens without the silent flag, then
+rechecks mandatory policy, sets key context/fresh-gesture requirements and calls
+the same OAEP/SHA-256 decrypt. Silent attempts retain silent open/decrypt.
+Unsupported provider context stops with its exact operation/code, without an
+unowned retry. All primary refusal, export, cleanup, epoch and single-flight
+gates remain intact, and vault enrollment/unlock stays unavailable. This does
+not establish the parameter error's root cause or a successful target fix.
+
+Added a real Windows API regression using an isolated named software RSA key
+and hidden app-owned window: exercise provider HWND context, authorized/silent
+reopen and actual OAEP decrypt, reject actual silent success as authorization
+evidence, delete the exact fixture key, and check post-deletion failures keep
+their mode-specific operation/code. No software provider is selectable in
+production; this regression supplies no Passport/TPM/physical consent proof.
+Local Windows GNU Clippy with warnings denied and all eight portable proof-runner
+regressions **PASS**. Its actual Windows execution and the corrected target retest
+are initially **NOT RUN**; CI results will be recorded after execution.
+
 ## Source-correlated silent decrypt and authorized capability diagnostic (2026-10-07)
 
 The third owner report names published source `0a3bf261dfdf2f246a08b1c9136056d5a730083d`:
