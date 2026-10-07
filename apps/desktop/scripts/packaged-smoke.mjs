@@ -99,6 +99,28 @@ try {
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test PKCS#1 compatibility', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test PKCS#1 key behavior', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test key attestation capability', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
+  await expect(helloSection.getByRole('button', { name: 'Check PRF support', exact: true })).toBeEnabled();
+  const helloWebauthnCapability = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_webauthn_capability'));
+  assert.equal(helloWebauthnCapability.sourceCommit, process.env.GITHUB_SHA);
+  assert.equal(helloWebauthnCapability.purpose, 'webauthn-prf-capability');
+  assert.equal(helloWebauthnCapability.checks.length, 4);
+  assert(helloWebauthnCapability.webauthn.osBuild > 0);
+  assert(helloWebauthnCapability.webauthn.apiVersion > 0);
+  assert.equal(helloWebauthnCapability.webauthn.tpmBinding, 'not-verified');
+  for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloWebauthnCapability[key], false);
+  let helloPrfProof = null;
+  if (helloWebauthnCapability.outcome === 'blocked') {
+    // A blocked read-only preflight stops before make/get, even if this runner
+    // ever gains Hello. Never automate biometric prompts on a hosted machine.
+    helloPrfProof = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_prf_proof'));
+    assert.equal(helloPrfProof.sourceCommit, process.env.GITHUB_SHA);
+    assert.equal(helloPrfProof.purpose, 'synthetic-webauthn-prf');
+    assert.equal(helloPrfProof.outcome, 'blocked');
+    assert.equal(helloPrfProof.checks.length, 10);
+    for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloPrfProof[key], false);
+    assert(helloPrfProof.checks.slice(4, 9).every((check) => check.status === 'not-run'));
+    assert.deepEqual(helloPrfProof.checks.at(-1), { test: 'test-passkey-delete', status: 'passed' });
+  }
   let helloKeyProof = null;
   let helloOaepCapability = null;
   let helloPkcs1Compatibility = null;
@@ -243,7 +265,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

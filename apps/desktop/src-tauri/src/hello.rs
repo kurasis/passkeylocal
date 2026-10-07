@@ -6,6 +6,9 @@ use serde_json::{json, Value};
 pub mod attestation;
 
 #[cfg(any(windows, test))]
+pub mod prf;
+
+#[cfg(any(windows, test))]
 pub mod proof;
 
 #[cfg(windows)]

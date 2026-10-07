@@ -28,6 +28,8 @@
     "allow-hello-pkcs1-compatibility",
     "allow-hello-pkcs1-behavior",
     "allow-hello-attestation-capability",
+    "allow-hello-webauthn-capability",
+    "allow-hello-prf-proof",
     "allow-hello-settings",
     "allow-hello-unlock",
     "allow-hello-revoke",

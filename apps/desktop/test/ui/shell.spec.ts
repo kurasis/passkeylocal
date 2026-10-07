@@ -291,3 +291,46 @@ test('attestation capability shares single flight and discards a late result aft
   await expect(page.getByText('Его подпись, доверие к подписавшему ключу', { exact: false })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ attestations: 1, behaviors: 0, proofs: 0, verifies: 0 });
 });
+
+
+test('PRF capability stays read-only while synthetic encryption cannot enable vault unlock', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  await page.evaluate(() => (window as any).helloTest.configure('not-configured'));
+  await hello.getByRole('button', { name: 'Проверить Windows Hello', exact: true }).click();
+  const probe = hello.getByRole('button', { name: 'Проверить Windows Hello PRF', exact: true });
+  await expect(probe).toBeDisabled();
+  await hello.getByRole('button', { name: 'Проверить поддержку PRF', exact: true }).click();
+  await expect(hello.getByText('Сборка Windows: 26200.', { exact: false })).toBeVisible();
+  expect(await page.evaluate(() => (window as any).helloTest.counts().prf)).toBe(0);
+  await page.evaluate(() => (window as any).helloTest.configure('available'));
+  await hello.getByRole('button', { name: 'Проверить Windows Hello', exact: true }).click();
+  await probe.click();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.outcome).toBe('prf-roundtrip-passed');
+  expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false, false, false]);
+  expect(report.webauthn.tpmBinding).toBe('not-verified');
+  expect(report.checks.at(-1)).toEqual({ test: 'test-passkey-delete', status: 'passed' });
+  expect(report.remaining).toHaveLength(4);
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await probe.click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+});
+
+test('pending native PRF cannot be duplicated or publish results after Lock All', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  const probe = page.getByRole('button', { name: 'Проверить Windows Hello PRF', exact: true });
+  await probe.click();
+  await expect(probe).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Проверить поддержку PRF', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.locator('.hello-proof-report')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts().prf)).toBe(1);
+});

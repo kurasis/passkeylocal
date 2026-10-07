@@ -1,0 +1,32 @@
+//! Generate private native declarations from pinned Microsoft Windows metadata.
+fn main() {
+    windows_bindgen::bindgen([
+        "--out",
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../apps/desktop/src-tauri/src/hello/prf/bindings.rs"
+        ),
+        "--sys",
+        "--flat",
+        "--extern",
+        "--filter",
+        "WebAuthNAuthenticatorGetAssertion",
+        "WebAuthNAuthenticatorMakeCredential",
+        "WebAuthNCancelCurrentOperation",
+        "WebAuthNDeletePlatformCredential",
+        "WebAuthNFreeAssertion",
+        "WebAuthNFreeAuthenticatorList",
+        "WebAuthNFreeCredentialAttestation",
+        "WebAuthNGetApiVersionNumber",
+        "WebAuthNGetAuthenticatorList",
+        "WebAuthNGetCancellationId",
+        "WebAuthNIsUserVerifyingPlatformAuthenticatorAvailable",
+        "WEBAUTHN_API_VERSION_9",
+        "WEBAUTHN_CTAP_TRANSPORT_INTERNAL",
+        "WEBAUTHN_AUTHENTICATOR_ATTACHMENT_PLATFORM",
+        "WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED",
+        "WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_NONE",
+        "WEBAUTHN_AUTHENTICATOR_MAKE_CREDENTIAL_OPTIONS_VERSION_9",
+        "WEBAUTHN_AUTHENTICATOR_GET_ASSERTION_OPTIONS_VERSION_9",
+    ]);
+}

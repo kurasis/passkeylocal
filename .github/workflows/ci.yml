@@ -142,6 +142,11 @@ jobs:
       - run: python -m pip install --require-hashes -r tools/vault-recovery/requirements.lock
       - name: Independently verify the public-only software-signed TPM-format fixture
         run: python tests/hello/certification_fixture.py
+      - name: Reproduce private WebAuthn API-9 bindings (generator only uses Rust 1.95)
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal --component rustfmt
+          cargo +1.95.0 run --locked --manifest-path tools/webauthn-bindings/Cargo.toml
+          git diff --exit-code -- apps/desktop/src-tauri/src/hello/prf/bindings.rs
       - run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
       - run: cargo build --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --example file_safe_fixture_driver
       - run: python tests/file-safe/interop.py --large

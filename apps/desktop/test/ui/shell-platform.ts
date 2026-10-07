@@ -20,6 +20,8 @@ let capabilities = 0;
 let compatibilities = 0;
 let behaviors = 0;
 let attestations = 0;
+let webauthn = 0;
+let prf = 0;
 let attestationResult: 'returned-unverified' | 'unavailable' = 'returned-unverified';
 let behaviorFailure: 'silent-before' | 'private-export' | 'test-key-delete' | null = null;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
@@ -90,6 +92,23 @@ export async function testNativeHelloAttestation(): Promise<HelloKeyProof> {
     attestationClaim: { api: 'NCryptCreateClaim', claimType: 'subject-only', verification: 'not-performed',
       result: attestationResult, ...(attestationResult === 'returned-unverified' ? { bytes: 1234 } : {}) } };
 }
+export async function nativeWebauthnCapability(): Promise<HelloKeyProof> {
+  webauthn++;
+  return { version: 1, purpose: 'webauthn-prf-capability', algorithm: 'webauthn-prf-aes256gcm',
+    eligible: false, enrolled: false, unlocked: false, outcome: 'webauthn-capability-observed',
+    remaining: ['per-key-tpm-proof', 'fresh-authorization-proof', 'fresh-process-proof', 'account-machine-copy-proof'],
+    checks: ['webauthn-load', 'webauthn-api', 'hello-platform', 'hello-route'].map((test) => ({ test: test as HelloKeyProof['checks'][number]['test'], status: 'passed' })),
+    webauthn: { osBuild: 26200, apiVersion: 9, platformAvailable: true, helloCandidates: 1, helloLocked: false, routing: 'display-name-candidate', tpmBinding: 'not-verified' } };
+}
+export async function proveNativeHelloPrf(): Promise<HelloKeyProof> {
+  prf++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  const capability = await nativeWebauthnCapability();
+  webauthn--;
+  return { ...capability, purpose: 'synthetic-webauthn-prf', outcome: proofCleanupFailed ? 'blocked' : 'prf-roundtrip-passed',
+    checks: [...capability.checks, ...(['prf-create', 'prf-first', 'prf-repeat', 'prf-changed', 'prf-roundtrip'] as const).map((test) => ({ test, status: 'passed' as const })),
+      { test: 'test-passkey-delete', status: proofCleanupFailed ? 'failed' : 'passed', ...(proofCleanupFailed ? { nativeCode: '0x80090029', operation: 'delete-prf-test-passkey' } : {}) }] };
+}
 Object.assign(window, { helloTest: {
   configure(value: HelloConfiguration) { configuration = value; },
   outcome(value: HelloVerificationResult) { verification = value; },
@@ -100,5 +119,5 @@ Object.assign(window, { helloTest: {
   behaviorFailure(value: typeof behaviorFailure) { behaviorFailure = value; },
   attestationResult(value: typeof attestationResult) { attestationResult = value; },
   release() { release?.(); },
-  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations }; },
+  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations, webauthn, prf }; },
 } });
