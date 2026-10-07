@@ -1,5 +1,46 @@
 # Release evidence and gate status
 
+## Native PRF final hosted evidence (2026-10-07)
+
+[PR #17](https://github.com/kurasis/passkeylocal/pull/17) code head `582813c375e5e3559dbdafd6fbe3bedabbb3632e`;
+installed/tested PR merge source `107c49d6d9d58d269ea5093b78218e76f5383437`. [General CI 37651173424](https://github.com/kurasis/passkeylocal/actions/runs/37651173424)
+and [Windows CI 37651173428](https://github.com/kurasis/passkeylocal/actions/runs/37651173428)
+**PASS**, all 11 checks. Automatic merge `1fd5aa944db4c80caf93b53564ad3e0b3695e283` has the tested PR tree.
+
+Local: typecheck, 161 TypeScript tests, 61 Linux native tests (one resource test
+ignored), Windows GNU production/all-target Clippy, byte-identical generation,
+both isolated builds, both new UI scenarios and all eight production PWA scenarios
+PASS. Hosted: all 22 isolated UI scenarios and eight PWA scenarios, the full Python
+OS/version matrix, offline kit and fresh interop PASS. Windows: 77 native tests
+PASS with two explicitly excluded ABI/resource gates; both gates independently
+executed/PASS, including every generated struct size/field offset against the pinned
+Microsoft header compiled by MSVC. Native KDBX/Python parity and fresh bidirectional
+file-safe recovery/10,000-file restore PASS. Restore took 241.943 s.
+Native hosted 5 GiB primitive measurement: 50.656 s process,
+sampled peak working set 10,530,816 bytes.
+
+NSIS installation/actual packaged app PASS. Original build, smoke, resource and
+signed Microsoft WebView2 metadata all match the full installed source SHA.
+All seven native diagnostics returned source-matched reports; the two PRF actions
+observed hosted API version 7 and stopped before creation.
+The read-only capability has four stages; synthetic proof has ten and no-op cleanup.
+No PRF secret or native credential IDs were returned. Downloaded unsigned installer
+matches the original SHA sidecar/build metadata: `af4f73fdedc549d29dad553d93ce628d5e804b12cf8e6033b451390523593e75`,
+217,879,804 bytes. [GitHub download/evidence folder](../deploy/windows-desktop/)
+contains the artifact link and original small metadata/screenshots. The unversioned
+sidecar was updated to the latest build; historical versioned evidence remains.
+
+New [Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-582813c.zip):
+208,644 bytes, SHA-256 `6324fd41e57729a0b13e638f2bca4b2284b6958e667ef5129bb229b60ad6e47e`; all ten files equal the tested local
+production output. No server deployment occurred. The test-header's original full
+MIT license was also retained from the exact pinned Microsoft commit.
+
+This publication changes evidence/docs/license text and versioned build artifacts
+only. It does not alter the tested application or header/bindings. Physical PRF,
+TPM inner envelope, fresh-process/account/machine acceptance and durable diagnostic
+crash cleanup remain NOT RUN / NOT IMPLEMENTED; all four gates remain open and
+real Hello enrollment/unlock remain unavailable.
+
 ## Native WebAuthn PRF implementation (2026-10-07)
 
 Implemented the fixed native adapter and two argument-free main-window actions;
@@ -13,8 +54,7 @@ Private bindings are reproducible from locked Microsoft metadata, with an indepe
 MSVC/pinned official-header ABI comparison added to Windows tests.
 
 Initial local typecheck and Windows GNU production/all-target Clippy passed.
-The generation output reproduced byte-for-byte. New native/UI checks and hosted
-installation are being executed; final results are recorded after completion.
+The generation output reproduced byte-for-byte. Final local and hosted validation is recorded above.
 The first new UI run passed 21/22 scenarios; the remaining scenario had an ambiguous
 text locator matching both a paragraph and collapsed JSON. Its locator is now specific.
 A local official-header compilation was not executable with the workspace's header-only

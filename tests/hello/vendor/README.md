@@ -2,7 +2,7 @@
 
 `webauthn.h` is an unmodified MIT-licensed header from microsoft/webauthn,
 commit `ef82c157125a0490e05f6ea82a7adb1b8e1bad08` (API 9). Its original
-copyright/license notice is retained. This is a test-only independent ABI
+copyright/license notice is retained; the full [MIT license](LICENSE) is included. This is a test-only independent ABI
 reference, never an implementation or a runtime dependency.
 
 Source: https://github.com/microsoft/webauthn/blob/ef82c157125a0490e05f6ea82a7adb1b8e1bad08/webauthn.h
