@@ -47,6 +47,17 @@ and [Cloudflare upload archive](../deploy/cloudflare-pages/README.md). The latte
 has all ten production root files verified, SHA-256
 `41bde0f2ba83c02ffee90f09ede44638bcd0e50b8d2ec2bb4d36f41bcca68cc8`.
 
+Post-merge duplicate Windows [37587203249](https://github.com/kurasis/passkeylocal/actions/runs/37587203249),
+general CI [37587203265](https://github.com/kurasis/passkeylocal/actions/runs/37587203265)
+and delivery-doc CI [37587393485](https://github.com/kurasis/passkeylocal/actions/runs/37587393485)
+are **BLOCKED by GitHub account billing**, not passed: their jobs executed no
+steps. GitHub's check annotation says: "The job was not started because recent
+account payments have failed or your spending limit needs to be increased.
+Please check the 'Billing & plans' section in your settings". Payment failure
+versus spending limit is not distinguished by that message. No billing setting
+was changed. The successful exact-tree PR runs and downloaded installer above
+remain the delivery evidence; later main/docs-only runs are not counted as tests.
+
 ## Desktop layout and Windows Hello actions (2026-10-06)
 
 The desktop sidebar previously used a fixed 112-pixel top offset, which put it
