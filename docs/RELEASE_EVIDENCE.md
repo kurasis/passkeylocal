@@ -1,5 +1,47 @@
 # Release evidence and gate status
 
+## Native TPM certification inspection and same-key capability increment (2026-10-07)
+
+Implemented bounded standard TPMS_ATTEST/TPMT_PUBLIC inspection against the
+exact app RSA2048 public component, native expected nonce, certified Name and
+required fixedTPM/fixedParent/sensitiveDataOrigin/decrypt attributes. Unsupported
+profiles, truncation/trailing/hostile lengths, wrong subject/nonce/Name and
+migratable/imported/signing/restricted templates fail. Windows fixed-provider
+RSA signature verification preserves an opaque **untrusted** result and checks
+request/session before and after API work. No AIK certificate/trust decision,
+enrollment or credential access is implemented.
+
+The committed public-only fixture is deliberately signed by a software RSA key,
+independently generated/verified with the existing pinned Python cryptography
+dependency. No private key is committed. Tests establish that valid parsing or
+a correct software signature cannot enable the actual Hello enrollment/unlock
+entry points. Signature padding is not approval of legacy credential encryption.
+See [the implementation profile and limits](windows/HELLO_ATTESTATION_VERIFIER.md).
+
+Added a separate argument-free `hello_attestation_capability` experiment and
+EN/RU Settings action. It calls `NCryptCreateClaim` once on the exact new app
+Passport decrypt-only test key, fixed subject-only type, native random nonce,
+optional authority absent, flags zero and fixed zeroized 16 KiB output. No OS
+AIK/Hello key enumeration/opening, fallback, arbitrary renderer parameters or
+raw blob/nonce/key-name reporting/persistence. API support is a candidate to
+measure, not a supported Passport contract. Returned nonempty bounded bytes are
+explicitly unverified and the standard inspector is not applied to unknown
+provider framing. Native failures preserve their codes; shared single-flight,
+session guards and unconditional exact app-key cleanup remain authoritative.
+All eligibility/enrollment/unlock flags stay false and four physical gates stay
+open. The earlier owner 946514c export result remains valid/completed.
+
+Local validation: independent Python fixture signature/subject/Name/nonce,
+25 portable Hello tests, typecheck, 20 isolated UI scenarios, both production
+builds/target isolation, eight production PWA scenarios and Windows GNU
+cross-target Clippy with warnings denied **PASS**.
+Cross-target compilation is not Windows API execution. Hosted Windows actual
+signature/claim-failure tests, general/Windows CI and installed-app evidence:
+**PENDING**. Target Passport claim capability/trusted TPM/fresh-process/copy
+proof: **NOT RUN / BLOCKED**. Real credential envelope/enrollment/unlock:
+**BLOCKED**. A transient cloud exec-server disconnect was retried after the
+transport recovered; no security/verification checks were bypassed.
+
 ## Target per-format export measurement completed (2026-10-07)
 
 The [owner report from published source 946514c](../deploy/windows-desktop/hello-target-946514c.json)

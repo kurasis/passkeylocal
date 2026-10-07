@@ -16,6 +16,7 @@ pub enum Stage {
     KeyCreate,
     KeyPolicy,
     PolicyReadback,
+    AttestationClaim,
     PublicWrap,
     PrivateExport,
     SilentBefore,
@@ -39,6 +40,14 @@ const STEPS: [Stage; 12] = [
     Stage::SilentAfterSecond,
     Stage::PrivateExport,
 ];
+const ATTESTATION_STEPS: [Stage; 6] = [
+    Stage::HelloConfiguration,
+    Stage::ProviderOpen,
+    Stage::KeyCreate,
+    Stage::KeyPolicy,
+    Stage::PolicyReadback,
+    Stage::AttestationClaim,
+];
 
 /// Fixed native experiments exposed through separate, argument-free commands.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -49,9 +58,14 @@ pub enum Experiment {
     Pkcs1Compatibility,
     // Separate full behavior measurement, never approval of legacy padding.
     Pkcs1Behavior,
+    // API capability only; a returned blob is not verified TPM evidence.
+    AttestationCapability,
 }
 impl Experiment {
     fn includes(self, stage: Stage) -> bool {
+        if self == Self::AttestationCapability {
+            return ATTESTATION_STEPS.contains(&stage);
+        }
         matches!(self, Self::SecurityProof | Self::Pkcs1Behavior)
             || matches!(
                 stage,
@@ -95,6 +109,18 @@ pub struct ExportCheck {
     pub result: &'static str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub native_code: Option<String>,
+}
+
+/// Only bounded API observations. Never contains a blob, key name or nonce.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttestationClaim {
+    pub api: &'static str,
+    pub claim_type: &'static str,
+    pub result: &'static str,
+    pub verification: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bytes: Option<u32>,
 }
 
 #[cfg(any(windows, test))]
@@ -178,6 +204,8 @@ pub struct Report {
     pub checks: Vec<Check>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub export_checks: Vec<ExportCheck>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attestation_claim: Option<AttestationClaim>,
     pub remaining: [&'static str; 4],
 }
 
@@ -206,6 +234,9 @@ pub(crate) trait Provider {
     fn export_checks(&self) -> Vec<ExportCheck> {
         Vec::new()
     }
+    fn attestation_claim(&self) -> Option<AttestationClaim> {
+        None
+    }
 }
 
 /// Only native code chooses the provider, algorithm, key and synthetic secret.
@@ -227,9 +258,11 @@ pub(crate) fn exercise_selected(
             Experiment::AuthorizedOaepCapability => "synthetic-oaep-capability",
             Experiment::Pkcs1Compatibility => "synthetic-pkcs1-compatibility",
             Experiment::Pkcs1Behavior => "synthetic-pkcs1-behavior",
+            Experiment::AttestationCapability => "synthetic-attestation-capability",
         },
         algorithm: match experiment {
             Experiment::Pkcs1Compatibility | Experiment::Pkcs1Behavior => "rsa-pkcs1-v1_5",
+            Experiment::AttestationCapability => "rsa-2048-decrypt-only",
             _ => "rsa-oaep-sha256",
         },
         eligible: false,
@@ -240,9 +273,11 @@ pub(crate) fn exercise_selected(
             Experiment::AuthorizedOaepCapability => "capability-passed",
             Experiment::Pkcs1Compatibility => "compatibility-passed",
             Experiment::Pkcs1Behavior => "behavior-passed",
+            Experiment::AttestationCapability => "attestation-capability-observed",
         },
         checks: Vec::with_capacity(13),
         export_checks: Vec::new(),
+        attestation_claim: None,
         remaining: [
             "per-key-tpm-proof",
             "fresh-authorization-proof",
@@ -251,7 +286,12 @@ pub(crate) fn exercise_selected(
         ],
     };
     let mut stopped = false;
-    for stage in STEPS {
+    let steps: &[Stage] = if experiment == Experiment::AttestationCapability {
+        &ATTESTATION_STEPS
+    } else {
+        &STEPS
+    };
+    for &stage in steps {
         if stopped || !experiment.includes(stage) {
             report.checks.push(Check {
                 test: stage,
@@ -316,12 +356,101 @@ pub(crate) fn exercise_selected(
         operation,
     });
     report.export_checks = provider.export_checks();
+    report.attestation_claim = provider.attestation_claim();
     report
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn attestation_mode_has_only_its_own_stages_and_always_cleans_up() {
+        for failure in ATTESTATION_STEPS.into_iter().map(Some).chain([None]) {
+            let mut provider = SyntheticProvider {
+                calls: Vec::new(),
+                failure,
+                cleanup_failure: false,
+            };
+            let report =
+                exercise_selected(&mut provider, || true, Experiment::AttestationCapability);
+            assert_eq!(report.purpose, "synthetic-attestation-capability");
+            assert_eq!(report.algorithm, "rsa-2048-decrypt-only");
+            assert_eq!(report.checks.len(), 7);
+            assert_eq!(provider.calls.last(), Some(&Stage::TestKeyDelete));
+            assert!(!provider.calls.contains(&Stage::PublicWrap));
+            assert!(!provider.calls.contains(&Stage::UnwrapFirst));
+            assert!(!provider.calls.contains(&Stage::PrivateExport));
+            assert!(!report.eligible && !report.enrolled && !report.unlocked);
+            assert_eq!(
+                report.outcome,
+                if failure.is_some() {
+                    "blocked"
+                } else {
+                    "attestation-capability-observed"
+                }
+            );
+            assert!(report.attestation_claim.is_none());
+            if let Some(stage) = failure {
+                let failed = report
+                    .checks
+                    .iter()
+                    .position(|check| check.test == stage)
+                    .unwrap();
+                assert!(report.checks[failed + 1..6]
+                    .iter()
+                    .all(|check| check.status == Outcome::NotRun));
+            }
+        }
+        for permitted in 0..=6 {
+            let mut provider = SyntheticProvider {
+                calls: Vec::new(),
+                failure: None,
+                cleanup_failure: false,
+            };
+            let calls = std::cell::Cell::new(0);
+            let report = exercise_selected(
+                &mut provider,
+                || {
+                    let old = calls.get();
+                    calls.set(old + 1);
+                    old < permitted
+                },
+                Experiment::AttestationCapability,
+            );
+            assert_eq!(report.outcome, "interrupted");
+            assert_eq!(provider.calls.last(), Some(&Stage::TestKeyDelete));
+        }
+    }
+
+    #[test]
+    fn returned_claim_metadata_is_unverified_even_when_cleanup_fails() {
+        struct Claimed;
+        impl Provider for Claimed {
+            fn step(&mut self, _: Stage) -> std::result::Result<(), Failure> {
+                Ok(())
+            }
+            fn cleanup(&mut self) -> std::result::Result<(), Failure> {
+                Err(Failure::failed())
+            }
+            fn attestation_claim(&self) -> Option<AttestationClaim> {
+                Some(AttestationClaim {
+                    api: "NCryptCreateClaim",
+                    claim_type: "subject-only",
+                    result: "returned-unverified",
+                    verification: "not-performed",
+                    bytes: Some(1024),
+                })
+            }
+        }
+        let report = exercise_selected(&mut Claimed, || true, Experiment::AttestationCapability);
+        assert_eq!(report.outcome, "blocked");
+        assert!(!report.eligible && !report.enrolled && !report.unlocked);
+        let value = serde_json::to_value(report).unwrap();
+        assert_eq!(value["attestationClaim"]["verification"], "not-performed");
+        assert_eq!(value["attestationClaim"]["bytes"], 1024);
+        assert_eq!(value["remaining"].as_array().unwrap().len(), 4);
+        assert!(value.get("blob").is_none() && value.get("nonce").is_none());
+    }
     struct SyntheticProvider {
         calls: Vec<Stage>,
         failure: Option<Stage>,

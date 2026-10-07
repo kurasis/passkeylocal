@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior } from '@platform';
+import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation } from '@platform';
 import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
@@ -56,19 +56,19 @@ export function DesktopHelloSettings() {
     return () => { epoch.current++; window.removeEventListener('focus', focus); };
   }, []);
   if (!desktop) return null;
-  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior') => {
+  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation') => {
     if (inFlight.current) return;
     inFlight.current = true;
     const attempt = ++epoch.current;
     setBusy(true); setResult(null); setFailed(false);
-    if (kind === 'proof' || kind === 'capability' || kind === 'compatibility' || kind === 'behavior') { setProof(null); setCopied(false); setCopyFailed(false); }
+    if (kind !== 'verify' && kind !== 'settings') { setProof(null); setCopied(false); setCopyFailed(false); }
     let completed = false;
     try {
       if (kind === 'verify') {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
-      } else if (kind === 'proof' || kind === 'capability' || kind === 'compatibility' || kind === 'behavior') {
-        const response = await (kind === 'proof' ? proveNativeHelloKey() : kind === 'capability' ? testNativeHelloOaep() : kind === 'compatibility' ? testNativeHelloPkcs1() : testNativeHelloPkcs1Behavior());
+      } else if (kind !== 'settings') {
+        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation }[kind]());
         if (epoch.current === attempt) setProof(response);
       } else await openNativeHelloSettings();
       completed = true;
@@ -97,11 +97,13 @@ export function DesktopHelloSettings() {
     <button type="button" className="secondary" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('compatibility')}>{t('desktopHelloCompatibility')}</button>
     <p>{t('desktopHelloBehaviorExplain')}</p>
     <button type="button" className="secondary" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('behavior')}>{t('desktopHelloBehavior')}</button>
+    <p>{t('desktopHelloAttestationExplain')}</p>
+    <button type="button" className="secondary" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('attestation')}>{t('desktopHelloAttestation')}</button>
     {busy && <p role="status">{t('desktopHelloPending')}</p>}
     {result && <Banner kind={result === 'verified' ? 'info' : 'warn'}>{t(`desktopHello_result_${result}`)}</Banner>}
     {failed && <Banner kind="error">{t('desktopHelloError')}</Banner>}
     {proof && <div className="stack">
-      <p>{t(proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
+      <p>{t(proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
       <Banner kind={proof.outcome === 'roundtrip-passed' || proof.outcome === 'capability-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
       <ul className="hello-proof-checks">{proof.checks.filter((check) => check.status !== 'not-run').map((check) => <li key={check.test}>
         <span>{t(check.test === 'public-wrap' && proof.algorithm === 'rsa-pkcs1-v1_5' ? proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloPkcs1Wrap' : 'desktopHelloCompatibilityWrap' : `desktopHello_proof_${check.test}`)}</span>
@@ -114,6 +116,7 @@ export function DesktopHelloSettings() {
           <span>{t(`desktopHello_exportResult_${check.result}`)}{check.nativeCode && <> <code>{check.nativeCode}</code></>}</span>
         </li>)}</ul>
       </div> : null}
+      {proof.attestationClaim && <Banner kind="warn">{t(`desktopHello_attestation_${proof.attestationClaim.result}`)}{proof.attestationClaim.bytes !== undefined && <> {t('desktopHelloAttestationBytes')}: {proof.attestationClaim.bytes}.</>}</Banner>}
       {cleanupFailed && <Banner kind="error">{t('desktopHelloProofDeleteFailed')}</Banner>}
       <details><summary>{t('desktopHelloProofReport')}</summary><pre className="hello-proof-report">{JSON.stringify(proof, null, 2)}</pre></details>
       <button type="button" className="secondary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(proof, null, 2)).then(() => { setCopied(true); setCopyFailed(false); }, () => { setCopied(false); setCopyFailed(true); })}>{t('desktopHelloProofCopy')}</button>

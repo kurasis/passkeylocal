@@ -251,3 +251,43 @@ test('private export details distinguish unsupported formats from permission ref
   await page.setViewportSize({ width: 320, height: 780 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
 });
+
+test('attestation capability remains unverified and shows bounded metadata or original failure', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const action = hello.getByRole('button', { name: 'Проверить возможность аттестации ключа', exact: true });
+  await action.click();
+  await expect(hello.getByText('Его подпись, доверие к подписавшему ключу', { exact: false })).toBeVisible();
+  await expect(hello.getByText('Размер свидетельства в байтах: 1234.', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report).toMatchObject({ purpose: 'synthetic-attestation-capability', eligible: false, enrolled: false, unlocked: false,
+    attestationClaim: { api: 'NCryptCreateClaim', claimType: 'subject-only', verification: 'not-performed', bytes: 1234 } });
+  expect(report.remaining).toHaveLength(4);
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  await page.evaluate(() => (window as any).helloTest.attestationResult('unavailable'));
+  await action.click();
+  await expect(hello.getByText('это не означает отсутствия TPM', { exact: false })).toBeVisible();
+  await expect(hello.getByText('0x80090029', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await action.click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+});
+
+test('attestation capability shares single flight and discards a late result after Lock all', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  await page.getByRole('button', { name: 'Проверить возможность аттестации ключа', exact: true }).click();
+  for (const name of ['Проверить возможность аттестации ключа', 'Проверить поведение ключа PKCS#1', 'Проверить защищённый ключ', 'Проверить отпечаток или PIN']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
+  }
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.getByText('Его подпись, доверие к подписавшему ключу', { exact: false })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ attestations: 1, behaviors: 0, proofs: 0, verifies: 0 });
+});

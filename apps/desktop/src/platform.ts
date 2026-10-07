@@ -50,6 +50,7 @@ export async function proveNativeHelloKey(): Promise<import('../../pwa/src/hello
 export async function testNativeHelloOaep(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_oaep_capability'); }
 export async function testNativeHelloPkcs1(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_pkcs1_compatibility'); }
 export async function testNativeHelloPkcs1Behavior(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_pkcs1_behavior'); }
+export async function testNativeHelloAttestation(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_attestation_capability'); }
 export async function openNativeHelloSettings(): Promise<void> { await invoke('hello_settings'); }
 export async function configureNativeBackup(): Promise<void> { await invoke('configure_backup'); }
 export async function retryNativeBackup(): Promise<void> { await invoke('retry_backup'); }

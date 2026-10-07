@@ -6,6 +6,12 @@ enrollment/unlock. It is a real CNG experiment in the existing app, not a
 UserConsentVerifier boolean followed by a credential read. All reports keep
 `eligible`, `enrolled` and `unlocked` false.
 
+The next separate action is **Test key attestation capability**, described in
+[HELLO_ATTESTATION_VERIFIER.md](HELLO_ATTESTATION_VERIFIER.md). It measures a
+different API on the same new app test key, not another raw private-format export.
+The standard TPM component inspector and actual Windows signature verifier are
+implemented, while provider framing and trusted AIK verification remain open.
+
 ## All three target export formats are unavailable (2026-10-07)
 
 The [946514c owner report](../../deploy/windows-desktop/hello-target-946514c.json)

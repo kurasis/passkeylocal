@@ -306,6 +306,13 @@ async fn hello_pkcs1_compatibility(window: WebviewWindow, app: tauri::AppHandle)
 async fn hello_pkcs1_behavior(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
     hello_experiment(window, app, hello::proof::Experiment::Pkcs1Behavior).await
 }
+#[tauri::command]
+async fn hello_attestation_capability(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+) -> Result<Value> {
+    hello_experiment(window, app, hello::proof::Experiment::AttestationCapability).await
+}
 async fn hello_experiment(
     window: WebviewWindow,
     app: tauri::AppHandle,
@@ -532,6 +539,7 @@ pub fn run() {
             hello_oaep_capability,
             hello_pkcs1_compatibility,
             hello_pkcs1_behavior,
+            hello_attestation_capability,
             hello_settings,
             hello_unlock,
             hello_revoke,
