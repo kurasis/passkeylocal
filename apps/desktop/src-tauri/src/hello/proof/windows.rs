@@ -902,10 +902,18 @@ mod tests {
             .unwrap();
             NCryptFinalizeKey(key, NCRYPT_FLAGS(0)).unwrap();
             let (export_checks, export_gate) = measure_key_exports(key, || true);
-            export_gate.unwrap();
+            // This actual software KSP reports unsupported export with policy
+            // zero, not NTE_PERM. Preserve that unresolved result; the fixture
+            // must not manufacture explicit denial or provider eligibility.
+            let failure = export_gate.unwrap_err();
+            assert_eq!(failure.code, Some(0x80090029));
+            assert_eq!(failure.operation, Some("private-export-rsa"));
             assert_eq!(export_checks.len(), 3);
-            assert!(export_checks.iter().all(|check| check.result == "refused"
-                && check.native_code.as_deref() == Some("0x80090010")));
+            assert_eq!(export_checks[0].result, "failed");
+            assert_eq!(export_checks[0].native_code.as_deref(), Some("0x80090029"));
+            assert!(export_checks
+                .iter()
+                .all(|check| check.result != "unexpected-success" && check.result != "not-run"));
             // Positive control: an explicitly exportable software fixture
             // actually exports. The production gate must stop after success.
             let mut exportable = NCRYPT_KEY_HANDLE(0);

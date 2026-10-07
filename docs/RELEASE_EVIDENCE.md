@@ -29,8 +29,8 @@ accepted; no key material or caller-selected export command is returned.
 
 Added portable measurement regressions for mixed format results, strict denial,
 unexpected export success, cancellation and invalidation. Actual Windows CNG
-regressions measure all three formats on a non-exportable software fixture,
-then verify an explicitly exportable fixture fails the gate and stops later
+regressions retain actual unsupported-operation results from the zero-export
+software fixture, then verify an explicitly exportable fixture fails the gate and stops later
 formats. The isolated UI shows all three classifications without enabling
 unlock or overflowing at 320 pixels. Local checks and general/Windows CI:
 **PENDING**. Local typecheck, both production builds/target isolation, 18 isolated
@@ -40,6 +40,22 @@ SDK export policy flags are `u32`, not wrapper types; corrected the flag access
 and the full cross-target Clippy rerun passed. Updated target export diagnostics:
 **NOT RUN**. Actual Hello
 credential envelope/enrollment/unlock and remaining physical proof: **BLOCKED**.
+
+Initial general CI [37626225841](https://github.com/kurasis/passkeylocal/actions/runs/37626225841)
+passed all ten jobs for head `ba9a419`, tested merge `8c1777d`. Initial Windows
+CI [37626225937](https://github.com/kurasis/passkeylocal/actions/runs/37626225937)
+**FAILED**: 47 native tests PASS, one new real export assertion FAILED and one
+resource test ignored. Later resource/recovery/packaging/install stages were
+NOT RUN; no successful installer was published. The software KSP with zero
+export policy returned actual `NTE_NOT_SUPPORTED` (`0x80090029`) at RSA private
+export, contrary to the new fixture's assumption of `NTE_PERM`. The fixture now
+requires the original unresolved code/operation and completed per-format results
+without successful export, rather than assuming permission-denial semantics.
+The production gate still rejects unsupported operation/format errors and
+requires `NTE_PERM` for every format; no production security rule was changed
+for this correction. The explicitly exportable positive-control fixture was
+not reached by that failed test and still awaits actual execution. Windows/
+general CI rerun and final installed evidence: **PENDING**.
 
 ## Target PKCS#1 compatibility passed; explicit key behavior experiment (2026-10-07)
 
