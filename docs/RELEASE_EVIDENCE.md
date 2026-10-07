@@ -32,8 +32,9 @@ unexpected export success, cancellation and invalidation. Actual Windows CNG
 regressions retain actual unsupported-operation results from the zero-export
 software fixture, then verify an explicitly exportable fixture fails the gate and stops later
 formats. The isolated UI shows all three classifications without enabling
-unlock or overflowing at 320 pixels. Local checks and general/Windows CI:
-**PENDING**. Local typecheck, both production builds/target isolation, 18 isolated
+unlock or overflowing at 320 pixels. At initial validation, general/Windows CI
+and installed evidence were **PENDING**; final execution is recorded below.
+Local typecheck, both production builds/target isolation, 18 isolated
 UI scenarios, 12 portable proof regressions and Windows GNU Clippy with warnings
 denied **PASS**. Initial Windows test compilation failed because the newly used
 SDK export policy flags are `u32`, not wrapper types; corrected the flag access
@@ -54,8 +55,46 @@ without successful export, rather than assuming permission-denial semantics.
 The production gate still rejects unsupported operation/format errors and
 requires `NTE_PERM` for every format; no production security rule was changed
 for this correction. The explicitly exportable positive-control fixture was
-not reached by that failed test and still awaits actual execution. Windows/
-general CI rerun and final installed evidence: **PENDING**.
+not reached by that failed test. At that point Windows/general CI rerun and
+final installed evidence were **PENDING**.
+
+Final general CI [37627304079](https://github.com/kurasis/passkeylocal/actions/runs/37627304079)
+and Windows CI [37627304056](https://github.com/kurasis/passkeylocal/actions/runs/37627304056)
+**PASS** for head `587e3c13a60d17541b9ea7f45e8c763e68b8c2e7` and tested PR merge `946514c0dd590f703cd5398d9d39ec7c28d0491d`. All 11 PR checks passed;
+[PR #12](https://github.com/kurasis/passkeylocal/pull/12) merged automatically.
+Actual main merge `a03f74eff94ef62d55d6afe1cbe4addf83d01a80` has the identical tested Git tree `e689cf0389fe5869e8a9152293ef903685bfede2`.
+General CI: 161 TypeScript tests, all 18 isolated UI scenarios, eight production
+PWA scenarios, 44 Linux native tests (one resource test ignored), dependency
+advisories and cross-platform independent recovery PASS. Windows: 48 native
+tests PASS (one resource test ignored and separately executed/PASS), real
+software CNG regressions, native KDBX/Python parity, full encrypted-file interop/
+10,000-file restore and independent recovery PASS (88 tests passed / 15 skipped
+on Windows). Restore/search measurements: 97.1923936 s / 0.2135383 s.
+The real software fixture retained `NTE_NOT_SUPPORTED` from zero-export policy
+as an unresolved result, measured all formats and returned no export success;
+the explicitly exportable control actually succeeded and the gate rejected it,
+stopping later formats. Both controls passed in this run.
+These are hosted API/software
+tests, not physical Passport/TPM/Kensington proof.
+
+The 5 GiB hosted gate passed in 44.2160539 s with sampled peak working
+set 10,567,680 bytes. Native encryption/verification:
+26.4160211 s / 17.0384997 s.
+These are runner measurements, not target-device performance. Actual NSIS
+installation/packaged smoke **PASS**, including file-safe re-unlock metadata.
+All four installed native modes name the exact build source and algorithm,
+keep eligibility/enrollment/unlock false, and stop at actual
+`device-not-present` before key creation; cleanup passes. The new
+target export diagnostics remain **NOT RUN** and all physical gates remain
+**BLOCKED**. The owner's earlier same-process behavior success is distinct evidence.
+
+Downloaded installer: 217,852,272 bytes, SHA-256 `8ac0609e492b602014538292e28bd6dc04d775cdd408b9dfa57b5421cf68821a`,
+independently matched to its original sidecar and metadata. All four metadata
+sources and installed native reports match `946514c0dd590f703cd5398d9d39ec7c28d0491d`. The signed official
+WebView2 evidence is retained. Updated [Windows delivery folder](../deploy/windows-desktop/README.md).
+New [Cloudflare ZIP](../deploy/cloudflare-pages/README.md) for `587e3c1`:
+206,877 bytes, SHA-256 `a9dc199982c0a47ba752f25a98872dea1f4043ef089c1d7a4833cba6b2cc95bc`; all ten production files and
+the sidecar independently matched. Older evidence/archives remain available.
 
 ## Target PKCS#1 compatibility passed; explicit key behavior experiment (2026-10-07)
 
