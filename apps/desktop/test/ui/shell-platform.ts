@@ -19,6 +19,8 @@ let proofs = 0;
 let capabilities = 0;
 let compatibilities = 0;
 let behaviors = 0;
+let attestations = 0;
+let attestationResult: 'returned-unverified' | 'unavailable' = 'returned-unverified';
 let behaviorFailure: 'silent-before' | 'private-export' | 'test-key-delete' | null = null;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
   checks++;
@@ -74,6 +76,20 @@ export async function testNativeHelloPkcs1Behavior(): Promise<HelloKeyProof> {
       return { test, status: stopped && test !== 'test-key-delete' ? 'not-run' : 'passed' };
     }) };
 }
+export async function testNativeHelloAttestation(): Promise<HelloKeyProof> {
+  attestations++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  return { version: 1, purpose: 'synthetic-attestation-capability', algorithm: 'rsa-2048-decrypt-only',
+    eligible: false, enrolled: false, unlocked: false,
+    outcome: attestationResult === 'returned-unverified' ? 'attestation-capability-observed' : 'blocked',
+    remaining: ['per-key-tpm-proof', 'fresh-authorization-proof', 'fresh-process-proof', 'account-machine-copy-proof'],
+    checks: [{ test: 'hello-configuration', status: 'passed' },
+      { test: 'attestation-claim', status: attestationResult === 'returned-unverified' ? 'passed' : 'failed',
+        ...(attestationResult === 'unavailable' ? { nativeCode: '0x80090029', operation: 'create-subject-only-attestation-claim' } : {}) },
+      { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }],
+    attestationClaim: { api: 'NCryptCreateClaim', claimType: 'subject-only', verification: 'not-performed',
+      result: attestationResult, ...(attestationResult === 'returned-unverified' ? { bytes: 1234 } : {}) } };
+}
 Object.assign(window, { helloTest: {
   configure(value: HelloConfiguration) { configuration = value; },
   outcome(value: HelloVerificationResult) { verification = value; },
@@ -82,6 +98,7 @@ Object.assign(window, { helloTest: {
   proofOutcome(value: HelloKeyProof['outcome']) { proofOutcome = value; },
   failCleanup() { proofCleanupFailed = true; },
   behaviorFailure(value: typeof behaviorFailure) { behaviorFailure = value; },
+  attestationResult(value: typeof attestationResult) { attestationResult = value; },
   release() { release?.(); },
-  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors }; },
+  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations }; },
 } });

@@ -1,5 +1,13 @@
 # Windows Hello eligibility decision
 
+Native standard TPM certification inspection, Windows RSA signature checks and
+the separate same-key `NCryptCreateClaim` capability experiment are now implemented.
+See [HELLO_ATTESTATION_VERIFIER.md](HELLO_ATTESTATION_VERIFIER.md). Returned claims
+and even valid signatures remain untrusted; supported Passport framing and AIK
+certificate/trust/revocation validation are not established/implemented. This
+new capability action does not repeat the completed private-export diagnostic
+and cannot enroll/unlock a vault or close a physical gate.
+
 The [946514c owner report](../../deploy/windows-desktop/hello-target-946514c.json)
 completes the private-format diagnostic: all three raw private formats return
 `NTE_BAD_TYPE`, while both synthetic PKCS#1 decrypt comparisons, three strict

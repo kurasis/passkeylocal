@@ -29,6 +29,7 @@ fn main() {
             "hello_oaep_capability",
             "hello_pkcs1_compatibility",
             "hello_pkcs1_behavior",
+            "hello_attestation_capability",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

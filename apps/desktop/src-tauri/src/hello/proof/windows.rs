@@ -1,7 +1,8 @@
 //! Microsoft Passport CNG capability experiment using maintained SDK bindings.
 //! No OS/account Hello keys are opened, enumerated or changed.
 use super::{
-    exercise, exercise_selected, Experiment, ExportCheck, Failure, Outcome, Provider, Report, Stage,
+    exercise, exercise_selected, AttestationClaim, Experiment, ExportCheck, Failure, Outcome,
+    Provider, Report, Stage,
 };
 use crate::storage::{Error, Result};
 use ::windows::Win32::{
@@ -261,6 +262,7 @@ struct Probe<'a> {
     ciphertext: Vec<u8>,
     scheme: RsaPadding,
     exports: Vec<ExportCheck>,
+    attestation_claim: Option<AttestationClaim>,
     current: &'a dyn Fn() -> bool,
 }
 fn failed(error: windows_core::Error) -> Failure {
@@ -375,7 +377,88 @@ fn measure_key_exports(
         .map_err(failed)
     })
 }
+
+/// One fixed documented API candidate. No authority/OS AIK key is opened;
+/// support is measured, not assumed. The unknown returned format is not parsed
+/// or blessed as a trusted TPM claim. Flags must be zero per Microsoft S21.
+fn create_claim_current(
+    key: NCRYPT_KEY_HANDLE,
+    nonce: &mut [u8; 32],
+    output: &mut [u8],
+    actual: &mut u32,
+    current: &dyn Fn() -> bool,
+) -> std::result::Result<windows_core::Result<()>, Failure> {
+    if !current() {
+        return Err(Failure {
+            status: Outcome::Interrupted,
+            code: None,
+            operation: Some("attestation-session-changed-before-call"),
+        });
+    }
+    let mut nonce_buffer = BCryptBuffer {
+        cbBuffer: 32,
+        BufferType: NCRYPTBUFFER_CLAIM_KEYATTESTATION_NONCE,
+        pvBuffer: nonce.as_mut_ptr().cast(),
+    };
+    let parameters = BCryptBufferDesc {
+        ulVersion: BCRYPTBUFFER_VERSION,
+        cBuffers: 1,
+        pBuffers: &mut nonce_buffer,
+    };
+    Ok(unsafe {
+        NCryptCreateClaim(
+            Some(key),
+            None,
+            NCRYPT_CLAIM_SUBJECT_ONLY,
+            Some(&parameters),
+            Some(output),
+            actual,
+            0,
+        )
+    })
+}
 impl Probe<'_> {
+    fn attestation(&mut self) -> std::result::Result<(), Failure> {
+        self.context(&self.key)?;
+        let mut output = Zeroizing::new([0u8; 16_384]);
+        let mut actual = 0;
+        let result = create_claim_current(
+            NCRYPT_KEY_HANDLE(self.key.0),
+            &mut self.secret,
+            output.as_mut_slice(),
+            &mut actual,
+            self.current,
+        )?;
+        self.attestation_claim = Some(AttestationClaim {
+            api: "NCryptCreateClaim",
+            claim_type: "subject-only",
+            result: if result.is_err() {
+                "unavailable"
+            } else if actual == 0 || actual as usize > output.len() {
+                "invalid-length"
+            } else {
+                "returned-unverified"
+            },
+            verification: "not-performed",
+            bytes: if result.is_ok() && actual > 0 && actual as usize <= output.len() {
+                Some(actual)
+            } else {
+                None
+            },
+        });
+        if !(self.current)() {
+            return Err(Failure {
+                status: Outcome::Interrupted,
+                code: None,
+                operation: Some("attestation-session-changed-after-call"),
+            });
+        }
+        result.map_err(|error| failed(error).at("create-subject-only-attestation-claim"))?;
+        if actual == 0 || actual as usize > output.len() {
+            return Err(Failure::failed().at("attestation-claim-length"));
+        }
+        Ok(())
+    }
     fn delete_pending(&self) -> std::result::Result<(), Failure> {
         let mut pending = PENDING_DELETE.lock().map_err(|_| Failure::failed())?;
         if let Some(name) = pending.as_ref() {
@@ -435,7 +518,7 @@ impl Probe<'_> {
     }
     fn context(&self, key: &Handle) -> std::result::Result<(), Failure> {
         let message: Vec<u8> =
-            "PassKey Local: decrypt a test secret only. / Расшифровка тестового ключа."
+            "PassKey Local: test an app key only; no vault unlock. / Проверка тестового ключа приложения; хранилище не разблокируется."
                 .encode_utf16()
                 .chain(Some(0))
                 .flat_map(u16::to_le_bytes)
@@ -539,11 +622,15 @@ impl Probe<'_> {
     }
 }
 impl Provider for Probe<'_> {
+    fn attestation_claim(&self) -> Option<AttestationClaim> {
+        self.attestation_claim.clone()
+    }
     fn export_checks(&self) -> Vec<ExportCheck> {
         self.exports.clone()
     }
     fn step(&mut self, stage: Stage) -> std::result::Result<(), Failure> {
         match stage {
+            Stage::AttestationClaim => self.attestation()?,
             Stage::HelloConfiguration => {
                 if crate::hello::diagnostics::check()["helloConfiguration"] != "available" {
                     return Err(Failure::failed());
@@ -674,19 +761,57 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool, experiment: Experiment) -> R
         ciphertext: Vec::new(),
         scheme: RsaPadding::for_experiment(experiment),
         exports: Vec::new(),
+        attestation_claim: None,
         current: &current,
     };
     Ok(match experiment {
         Experiment::SecurityProof => exercise(&mut probe, &current),
         Experiment::AuthorizedOaepCapability
         | Experiment::Pkcs1Compatibility
-        | Experiment::Pkcs1Behavior => exercise_selected(&mut probe, &current, experiment),
+        | Experiment::Pkcs1Behavior
+        | Experiment::AttestationCapability => exercise_selected(&mut probe, &current, experiment),
     })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn actual_claim_api_is_guarded_and_preserves_its_native_failure() {
+        let mut nonce = [0x55; 32];
+        let mut output = [0xAA; 1024];
+        let mut actual = 123;
+        let stopped = create_claim_current(
+            NCRYPT_KEY_HANDLE(0),
+            &mut nonce,
+            &mut output,
+            &mut actual,
+            &|| false,
+        )
+        .unwrap_err();
+        assert_eq!(stopped.status, Outcome::Interrupted);
+        assert_eq!(output, [0xAA; 1024]);
+        assert_eq!(actual, 123);
+        // Intentionally invalid app handle: exercise actual API failure mapping,
+        // not a fabricated provider/TPM success. Never opens an OS key or UI.
+        let native = create_claim_current(
+            NCRYPT_KEY_HANDLE(0),
+            &mut nonce,
+            &mut output,
+            &mut actual,
+            &|| true,
+        )
+        .unwrap()
+        .unwrap_err();
+        let original = native.code().0 as u32;
+        assert_ne!(original, 0);
+        assert_eq!(
+            failed(native)
+                .at("create-subject-only-attestation-claim")
+                .code,
+            Some(original)
+        );
+    }
 
     #[test]
     fn owned_creation_and_silent_reopened_keys_interoperate_without_relaxing_refusal() {

@@ -12,6 +12,7 @@ export async function proveNativeHelloKey(): Promise<import('./hello-protocol.ts
 export async function testNativeHelloOaep(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello capability test is not available in browsers'); }
 export async function testNativeHelloPkcs1(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello compatibility test is not available in browsers'); }
 export async function testNativeHelloPkcs1Behavior(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello behavior test is not available in browsers'); }
+export async function testNativeHelloAttestation(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello attestation is not available in browsers'); }
 export async function openNativeHelloSettings(): Promise<void> { /* Not applicable to browsers. */ }
 export async function configureNativeBackup(): Promise<void> { /* Not applicable to browsers. */ }
 export async function retryNativeBackup(): Promise<void> { /* Not applicable to browsers. */ }
