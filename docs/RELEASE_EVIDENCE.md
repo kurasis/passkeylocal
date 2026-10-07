@@ -31,6 +31,17 @@ links and whitespace **PASS**. Application code, installer and Cloudflare ZIP
 are unchanged; their earlier CI evidence below remains historical evidence,
 not a new target pass. No replacement installer is needed for this update.
 
+Final general CI [37642830565](https://github.com/kurasis/passkeylocal/actions/runs/37642830565)
+**PASS**, all ten checks for head `0241e4998d6263aada6526f77e1c75e5e4951350`.
+It executes 161 TypeScript tests, 20 isolated UI scenarios, eight production PWA
+scenarios, 55 Linux native tests (one resource test ignored), independent fixture
+verification, cross-platform recovery, fresh interop and the offline recovery kit.
+Windows installer/physical diagnostics were not rerun for this evidence-only
+change. [PR #15](https://github.com/kurasis/passkeylocal/pull/15) merged automatically
+as `260a4fdbd951fec9c1ffc87671de0efff42042b6`; its tree matches the tested PR
+merge tree `94bb18b0874801ae28ab0f28cf33c32775773431`. This final CI record changes
+documentation only and closes no physical Hello gate.
+
 ## Native TPM certification inspection and same-key capability increment (2026-10-07)
 
 Implemented bounded standard TPMS_ATTEST/TPMT_PUBLIC inspection against the
