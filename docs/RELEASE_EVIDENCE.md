@@ -19,14 +19,36 @@ This is provenance, not hardware/signature attestation. The mechanism, padding,
 call flags, real output buffers and authorization/cleanup requirements remain
 unchanged. No target-fix or completed Hello feature claim is made.
 
-The extended Windows API regression must confirm a test-only software key's
+The extended Windows API regression confirms a test-only software key's
 actual successful silent decrypt is rejected by the production gate, while
 `NTE_INVALID_PARAMETER` retains its original error and only
-`NTE_SILENT_CONTEXT` counts as authorization refusal. Its Windows execution is
-**NOT RUN** until CI completes. A new target report remains **NOT RUN/BLOCKED**.
+`NTE_SILENT_CONTEXT` counts as authorization refusal. Its Windows execution
+**PASS**. A new target report remains **NOT RUN/BLOCKED**.
 Local typecheck, Windows GNU Clippy with warnings denied and 37 native Linux
 tests **PASS** (one existing resource test intentionally ignored in this local
-unit run). Windows execution and installed-build provenance checks are pending.
+unit run). Both production build outputs and target isolation passed in CI.
+
+General CI [37597928682](https://github.com/kurasis/passkeylocal/actions/runs/37597928682)
+and Windows CI [37597928612](https://github.com/kurasis/passkeylocal/actions/runs/37597928612)
+**PASS** for head `bf2a9fc5cebf8c52823259c8923f7b5c9f1b6b5f`, tested PR merge
+`0a3bf261dfdf2f246a08b1c9136056d5a730083d`. Actual main merge
+`24f29707532f979a215478bf72a87c842a999278` has the identical tested Git tree.
+Windows passed 40 native tests and the separate optimized 5 GiB gate; fresh
+native KDBX/Python parity; encrypted-file interop/full 10,000-file restore/search
+(126.012 s / 0.190 s); independent recovery (88 passed / 15 skipped); actual
+NSIS installation and packaged smoke. The 5 GiB gate took 42.416 s with sampled
+peak working set 9,592,832 bytes (28.109 s encryption / 13.747 s verification).
+
+Installed proof IPC's `sourceCommit` matches the tested build, but the hosted
+machine reports `device-not-present` and stops before app-key creation. This is
+not a successful target silent-decrypt result or Passport/TPM proof. Downloaded
+installer: 217,828,038 bytes, SHA-256
+`af9bab7261ca480c9e41268bcb3b1401f73b6ba77863ddef1c938be529de12ba`, independently
+matched to the original checksum sidecar and build metadata. Build, smoke,
+resource, signed official WebView2 and embedded native report provenance all
+name the tested PR source. [Download instructions and evidence](../deploy/windows-desktop/README.md)
+are updated. All ten files in the existing Cloudflare ZIP still match this
+current production web build byte for byte and its checksum sidecar.
 
 ## Reported Hello public-wrap failure and correction (2026-10-07)
 
