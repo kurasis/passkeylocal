@@ -1,5 +1,31 @@
 # Release evidence and gate status
 
+## Broader Windows Hello integration research (2026-10-07)
+
+The [source review](windows/HELLO_INTERNET_RESEARCH.md) identifies native WebAuthn
+PRF as a justified next synthetic experiment. W3C specifies the encryption use
+case, Microsoft's pinned API v9 header adds explicit authenticator routing, and
+merged Bitwarden PR #21998 supplies PRF input on creation to address incorrect
+capability reporting by Windows Hello. The current PWA already supplies that
+input; the desktop native adapter does not yet exist. Current `windows` 0.62.2
+bindings stop at WebAuthn API v7, so the newer fields need generated, reviewed
+bindings and runtime availability checks.
+
+Pinned examples distinguish true WebAuthn PRF from a signature-derived value
+also named PRF, and show a possible composition with an independent TPM-sealed
+inner envelope. These are implementation references, not accepted dependencies
+or proof that this owner's hardware supports the proposed route. One cited Rust
+PR series remains open; public 25H2 measurements include both successful PRF
+creation and a separate later-assertion failure. Authenticator names, API version,
+PRF success and backup flags are not per-key hardware proof.
+
+Validation: inspected primary API/specification contracts, pinned source
+implementations and current repository integration points; checked source URLs,
+local document links and whitespace. No application code/dependency changes and
+no new installer. Native PRF, TPM composition and new physical ceremonies are
+**NOT IMPLEMENTED / NOT RUN** here. Existing Passport reports remain unchanged,
+actual enrollment/unlock stays blocked and all four physical gates remain open.
+
 ## Target subject-only claim candidate rejected (2026-10-07)
 
 Saved the [owner-provided 6ae6e24 report](../deploy/windows-desktop/hello-target-6ae6e24.json)

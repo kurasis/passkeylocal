@@ -1,5 +1,11 @@
 # Windows Hello eligibility decision
 
+The [broader internet review](HELLO_INTERNET_RESEARCH.md) identifies native
+WebAuthn PRF as the recommended next experiment, including a concrete
+creation-input compatibility fix and a possible separate TPM-sealed inner layer.
+This is a new candidate architecture, not approval of the failed Passport claim
+path or completed hardware proof. Native enrollment/unlock remains unavailable.
+
 The [6ae6e24 owner report](../../deploy/windows-desktop/hello-target-6ae6e24.json)
 completes the no-authority, subject-only attestation capability measurement.
 Passport key creation/policy/readback and exact test-key deletion PASS; the
