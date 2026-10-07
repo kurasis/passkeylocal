@@ -1,5 +1,41 @@
 # Release evidence and gate status
 
+## Owner PRF creation-context result and wire-layout fix (2026-10-07)
+
+Saved the owner [capability](../deploy/windows-desktop/hello-target-107c49d-capability.json)
+and [synthetic PRF](../deploy/windows-desktop/hello-target-107c49d-prf.json) reports.
+Both match installed source `107c49d6d9d58d269ea5093b78218e76f5383437`.
+The reported Windows build is 26200, API version 9; platform availability and one
+unlocked display-name routing candidate pass. Synthetic creation stops at the
+local `prf-created-credential-context` validation, with no native error code;
+all assertions/AES remain NOT RUN and exact test-passkey deletion passes.
+No prompt/fingerprint observation or PRF secret is supplied by these reports.
+Eligibility/enrollment/unlock remain false and all four gates remain open.
+
+The old parser incorrectly read the credential length at 55–56 and ID at 57.
+W3C authenticator data is 32-byte RP hash + 1-byte flags + 4-byte counter,
+then 16-byte AAGUID + 2-byte credential length: length is at 53–54, ID at 55.
+Corrected the offsets using named prefix lengths without removing RP/UP/UV/backup,
+exact-ID or public-key-tail checks. Empty credential IDs also fail explicitly.
+Moved the pure parser to the portable module so Linux tests exercise real wire
+parsing rather than only Windows provider orchestration.
+
+The previous Windows fixture was hand-written with the same incorrect offset.
+Replaced it with a public-only W3C-layout fixture encoded independently with Python
+big-endian `struct`, a public NIST P-256 point and canonical COSE bytes. Python
+validates its layout and curve point. Before the fix, the new Rust fixture test
+FAILED on the old parser, reproducing the bug; validation after the fix is recorded
+below. New controls cover every header/ID truncation, wrong IDs/lengths,
+missing AT, RP/UP/UV/backup rejection and multi-byte network-order lengths.
+Physical PRF comparisons, TPM, fresh authorization/process/account/machine proof
+and real-store enrollment/unlock remain NOT RUN / BLOCKED. Hosted checks and a
+corrected installer are pending completion.
+
+Local validation PASS: 65 native Linux tests (one resource gate ignored), independent
+Python fixture encoding/layout/curve verification, app formatting and Windows GNU
+production/all-target Clippy. The regression first failed on the old parser and
+now passes; no physical PRF assertion or gate is counted as passed.
+
 ## Native PRF final hosted evidence (2026-10-07)
 
 [PR #17](https://github.com/kurasis/passkeylocal/pull/17) code head `582813c375e5e3559dbdafd6fbe3bedabbb3632e`;
