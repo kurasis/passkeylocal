@@ -1,0 +1,37 @@
+{
+  "algorithm": "webauthn-prf-aes256gcm",
+  "checks": [
+    { "status": "passed", "test": "webauthn-load" },
+    { "status": "passed", "test": "webauthn-api" },
+    { "status": "passed", "test": "hello-platform" },
+    { "status": "passed", "test": "hello-route" },
+    { "status": "passed", "test": "prf-create" },
+    { "status": "passed", "test": "prf-first" },
+    { "status": "passed", "test": "prf-repeat" },
+    { "status": "passed", "test": "prf-changed" },
+    { "status": "passed", "test": "prf-roundtrip" },
+    { "status": "passed", "test": "test-passkey-delete" }
+  ],
+  "eligible": false,
+  "enrolled": false,
+  "outcome": "prf-roundtrip-passed",
+  "purpose": "synthetic-webauthn-prf",
+  "remaining": [
+    "per-key-tpm-proof",
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "72a0df66fe107b6ef15e4c81aa010c261662287b",
+  "unlocked": false,
+  "version": 1,
+  "webauthn": {
+    "apiVersion": 9,
+    "helloCandidates": 1,
+    "helloLocked": false,
+    "osBuild": 26200,
+    "platformAvailable": true,
+    "routing": "display-name-candidate",
+    "tpmBinding": "not-verified"
+  }
+}

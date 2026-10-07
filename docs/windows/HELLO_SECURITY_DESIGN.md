@@ -1,9 +1,14 @@
 # Windows Hello eligibility decision
 
 The native [WebAuthn PRF increment](HELLO_PRF_PROOF.md) now implements read-only
-capability and synthetic PRF/AES/cleanup checks. It does not enable real
-enrollment/unlock or establish TPM binding. Physical PRF results and a separately
-verified hardware envelope remain prerequisites.
+capability and synthetic PRF/AES/cleanup checks. The
+[owner's installed-source report](../../deploy/windows-desktop/hello-target-72a0df6-prf.json)
+passes the same-process PRF comparisons, AES-GCM checks and exact cleanup on
+Windows 11 Pro 25H2 with Kensington VeriMark Desktop. The owner also reports
+fresh fingerprint requests at creation and all three assertions. These observations
+do not enable real enrollment/unlock or establish TPM binding. A separately
+verified hardware envelope and complete fresh-authorization/process/account/machine
+acceptance remain prerequisites; all four physical gates remain open.
 
 The [broader internet review](HELLO_INTERNET_RESEARCH.md) identifies native
 WebAuthn PRF as the recommended next experiment, including a concrete
