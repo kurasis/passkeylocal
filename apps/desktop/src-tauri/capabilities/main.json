@@ -26,6 +26,7 @@
     "allow-hello-key-proof",
     "allow-hello-oaep-capability",
     "allow-hello-pkcs1-compatibility",
+    "allow-hello-pkcs1-behavior",
     "allow-hello-settings",
     "allow-hello-unlock",
     "allow-hello-revoke",

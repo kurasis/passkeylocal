@@ -26,7 +26,7 @@ enum RsaPadding {
 impl RsaPadding {
     fn for_experiment(experiment: Experiment) -> Self {
         match experiment {
-            Experiment::Pkcs1Compatibility => Self::Pkcs1Compatibility,
+            Experiment::Pkcs1Compatibility | Experiment::Pkcs1Behavior => Self::Pkcs1Compatibility,
             _ => Self::OaepSha256,
         }
     }
@@ -271,10 +271,16 @@ fn failed(error: windows_core::Error) -> Failure {
         operation: None,
     }
 }
-fn require_silent_refusal(result: windows_core::Result<()>) -> std::result::Result<(), Failure> {
+fn require_silent_refusal(
+    result: windows_core::Result<()>,
+    scheme: RsaPadding,
+) -> std::result::Result<(), Failure> {
     match result {
         Err(error) if error.code() == NTE_SILENT_CONTEXT => Ok(()),
-        Err(error) => Err(failed(error).at("silent-oaep-sha256-decrypt")),
+        Err(error) => Err(failed(error).at(match scheme {
+            RsaPadding::OaepSha256 => "silent-oaep-sha256-decrypt",
+            RsaPadding::Pkcs1Compatibility => "silent-pkcs1-v1_5-decrypt",
+        })),
         Ok(()) => Err(Failure::failed().at("silent-decrypt-unexpected-success")),
     }
 }
@@ -488,7 +494,7 @@ impl Probe<'_> {
             self.current,
         )?;
         if silent {
-            return require_silent_refusal(result);
+            return require_silent_refusal(result, self.scheme);
         }
         result.map_err(|e| failed(e).at(self.scheme.decrypt_operation()))?;
         if actual != 32 || !libsodium_rs::utils::memcmp(&plaintext[..32], self.secret.as_slice()) {
@@ -662,9 +668,9 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool, experiment: Experiment) -> R
     };
     Ok(match experiment {
         Experiment::SecurityProof => exercise(&mut probe, &current),
-        Experiment::AuthorizedOaepCapability | Experiment::Pkcs1Compatibility => {
-            exercise_selected(&mut probe, &current, experiment)
-        }
+        Experiment::AuthorizedOaepCapability
+        | Experiment::Pkcs1Compatibility
+        | Experiment::Pkcs1Behavior => exercise_selected(&mut probe, &current, experiment),
     })
 }
 
@@ -793,7 +799,9 @@ mod tests {
                 ));
                 if silent {
                     assert_eq!(
-                        require_silent_refusal(result).unwrap_err().operation,
+                        require_silent_refusal(result, RsaPadding::OaepSha256)
+                            .unwrap_err()
+                            .operation,
                         Some("silent-decrypt-unexpected-success")
                     );
                 }
@@ -918,12 +926,13 @@ mod tests {
                 NCRYPT_PAD_OAEP_FLAG | NCRYPT_SILENT_FLAG,
             );
             assert!(silent.is_ok());
-            let refusal = require_silent_refusal(silent).unwrap_err();
+            let refusal = require_silent_refusal(silent, RsaPadding::OaepSha256).unwrap_err();
             assert_eq!(refusal.status, Outcome::Failed);
             assert_eq!(refusal.operation, Some("silent-decrypt-unexpected-success"));
-            let parameter_error = require_silent_refusal(Err(
-                windows::Win32::Foundation::NTE_INVALID_PARAMETER.into(),
-            ))
+            let parameter_error = require_silent_refusal(
+                Err(windows::Win32::Foundation::NTE_INVALID_PARAMETER.into()),
+                RsaPadding::OaepSha256,
+            )
             .unwrap_err();
             assert_eq!(parameter_error.status, Outcome::Failed);
             assert_eq!(parameter_error.code, Some(0x80090027));
@@ -931,7 +940,10 @@ mod tests {
                 parameter_error.operation,
                 Some("silent-oaep-sha256-decrypt")
             );
-            assert!(require_silent_refusal(Err(NTE_SILENT_CONTEXT.into())).is_ok());
+            assert!(
+                require_silent_refusal(Err(NTE_SILENT_CONTEXT.into()), RsaPadding::OaepSha256)
+                    .is_ok()
+            );
             // The separately selected legacy diagnostic uses SDK PKCS#1
             // encryption/decryption with null padding info. Compare both
             // schemes on the same real API key: wrong-scheme decrypts fail.
@@ -944,6 +956,7 @@ mod tests {
             );
             let legacy = RsaPadding::for_experiment(Experiment::Pkcs1Compatibility);
             assert!(legacy == RsaPadding::Pkcs1Compatibility);
+            assert!(RsaPadding::for_experiment(Experiment::Pkcs1Behavior) == legacy);
             assert!(legacy.info().is_none());
             let legacy_ciphertext = wrap_public_key(key, &secret, legacy).unwrap();
             decrypt_current(
@@ -962,6 +975,33 @@ mod tests {
                 &plaintext[..32],
                 secret.as_slice()
             ));
+            // Actual silent legacy decrypt succeeds on this software fixture,
+            // which must fail the same strict gate used by the Passport probe.
+            let silent_legacy = decrypt_current(
+                key,
+                &legacy_ciphertext,
+                None,
+                plaintext.as_mut_slice(),
+                &mut actual,
+                legacy.decrypt_flags() | NCRYPT_SILENT_FLAG,
+                &|| true,
+            )
+            .unwrap();
+            assert!(silent_legacy.is_ok());
+            assert_eq!(
+                require_silent_refusal(silent_legacy, legacy)
+                    .unwrap_err()
+                    .operation,
+                Some("silent-decrypt-unexpected-success")
+            );
+            let error = require_silent_refusal(
+                Err(windows::Win32::Foundation::NTE_INVALID_PARAMETER.into()),
+                legacy,
+            )
+            .unwrap_err();
+            assert_eq!(error.code, Some(0x80090027));
+            assert_eq!(error.operation, Some("silent-pkcs1-v1_5-decrypt"));
+            assert!(require_silent_refusal(Err(NTE_SILENT_CONTEXT.into()), legacy).is_ok());
             assert!(decrypt_current(
                 key,
                 &ciphertext,

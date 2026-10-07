@@ -1,5 +1,13 @@
 # Windows desktop test installers
 
+The [owner report from 6cbe2c4](hello-target-6cbe2c4.json) now passes authorized
+PKCS#1 v1.5 decryption and test-secret comparison, with successful cleanup.
+Silent/second-decrypt/export checks remain NOT RUN and no new prompt observation
+was supplied. A separate **Test PKCS#1 key behavior** action is being validated
+for the next installer; use the latest published build below until its CI and
+installed-app evidence are available. Hardware/fresh authorization gates remain
+open and Hello vault unlock stays disabled.
+
 Latest explicit RSA compatibility diagnostic and file-safe re-unlock fix: [successful Windows run 37616751627](https://github.com/kurasis/passkeylocal/actions/runs/37616751627), [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37616751627/artifacts/11480289407). Code head `4c18104424eab35bc7f4af56c29ba091fc3f37b6`; tested PR merge source `6cbe2c4177866382d9696105a198c550849a1218`; merged through [PR #10](https://github.com/kurasis/passkeylocal/pull/10). Actual main merge `8342a7b64a3b67ec9558d0d660845a6a1d45cd9f` has the identical tested Git tree.
 
 Installer SHA-256: `cdddf166cb62eb555b47df3893ca9ea832089100f1e12ec6679a92bff6ea28e3` (217,848,427 bytes), independently matched to the original checksum sidecar and metadata after download. [Build metadata](build-6cbe2c4.json), [installed-app evidence](smoke-6cbe2c4.json), [5 GiB measurement](file-safe-resource-6cbe2c4.json), [official WebView2 signature evidence](webview2-download-6cbe2c4.json), [Russian settings screenshot](windows-settings-6cbe2c4.png) and [locked window](windows-locked-6cbe2c4.png) are retained here. Previous evidence remains in this folder.

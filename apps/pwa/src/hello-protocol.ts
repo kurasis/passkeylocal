@@ -19,12 +19,12 @@ export type HelloProofStage = 'hello-configuration' | 'provider-open' | 'key-cre
 export interface HelloKeyProof {
   version: 1;
   sourceCommit?: string;
-  purpose: 'synthetic-key-proof' | 'synthetic-oaep-capability' | 'synthetic-pkcs1-compatibility';
+  purpose: 'synthetic-key-proof' | 'synthetic-oaep-capability' | 'synthetic-pkcs1-compatibility' | 'synthetic-pkcs1-behavior';
   algorithm?: 'rsa-oaep-sha256' | 'rsa-pkcs1-v1_5';
   eligible: false;
   unlocked: false;
   enrolled: false;
-  outcome: 'roundtrip-passed' | 'capability-passed' | 'compatibility-passed' | 'blocked' | 'cancelled' | 'interrupted';
+  outcome: 'roundtrip-passed' | 'capability-passed' | 'compatibility-passed' | 'behavior-passed' | 'blocked' | 'cancelled' | 'interrupted';
   checks: { test: HelloProofStage; status: 'passed' | 'failed' | 'cancelled' | 'interrupted' | 'not-run'; nativeCode?: string; operation?: string }[];
   remaining: ('per-key-tpm-proof' | 'fresh-authorization-proof' | 'fresh-process-proof' | 'account-machine-copy-proof')[];
 }

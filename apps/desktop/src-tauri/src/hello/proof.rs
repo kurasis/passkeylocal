@@ -47,10 +47,12 @@ pub enum Experiment {
     AuthorizedOaepCapability,
     // Explicit synthetic compatibility discovery, never an OAEP fallback.
     Pkcs1Compatibility,
+    // Separate full behavior measurement, never approval of legacy padding.
+    Pkcs1Behavior,
 }
 impl Experiment {
     fn includes(self, stage: Stage) -> bool {
-        self == Self::SecurityProof
+        matches!(self, Self::SecurityProof | Self::Pkcs1Behavior)
             || matches!(
                 stage,
                 Stage::HelloConfiguration
@@ -143,9 +145,10 @@ pub(crate) fn exercise_selected(
             Experiment::SecurityProof => "synthetic-key-proof",
             Experiment::AuthorizedOaepCapability => "synthetic-oaep-capability",
             Experiment::Pkcs1Compatibility => "synthetic-pkcs1-compatibility",
+            Experiment::Pkcs1Behavior => "synthetic-pkcs1-behavior",
         },
         algorithm: match experiment {
-            Experiment::Pkcs1Compatibility => "rsa-pkcs1-v1_5",
+            Experiment::Pkcs1Compatibility | Experiment::Pkcs1Behavior => "rsa-pkcs1-v1_5",
             _ => "rsa-oaep-sha256",
         },
         eligible: false,
@@ -155,6 +158,7 @@ pub(crate) fn exercise_selected(
             Experiment::SecurityProof => "roundtrip-passed",
             Experiment::AuthorizedOaepCapability => "capability-passed",
             Experiment::Pkcs1Compatibility => "compatibility-passed",
+            Experiment::Pkcs1Behavior => "behavior-passed",
         },
         checks: Vec::with_capacity(13),
         remaining: [
@@ -473,6 +477,56 @@ mod tests {
         assert_eq!(report.checks.last().unwrap().status, Outcome::Failed);
     }
     #[test]
+    fn legacy_behavior_measures_all_stages_without_promoting_eligibility() {
+        let mut complete = provider(None);
+        let report = exercise_selected(&mut complete, || true, Experiment::Pkcs1Behavior);
+        assert_eq!(report.purpose, "synthetic-pkcs1-behavior");
+        assert_eq!(report.algorithm, "rsa-pkcs1-v1_5");
+        assert_eq!(report.outcome, "behavior-passed");
+        assert!(!report.eligible && !report.enrolled && !report.unlocked);
+        assert_eq!(report.remaining.len(), 4);
+        assert!(report
+            .checks
+            .iter()
+            .all(|check| check.status == Outcome::Passed));
+        assert_eq!(&complete.calls[..12], &STEPS);
+        assert_eq!(complete.calls.last(), Some(&Stage::TestKeyDelete));
+        for (index, stage) in STEPS.into_iter().enumerate() {
+            let mut failed = provider(Some(stage));
+            let report = exercise_selected(&mut failed, || true, Experiment::Pkcs1Behavior);
+            assert_eq!(report.outcome, "blocked");
+            assert_eq!(failed.calls.len(), index + 2);
+            assert_eq!(failed.calls.last(), Some(&Stage::TestKeyDelete));
+            assert_eq!(report.checks[index].status, Outcome::Failed);
+            assert!(report.checks[index + 1..12]
+                .iter()
+                .all(|check| check.status == Outcome::NotRun));
+        }
+        let mut deletion = provider(None);
+        deletion.cleanup_failure = true;
+        assert_eq!(
+            exercise_selected(&mut deletion, || true, Experiment::Pkcs1Behavior).outcome,
+            "blocked"
+        );
+        // Invalidate before every stage, and after the last stage. No later
+        // private operation is started and cleanup remains unconditional.
+        for allowed in 0..=12 {
+            let mut interrupted = provider(None);
+            let calls = std::cell::Cell::new(0);
+            let report = exercise_selected(
+                &mut interrupted,
+                || {
+                    calls.set(calls.get() + 1);
+                    calls.get() <= allowed
+                },
+                Experiment::Pkcs1Behavior,
+            );
+            assert_eq!(report.outcome, "interrupted");
+            assert_eq!(interrupted.calls.len(), allowed + 1);
+            assert_eq!(interrupted.calls.last(), Some(&Stage::TestKeyDelete));
+        }
+    }
+    #[test]
     fn cancelled_operation_keeps_its_code_and_still_cleans_up() {
         struct Cancelled(bool);
         impl Provider for Cancelled {
@@ -496,6 +550,7 @@ mod tests {
             Experiment::SecurityProof,
             Experiment::AuthorizedOaepCapability,
             Experiment::Pkcs1Compatibility,
+            Experiment::Pkcs1Behavior,
         ] {
             let mut provider = Cancelled(false);
             let report = exercise_selected(&mut provider, || true, experiment);

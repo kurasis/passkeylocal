@@ -18,6 +18,8 @@ let proofCleanupFailed = false;
 let proofs = 0;
 let capabilities = 0;
 let compatibilities = 0;
+let behaviors = 0;
+let behaviorFailure: 'silent-before' | 'test-key-delete' | null = null;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
   checks++;
   return { available: false, enrolled: false, reason: 'protected-key-proof-required', helloConfiguration: configuration, mode: 'off' };
@@ -55,6 +57,18 @@ export async function testNativeHelloPkcs1(): Promise<HelloKeyProof> {
       { test: 'unwrap-first', status: 'passed' }, { test: 'unwrap-second', status: 'not-run' }, { test: 'private-export', status: 'not-run' },
       { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
 }
+export async function testNativeHelloPkcs1Behavior(): Promise<HelloKeyProof> {
+  behaviors++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  const stages: HelloKeyProof['checks'][number]['test'][] = ['hello-configuration', 'provider-open', 'key-create', 'key-policy', 'policy-readback', 'public-wrap', 'silent-before', 'unwrap-first', 'silent-after-first', 'unwrap-second', 'silent-after-second', 'private-export', 'test-key-delete'];
+  let stopped = false;
+  return { version: 1, purpose: 'synthetic-pkcs1-behavior', algorithm: 'rsa-pkcs1-v1_5', eligible: false, enrolled: false, unlocked: false,
+    outcome: behaviorFailure ? 'blocked' : 'behavior-passed', remaining: ['per-key-tpm-proof', 'fresh-authorization-proof', 'fresh-process-proof', 'account-machine-copy-proof'],
+    checks: stages.map((test) => {
+      if (test === behaviorFailure) { stopped = true; return { test, status: 'failed', operation: test === 'silent-before' ? 'silent-decrypt-unexpected-success' : 'delete-test-key' }; }
+      return { test, status: stopped && test !== 'test-key-delete' ? 'not-run' : 'passed' };
+    }) };
+}
 Object.assign(window, { helloTest: {
   configure(value: HelloConfiguration) { configuration = value; },
   outcome(value: HelloVerificationResult) { verification = value; },
@@ -62,6 +76,7 @@ Object.assign(window, { helloTest: {
   failSettings() { settingsFail = true; },
   proofOutcome(value: HelloKeyProof['outcome']) { proofOutcome = value; },
   failCleanup() { proofCleanupFailed = true; },
+  behaviorFailure(value: typeof behaviorFailure) { behaviorFailure = value; },
   release() { release?.(); },
-  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities }; },
+  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors }; },
 } });
