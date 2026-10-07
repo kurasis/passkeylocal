@@ -26,5 +26,6 @@ export interface HelloKeyProof {
   enrolled: false;
   outcome: 'roundtrip-passed' | 'capability-passed' | 'compatibility-passed' | 'behavior-passed' | 'blocked' | 'cancelled' | 'interrupted';
   checks: { test: HelloProofStage; status: 'passed' | 'failed' | 'cancelled' | 'interrupted' | 'not-run'; nativeCode?: string; operation?: string }[];
+  exportChecks?: { format: 'rsa-private' | 'rsa-full-private' | 'pkcs8-private'; result: 'refused' | 'unsupported-format' | 'unexpected-success' | 'failed' | 'not-run'; nativeCode?: string }[];
   remaining: ('per-key-tpm-proof' | 'fresh-authorization-proof' | 'fresh-process-proof' | 'account-machine-copy-proof')[];
 }

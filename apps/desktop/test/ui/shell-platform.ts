@@ -19,7 +19,7 @@ let proofs = 0;
 let capabilities = 0;
 let compatibilities = 0;
 let behaviors = 0;
-let behaviorFailure: 'silent-before' | 'test-key-delete' | null = null;
+let behaviorFailure: 'silent-before' | 'private-export' | 'test-key-delete' | null = null;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
   checks++;
   return { available: false, enrolled: false, reason: 'protected-key-proof-required', helloConfiguration: configuration, mode: 'off' };
@@ -64,8 +64,13 @@ export async function testNativeHelloPkcs1Behavior(): Promise<HelloKeyProof> {
   let stopped = false;
   return { version: 1, purpose: 'synthetic-pkcs1-behavior', algorithm: 'rsa-pkcs1-v1_5', eligible: false, enrolled: false, unlocked: false,
     outcome: behaviorFailure ? 'blocked' : 'behavior-passed', remaining: ['per-key-tpm-proof', 'fresh-authorization-proof', 'fresh-process-proof', 'account-machine-copy-proof'],
+    exportChecks: behaviorFailure === 'private-export' ? [
+      { format: 'rsa-private', result: 'unsupported-format', nativeCode: '0x8009000A' },
+      { format: 'rsa-full-private', result: 'refused', nativeCode: '0x80090010' },
+      { format: 'pkcs8-private', result: 'failed', nativeCode: '0x80090029' },
+    ] : undefined,
     checks: stages.map((test) => {
-      if (test === behaviorFailure) { stopped = true; return { test, status: 'failed', operation: test === 'silent-before' ? 'silent-decrypt-unexpected-success' : 'delete-test-key' }; }
+      if (test === behaviorFailure) { stopped = true; return { test, status: 'failed', operation: test === 'silent-before' ? 'silent-decrypt-unexpected-success' : test === 'private-export' ? 'private-export-rsa' : 'delete-test-key' }; }
       return { test, status: stopped && test !== 'test-key-delete' ? 'not-run' : 'passed' };
     }) };
 }

@@ -107,6 +107,13 @@ export function DesktopHelloSettings() {
         <span>{t(check.test === 'public-wrap' && proof.algorithm === 'rsa-pkcs1-v1_5' ? proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloPkcs1Wrap' : 'desktopHelloCompatibilityWrap' : `desktopHello_proof_${check.test}`)}</span>
         <span>{t(`desktopHello_proofStatus_${check.status}`)}{check.nativeCode && <> <code>{check.nativeCode}</code></>}</span>
       </li>)}</ul>
+      {proof.exportChecks?.length ? <div className="stack">
+        <p>{t('desktopHelloExportExplain')}</p>
+        <ul className="hello-proof-checks">{proof.exportChecks.map((check) => <li key={check.format}>
+          <span>{t(`desktopHello_exportFormat_${check.format}`)}</span>
+          <span>{t(`desktopHello_exportResult_${check.result}`)}{check.nativeCode && <> <code>{check.nativeCode}</code></>}</span>
+        </li>)}</ul>
+      </div> : null}
       {cleanupFailed && <Banner kind="error">{t('desktopHelloProofDeleteFailed')}</Banner>}
       <details><summary>{t('desktopHelloProofReport')}</summary><pre className="hello-proof-report">{JSON.stringify(proof, null, 2)}</pre></details>
       <button type="button" className="secondary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(proof, null, 2)).then(() => { setCopied(true); setCopyFailed(false); }, () => { setCopied(false); setCopyFailed(true); })}>{t('desktopHelloProofCopy')}</button>

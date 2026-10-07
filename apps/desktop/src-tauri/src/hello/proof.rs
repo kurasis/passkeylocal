@@ -87,6 +87,82 @@ pub struct Check {
     pub operation: Option<&'static str>,
 }
 
+/// Format support is distinct from explicit private-export permission denial.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportCheck {
+    pub format: &'static str,
+    pub result: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub native_code: Option<String>,
+}
+
+#[cfg(any(windows, test))]
+fn export_result(format: &'static str, code: Option<u32>) -> ExportCheck {
+    ExportCheck {
+        format,
+        result: match code {
+            Some(0x80090010) => "refused",            // NTE_PERM
+            Some(0x8009000A) => "unsupported-format", // NTE_BAD_TYPE
+            None => "unexpected-success",
+            _ => "failed",
+        },
+        native_code: code.map(|code| format!("0x{code:08X}")),
+    }
+}
+
+#[cfg(any(windows, test))]
+pub(crate) fn measure_exports(
+    current: impl Fn() -> bool,
+    mut attempt: impl FnMut(&'static str) -> std::result::Result<(), Failure>,
+) -> (Vec<ExportCheck>, std::result::Result<(), Failure>) {
+    let formats = [
+        ("rsa-private", "private-export-rsa"),
+        ("rsa-full-private", "private-export-rsa-full"),
+        ("pkcs8-private", "private-export-pkcs8"),
+    ];
+    let mut checks: Vec<_> = formats
+        .iter()
+        .map(|(format, _)| ExportCheck {
+            format,
+            result: "not-run",
+            native_code: None,
+        })
+        .collect();
+    let mut first_failure = None;
+    for (index, (format, operation)) in formats.into_iter().enumerate() {
+        if !current() {
+            return (
+                checks,
+                Err(Failure {
+                    status: Outcome::Interrupted,
+                    code: None,
+                    operation: Some("private-export-session-changed"),
+                }),
+            );
+        }
+        let result = attempt(format);
+        checks[index] = export_result(format, result.as_ref().err().and_then(|error| error.code));
+        // No-code native failures must not be confused with API success.
+        if result.is_err() && checks[index].result == "unexpected-success" {
+            checks[index].result = "failed";
+        }
+        match result {
+            Err(error) if error.code == Some(0x80090010) && error.status == Outcome::Failed => {}
+            Err(error) if matches!(error.status, Outcome::Cancelled | Outcome::Interrupted) => {
+                return (checks, Err(error.at(operation)));
+            }
+            Err(error) => {
+                first_failure.get_or_insert(error.at(operation));
+            }
+            // A successful private export violates the gate. Output is never
+            // returned, and no subsequent export attempt is necessary.
+            Ok(()) => return (checks, Err(Failure::failed().at(operation))),
+        }
+    }
+    (checks, first_failure.map_or(Ok(()), Err))
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Report {
@@ -100,6 +176,8 @@ pub struct Report {
     pub enrolled: bool,
     pub outcome: &'static str,
     pub checks: Vec<Check>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub export_checks: Vec<ExportCheck>,
     pub remaining: [&'static str; 4],
 }
 
@@ -125,6 +203,9 @@ impl Failure {
 pub(crate) trait Provider {
     fn step(&mut self, stage: Stage) -> std::result::Result<(), Failure>;
     fn cleanup(&mut self) -> std::result::Result<(), Failure>;
+    fn export_checks(&self) -> Vec<ExportCheck> {
+        Vec::new()
+    }
 }
 
 /// Only native code chooses the provider, algorithm, key and synthetic secret.
@@ -161,6 +242,7 @@ pub(crate) fn exercise_selected(
             Experiment::Pkcs1Behavior => "behavior-passed",
         },
         checks: Vec::with_capacity(13),
+        export_checks: Vec::new(),
         remaining: [
             "per-key-tpm-proof",
             "fresh-authorization-proof",
@@ -233,6 +315,7 @@ pub(crate) fn exercise_selected(
         native_code,
         operation,
     });
+    report.export_checks = provider.export_checks();
     report
 }
 
@@ -525,6 +608,157 @@ mod tests {
             assert_eq!(interrupted.calls.len(), allowed + 1);
             assert_eq!(interrupted.calls.last(), Some(&Stage::TestKeyDelete));
         }
+    }
+    #[test]
+    fn export_formats_are_measured_without_blessing_unsupported_types() {
+        let formats = ["rsa-private", "rsa-full-private", "pkcs8-private"];
+        let mut calls = Vec::new();
+        let (checks, result) = measure_exports(
+            || true,
+            |format| {
+                calls.push(format);
+                Err(Failure {
+                    code: Some(if format == "rsa-private" {
+                        0x8009000A
+                    } else {
+                        0x80090010
+                    }),
+                    ..Failure::failed()
+                })
+            },
+        );
+        assert_eq!(calls, formats);
+        let error = result.unwrap_err();
+        assert_eq!(error.code, Some(0x8009000A));
+        assert_eq!(error.operation, Some("private-export-rsa"));
+        assert_eq!(checks[0].result, "unsupported-format");
+        assert_eq!(checks[1].result, "refused");
+        assert_eq!(checks[2].result, "refused");
+        // No private data or key identifiers are serialized.
+        let json = serde_json::to_string(&checks).unwrap();
+        assert!(!json.contains("plaintext") && !json.contains("keyName"));
+        for code in [0x8009000A, 0x80090027, 0x80090029] {
+            let (checks, result) = measure_exports(
+                || true,
+                |_| {
+                    Err(Failure {
+                        code: Some(code),
+                        ..Failure::failed()
+                    })
+                },
+            );
+            assert!(result.is_err());
+            assert!(checks.iter().all(|check| check.result != "refused"));
+        }
+        let (checks, result) = measure_exports(
+            || true,
+            |_| {
+                Err(Failure {
+                    code: Some(0x80090010),
+                    ..Failure::failed()
+                })
+            },
+        );
+        assert!(result.is_ok());
+        assert!(checks.iter().all(|check| check.result == "refused"));
+        for stop_at in 0..3 {
+            let mut calls = 0;
+            let (checks, result) = measure_exports(
+                || true,
+                |_| {
+                    calls += 1;
+                    if calls == stop_at + 1 {
+                        Ok(())
+                    } else {
+                        Err(Failure {
+                            code: Some(0x80090010),
+                            ..Failure::failed()
+                        })
+                    }
+                },
+            );
+            assert!(result.is_err());
+            assert_eq!(calls, stop_at + 1);
+            assert_eq!(checks[stop_at].result, "unexpected-success");
+            assert!(checks[stop_at + 1..]
+                .iter()
+                .all(|check| check.result == "not-run"));
+        }
+        for allowed in 0..3 {
+            let calls = std::cell::Cell::new(0);
+            let (checks, result) = measure_exports(
+                || calls.get() < allowed,
+                |_| {
+                    calls.set(calls.get() + 1);
+                    Err(Failure {
+                        code: Some(0x8009000A),
+                        ..Failure::failed()
+                    })
+                },
+            );
+            assert_eq!(result.unwrap_err().status, Outcome::Interrupted);
+            assert_eq!(calls.get(), allowed);
+            assert!(checks[allowed..]
+                .iter()
+                .all(|check| check.result == "not-run"));
+        }
+        let (_, result) = measure_exports(
+            || true,
+            |_| {
+                Err(Failure {
+                    status: Outcome::Cancelled,
+                    code: Some(0x80090036),
+                    operation: None,
+                })
+            },
+        );
+        assert_eq!(result.unwrap_err().status, Outcome::Cancelled);
+    }
+    #[test]
+    fn export_details_survive_failed_gate_and_unconditional_cleanup() {
+        struct Exports {
+            checks: Vec<ExportCheck>,
+            deleted: bool,
+        }
+        impl Provider for Exports {
+            fn step(&mut self, stage: Stage) -> std::result::Result<(), Failure> {
+                if stage != Stage::PrivateExport {
+                    return Ok(());
+                }
+                let (checks, result) = measure_exports(
+                    || true,
+                    |_| {
+                        Err(Failure {
+                            code: Some(0x8009000A),
+                            ..Failure::failed()
+                        })
+                    },
+                );
+                self.checks = checks;
+                result
+            }
+            fn cleanup(&mut self) -> std::result::Result<(), Failure> {
+                self.deleted = true;
+                Ok(())
+            }
+            fn export_checks(&self) -> Vec<ExportCheck> {
+                self.checks.clone()
+            }
+        }
+        let mut provider = Exports {
+            checks: Vec::new(),
+            deleted: false,
+        };
+        let report = exercise_selected(&mut provider, || true, Experiment::Pkcs1Behavior);
+        assert!(provider.deleted);
+        assert_eq!(report.outcome, "blocked");
+        assert!(!report.eligible && !report.enrolled && !report.unlocked);
+        assert_eq!(report.export_checks.len(), 3);
+        assert_eq!(report.checks.last().unwrap().status, Outcome::Passed);
+        let value = serde_json::to_value(report).unwrap();
+        assert_eq!(value["exportChecks"][2]["format"], "pkcs8-private");
+        assert_eq!(value["exportChecks"][2]["nativeCode"], "0x8009000A");
+        assert_eq!(value["exportChecks"][2]["result"], "unsupported-format");
     }
     #[test]
     fn cancelled_operation_keeps_its_code_and_still_cleans_up() {

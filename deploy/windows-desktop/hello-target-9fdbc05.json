@@ -1,0 +1,72 @@
+{
+  "algorithm": "rsa-pkcs1-v1_5",
+  "checks": [
+    {
+      "status": "passed",
+      "test": "hello-configuration"
+    },
+    {
+      "status": "passed",
+      "test": "provider-open"
+    },
+    {
+      "status": "passed",
+      "test": "key-create"
+    },
+    {
+      "status": "passed",
+      "test": "key-policy"
+    },
+    {
+      "status": "passed",
+      "test": "policy-readback"
+    },
+    {
+      "status": "passed",
+      "test": "public-wrap"
+    },
+    {
+      "status": "passed",
+      "test": "silent-before"
+    },
+    {
+      "status": "passed",
+      "test": "unwrap-first"
+    },
+    {
+      "status": "passed",
+      "test": "silent-after-first"
+    },
+    {
+      "status": "passed",
+      "test": "unwrap-second"
+    },
+    {
+      "status": "passed",
+      "test": "silent-after-second"
+    },
+    {
+      "status": "failed",
+      "test": "private-export",
+      "nativeCode": "0x8009000A",
+      "operation": "private-export-rsa"
+    },
+    {
+      "status": "passed",
+      "test": "test-key-delete"
+    }
+  ],
+  "eligible": false,
+  "enrolled": false,
+  "outcome": "blocked",
+  "purpose": "synthetic-pkcs1-behavior",
+  "remaining": [
+    "per-key-tpm-proof",
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "9fdbc050877c9968b77c2aa7aa76f807afe3ee3a",
+  "unlocked": false,
+  "version": 1
+}

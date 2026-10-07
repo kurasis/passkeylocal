@@ -1,5 +1,13 @@
 # Windows desktop test installers
 
+The [owner behavior report from 9fdbc05](hello-target-9fdbc05.json) passes both
+decryptions and all three silent refusals, with successful cleanup. The owner
+reports fingerprint confirmation every time for the queried system prompts.
+Private RSA export returns `NTE_BAD_TYPE`, meaning that format is unavailable
+for this key. A next diagnostic collects all three private format results while
+keeping unsupported types unresolved and Hello vault unlock disabled. Its new
+installer is pending CI; the currently published installer is linked below.
+
 Latest explicit PKCS#1 key behavior test: [successful Windows run 37621824873](https://github.com/kurasis/passkeylocal/actions/runs/37621824873), [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37621824873/artifacts/11482488654). Code head `f08abcccffb1d3b68c0c15d16cf8ffdc2e8a91b4`; tested PR merge source `9fdbc050877c9968b77c2aa7aa76f807afe3ee3a`; merged automatically through [PR #11](https://github.com/kurasis/passkeylocal/pull/11). Actual main merge `90f720322afa8819d0717725a8c4038428c1febf` has the identical tested Git tree `709ee5ae035e91e4140b56d27d11188806c5693c`.
 
 Installer SHA-256: `f710b52afa563e52efd44fed48008e0b80bae675cd5e48ea0cb18aeccf99c118` (217,853,467 bytes), independently matched to its original checksum sidecar and metadata after download. [Build metadata](build-9fdbc05.json), [installed-app evidence](smoke-9fdbc05.json), [5 GiB measurement](file-safe-resource-9fdbc05.json), [official WebView2 signature evidence](webview2-download-9fdbc05.json), [Russian settings screenshot](windows-settings-9fdbc05.png) and [locked window](windows-locked-9fdbc05.png) are retained here. Previous evidence remains in this folder.

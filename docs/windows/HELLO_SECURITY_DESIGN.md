@@ -1,5 +1,15 @@
 # Windows Hello eligibility decision
 
+The [9fdbc05 owner report](../../deploy/windows-desktop/hello-target-9fdbc05.json)
+now passes both synthetic PKCS#1 decrypts and three explicit silent refusals.
+The owner reports fingerprint confirmation every time for the queried prompts.
+Private export returns `NTE_BAD_TYPE`, meaning the requested format is unavailable
+for this key; that does not establish non-exportability. The next diagnostic
+reports every fixed private export format without accepting unsupported types
+as denial. Per-key TPM, fresh-process/account/machine/cancellation proof and
+actual credential envelope/enrollment remain outstanding; vault unlock stays
+disabled. See [the export result/procedure](HELLO_KEY_PROBE.md#target-repeated-decrypt-and-export-result-2026-10-07).
+
 The [6cbe2c4 owner report](../../deploy/windows-desktop/hello-target-6cbe2c4.json)
 now passes authorized PKCS#1 v1.5 decryption and synthetic-secret comparison;
 cleanup passes. Prompt observations and silent/second-decrypt/export results
