@@ -18,6 +18,7 @@ fn main() {
             "hello_enroll",
             "hello_status",
             "hello_verify",
+            "hello_key_proof",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

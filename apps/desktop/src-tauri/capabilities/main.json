@@ -23,6 +23,7 @@
     "allow-hello-enroll",
     "allow-hello-status",
     "allow-hello-verify",
+    "allow-hello-key-proof",
     "allow-hello-settings",
     "allow-hello-unlock",
     "allow-hello-revoke",

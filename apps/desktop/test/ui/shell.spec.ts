@@ -38,7 +38,7 @@ test('configured Hello offers OS actions, preserves cancellation and handles pol
   const verify = hello.getByRole('button', { name: 'Проверить отпечаток или PIN', exact: true });
   await verify.click();
   await expect(hello.getByText('Проверка Windows Hello пройдена.', { exact: false })).toBeVisible();
-  await expect(hello.getByText('Разблокировка хранилища через Hello в этой сборке ещё не реализована', { exact: false })).toBeVisible();
+  await expect(hello.getByText('Для входа через Hello ещё нужно подтвердить аппаратную защиту ключа', { exact: false })).toBeVisible();
   await page.evaluate(() => (window as any).helloTest.outcome('cancelled'));
   await verify.click();
   await expect(hello.getByText('Проверка Windows Hello отменена.', { exact: false })).toBeVisible();
@@ -52,6 +52,44 @@ test('configured Hello offers OS actions, preserves cancellation and handles pol
   await page.evaluate(() => (window as any).helloTest.failSettings());
   await hello.getByRole('button', { name: 'Параметры входа Windows', exact: true }).click();
   await expect(hello.getByText('Действие Windows не удалось выполнить.', { exact: false })).toBeVisible();
+});
+
+test('protected-key proof shows specific failures, cleanup and unresolved hardware gates', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const probe = hello.getByRole('button', { name: 'Проверить защищённый ключ', exact: true });
+  await probe.click();
+  await expect(hello.getByText('Проверка защищённого ключа остановилась', { exact: false })).toBeVisible();
+  await expect(hello.getByText('Обязательное подтверждение и запрет экспорта', { exact: true })).toBeVisible();
+  await expect(hello.getByText('0x80090029', { exact: true })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  await expect(hello.locator('pre')).toContainText('"eligible": false');
+  await expect(hello.locator('pre')).toContainText('per-key-tpm-proof');
+  await page.evaluate(() => (window as any).helloTest.proofOutcome('roundtrip-passed'));
+  await probe.click();
+  await expect(hello.getByText('Шифрование тестового секрета и обе расшифровки прошли.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await probe.click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
+test('protected-key probe cannot duplicate or show late success after Lock all', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => { (window as any).helloTest.defer(); (window as any).helloTest.proofOutcome('roundtrip-passed'); });
+  const probe = page.getByRole('button', { name: 'Проверить защищённый ключ', exact: true });
+  await probe.click();
+  await expect(probe).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Проверить отпечаток или PIN', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.getByText('Шифрование тестового секрета и обе расшифровки прошли.', { exact: false })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts().proofs)).toBe(1);
 });
 
 test('pending Hello diagnostic cannot be duplicated or reappear after locking', async ({ page }) => {

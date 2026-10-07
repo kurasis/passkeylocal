@@ -286,6 +286,31 @@ async fn hello_verify(window: WebviewWindow, app: tauri::AppHandle) -> Result<Va
     Ok(result)
 }
 #[tauri::command]
+async fn hello_key_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    focused(&window)?;
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    let session = app
+        .state::<NativeState>()
+        .active
+        .lock()
+        .map_err(|_| Error::new("UNAVAILABLE"))?
+        .clone();
+    let report = tauri::async_runtime::spawn_blocking(move || {
+        hello::proof::run(hwnd, || {
+            let state = app.state::<NativeState>();
+            state.serial.load(Ordering::SeqCst) == serial
+                && state.active.lock().is_ok_and(|active| *active == session)
+        })
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))??;
+    // The report has no secret or usable credential. Returning interruption
+    // and deletion evidence is safe even when a lock changed the generation.
+    trusted(&window)?;
+    serde_json::to_value(report).map_err(|_| Error::new("UNAVAILABLE"))
+}
+#[tauri::command]
 fn hello_settings(window: WebviewWindow) -> Result<()> {
     focused(&window)?;
     // A fixed OS destination, never a caller-supplied protocol or command.
@@ -475,6 +500,7 @@ pub fn run() {
             hello_enroll,
             hello_status,
             hello_verify,
+            hello_key_proof,
             hello_settings,
             hello_unlock,
             hello_revoke,
