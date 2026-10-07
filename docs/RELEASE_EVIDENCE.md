@@ -1,5 +1,28 @@
 # Release evidence and gate status
 
+## Reported Hello public-wrap failure and correction (2026-10-07)
+
+Owner-supplied target report: configuration/provider/key creation/policy/readback
+PASS; direct Passport `NCryptEncrypt` public-wrap FAIL with `0x80090027`
+(`NTE_INVALID_PARAMETER`); all private decrypt/export steps NOT RUN; app-key
+cleanup PASS; eligible/enrolled/unlocked all false. Source/installer identifier
+and exact Windows build are absent. This is a reported target result, not an
+independently reproduced CI failure or a hardware-security proof.
+
+The corrected public-wrap path exports only a bounded RSA public blob, imports
+it into the fixed BCrypt Microsoft Primitive Provider and encrypts with unchanged
+OAEP/SHA-256. The private key stays in Passport; production private decrypts,
+mandatory authorization policies, silent/export refusal, cleanup and eligibility
+gates are unchanged. Reports identify which public sub-operation failed.
+See [procedure and limitations](windows/HELLO_KEY_PROBE.md).
+
+Local Windows GNU Clippy with warnings denied **PASS**. The new Windows API test
+exercises the actual public helper and NCrypt OAEP/SHA-256 round trip, wrong-hash
+and corruption rejection using an unnamed ephemeral **test-only software key**.
+Its execution is **NOT RUN** until Windows CI completes; it supplies no Passport,
+TPM or physical sensor evidence. Target retest remains **NOT RUN/BLOCKED**;
+vault enrollment/unlock stays unavailable.
+
 ## Billing recheck and current-main validation (2026-10-07)
 
 Validated source: `06536b18916f2402d9d0fb66a517e58d114180c8` on `main`.

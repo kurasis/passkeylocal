@@ -48,7 +48,8 @@ Kensington support and Windows Hello vault unlocking are **not complete**.
 
 [Test protected key](HELLO_KEY_PROBE.md) is now implemented in the same app.
 It creates a uniquely named application test key in the real Microsoft Passport
-CNG provider, attempts RSA-OAEP/SHA-256 encryption and two authorized decryptions,
+CNG provider, exports only its public RSA component for BCrypt
+RSA-OAEP/SHA-256 encryption, and attempts two authorized Passport decryptions,
 tests silent decrypt before/after them on reopened handles, and attempts three
 private export formats with bounded output buffers. Failures include the exact
 stage and sanitized HRESULT. Cleanup always runs; a failed key deletion is shown
