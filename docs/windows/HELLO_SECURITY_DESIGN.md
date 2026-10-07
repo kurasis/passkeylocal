@@ -1,5 +1,13 @@
 # Windows Hello eligibility decision
 
+The source-correlated owner report from build `0a3bf26` reaches actual silent
+`NCryptDecrypt` and returns `NTE_INVALID_PARAMETER`; this is not authorization
+denial. The separate, explicit OAEP capability experiment may attempt one
+synthetic decrypt with Windows confirmation allowed, while reporting skipped
+silent/export gates as NOT RUN. It shares native guards/cleanup and cannot
+enroll, unlock or substitute for the primary security proof. See
+[the target procedure](HELLO_KEY_PROBE.md).
+
 Status: **BLOCKED — no eligible protected-secret provider or physical proof**. This is a deliberate fail-closed implementation of the handoff's rule: "If the proof cannot satisfy the requirements, leave Hello unavailable with an actionable reason ... Continue safe work on the rest of the app."
 
 No Windows 11/TPM/Kensington device is attached to this environment. Microsoft Passport provider RSA decrypt/unwrap support, non-exportability and per-key TPM binding have not been established on the target device; repeated/fresh authorization and cache behavior have not been demonstrated there. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.

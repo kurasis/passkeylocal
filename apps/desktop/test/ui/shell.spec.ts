@@ -105,3 +105,37 @@ test('pending Hello diagnostic cannot be duplicated or reappear after locking', 
   await expect(page.getByText('Проверка Windows Hello пройдена.', { exact: false })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts().verifies)).toBe(1);
 });
+
+test('authorized OAEP capability is explicit and never reports a complete security proof', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  await hello.getByRole('button', { name: 'Проверить OAEP с подтверждением', exact: true }).click();
+  await expect(hello.getByText('Подтверждена только поддержка алгоритма;', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  await expect(hello.locator('pre')).toContainText('"purpose": "synthetic-oaep-capability"');
+  await expect(hello.locator('pre')).toContainText('"eligible": false');
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.checks.find((check: { test: string }) => check.test === 'silent-before').status).toBe('not-run');
+  expect(report.checks.find((check: { test: string }) => check.test === 'private-export').status).toBe('not-run');
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ capabilities: 1, proofs: 0, verifies: 0 });
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
+
+test('OAEP capability shares single flight and discards a result after Lock all', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  const capability = page.getByRole('button', { name: 'Проверить OAEP с подтверждением', exact: true });
+  await capability.click();
+  await expect(capability).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Проверить защищённый ключ', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Проверить отпечаток или PIN', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.getByText('Подтверждена только поддержка алгоритма;', { exact: false })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ capabilities: 1, proofs: 0, verifies: 0 });
+});

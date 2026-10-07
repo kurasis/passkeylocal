@@ -287,6 +287,22 @@ async fn hello_verify(window: WebviewWindow, app: tauri::AppHandle) -> Result<Va
 }
 #[tauri::command]
 async fn hello_key_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_experiment(window, app, hello::proof::Experiment::SecurityProof).await
+}
+#[tauri::command]
+async fn hello_oaep_capability(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_experiment(
+        window,
+        app,
+        hello::proof::Experiment::AuthorizedOaepCapability,
+    )
+    .await
+}
+async fn hello_experiment(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    experiment: hello::proof::Experiment,
+) -> Result<Value> {
     focused(&window)?;
     let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
     let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
@@ -297,11 +313,15 @@ async fn hello_key_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result
         .map_err(|_| Error::new("UNAVAILABLE"))?
         .clone();
     let report = tauri::async_runtime::spawn_blocking(move || {
-        hello::proof::run(hwnd, || {
-            let state = app.state::<NativeState>();
-            state.serial.load(Ordering::SeqCst) == serial
-                && state.active.lock().is_ok_and(|active| *active == session)
-        })
+        hello::proof::run(
+            hwnd,
+            || {
+                let state = app.state::<NativeState>();
+                state.serial.load(Ordering::SeqCst) == serial
+                    && state.active.lock().is_ok_and(|active| *active == session)
+            },
+            experiment,
+        )
     })
     .await
     .map_err(|_| Error::new("UNAVAILABLE"))??;
@@ -501,6 +521,7 @@ pub fn run() {
             hello_status,
             hello_verify,
             hello_key_proof,
+            hello_oaep_capability,
             hello_settings,
             hello_unlock,
             hello_revoke,

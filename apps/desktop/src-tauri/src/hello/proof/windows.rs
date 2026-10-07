@@ -1,6 +1,6 @@
 //! Microsoft Passport CNG capability experiment using maintained SDK bindings.
 //! No OS/account Hello keys are opened, enumerated or changed.
-use super::{exercise, Failure, Outcome, Provider, Report, Stage};
+use super::{exercise, exercise_selected, Experiment, Failure, Outcome, Provider, Report, Stage};
 use crate::storage::{Error, Result};
 use ::windows::Win32::{
     Foundation::{NTE_BAD_KEYSET, NTE_PERM, NTE_SILENT_CONTEXT, NTE_USER_CANCELLED},
@@ -515,7 +515,7 @@ impl Provider for Probe {
     }
 }
 
-pub fn run(hwnd: usize, current: impl Fn() -> bool) -> Result<Report> {
+pub fn run(hwnd: usize, current: impl Fn() -> bool, experiment: Experiment) -> Result<Report> {
     let _attempt = crate::hello::Attempt::begin()?;
     libsodium_rs::ensure_init().map_err(|_| Error::new("UNAVAILABLE"))?;
     let mut secret = Zeroizing::new([0u8; 32]);
@@ -528,7 +528,10 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool) -> Result<Report> {
         secret,
         ciphertext: Vec::new(),
     };
-    Ok(exercise(&mut probe, current))
+    Ok(match experiment {
+        Experiment::SecurityProof => exercise(&mut probe, current),
+        Experiment::AuthorizedOaepCapability => exercise_selected(&mut probe, current, experiment),
+    })
 }
 
 #[cfg(test)]

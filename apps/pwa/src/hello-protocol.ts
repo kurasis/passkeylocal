@@ -19,11 +19,11 @@ export type HelloProofStage = 'hello-configuration' | 'provider-open' | 'key-cre
 export interface HelloKeyProof {
   version: 1;
   sourceCommit?: string;
-  purpose: 'synthetic-key-proof';
+  purpose: 'synthetic-key-proof' | 'synthetic-oaep-capability';
   eligible: false;
   unlocked: false;
   enrolled: false;
-  outcome: 'roundtrip-passed' | 'blocked' | 'cancelled' | 'interrupted';
+  outcome: 'roundtrip-passed' | 'capability-passed' | 'blocked' | 'cancelled' | 'interrupted';
   checks: { test: HelloProofStage; status: 'passed' | 'failed' | 'cancelled' | 'interrupted' | 'not-run'; nativeCode?: string; operation?: string }[];
   remaining: ('per-key-tpm-proof' | 'fresh-authorization-proof' | 'fresh-process-proof' | 'account-machine-copy-proof')[];
 }

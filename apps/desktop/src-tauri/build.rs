@@ -26,6 +26,7 @@ fn main() {
             "hello_status",
             "hello_verify",
             "hello_key_proof",
+            "hello_oaep_capability",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

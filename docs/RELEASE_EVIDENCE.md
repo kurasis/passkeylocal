@@ -1,5 +1,36 @@
 # Release evidence and gate status
 
+## Source-correlated silent decrypt and authorized capability diagnostic (2026-10-07)
+
+The third owner report names published source `0a3bf261dfdf2f246a08b1c9136056d5a730083d`:
+public-wrap PASS, silent-before FAIL with `0x80090027` at
+`silent-oaep-sha256-decrypt`. Key reopen and mandatory-policy readback therefore
+passed; actual silent `NCryptDecrypt` rejected a parameter. Authorized decrypts
+and private exports were NOT RUN, deletion PASS, all eligibility flags false.
+This is source-correlated owner evidence, not independently executed physical
+CI. OAEP compatibility versus silent-call behavior remains unresolved.
+
+Added a separately invoked argument-free authorized OAEP capability command,
+using its own synthetic Passport key and unchanged mandatory policy, strong
+padding, real buffers, single-flight/epoch guards and exact cleanup. Only one
+authorized decrypt is attempted; skipped silent/export/second-decrypt checks
+remain NOT RUN. Distinct purpose/result and unchanged four remaining gates
+prevent confusing this with completed security proof or enrollment.
+The primary proof still stops at any failed silent call.
+
+Added native regressions for distinct capability versus primary sequences,
+every capability failure/deletion failure, invalidation before/after the private
+call, and cancellation in both experiments. Added isolated UI regressions for
+explicit capability results, skipped gates, shared busy state and discard after
+Lock all. Packaged smoke now checks both installed native commands and source
+identifiers stop before key creation when Hello is absent. Local typecheck,
+Windows GNU Clippy with warnings denied, 40 Linux native tests (one existing
+resource test intentionally ignored), all eight final proof-runner regressions,
+11 isolated UI scenarios and both production builds/target isolation **PASS**.
+Packaged Windows smoke and a target authorized-decrypt report remain **NOT RUN**
+at this point; CI results will be recorded after actual execution. Physical
+TPM/freshness/process/account gates and vault enrollment/unlock remain **BLOCKED**.
+
 ## Reported silent-before failure and precise diagnostics (2026-10-07)
 
 The owner's next report has public-wrap **PASS**, followed by silent-before

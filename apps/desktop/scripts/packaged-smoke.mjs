@@ -95,7 +95,9 @@ try {
   await expect(helloSection.getByRole('button', { name: 'Windows sign-in settings', exact: true })).toBeEnabled();
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test fingerprint or PIN', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test protected key', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
+  await expect.poll(async () => helloSection.getByRole('button', { name: 'Test OAEP with confirmation', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
   let helloKeyProof = null;
+  let helloOaepCapability = null;
   if (helloReport.helloConfiguration !== 'available') {
     // The hosted runner has no configured Hello. Direct permitted IPC must
     // stop before creating a key or opening any OS enrollment/consent prompt.
@@ -108,6 +110,16 @@ try {
     assert.equal(helloKeyProof.checks[0].status, 'failed');
     assert(helloKeyProof.checks.slice(1, -1).every((check) => check.status === 'not-run'));
     assert.equal(helloKeyProof.checks.at(-1).status, 'passed');
+    helloOaepCapability = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_oaep_capability'));
+    assert.equal(helloOaepCapability.sourceCommit, process.env.GITHUB_SHA);
+    assert.equal(helloOaepCapability.purpose, 'synthetic-oaep-capability');
+    assert.equal(helloOaepCapability.eligible, false);
+    assert.equal(helloOaepCapability.enrolled, false);
+    assert.equal(helloOaepCapability.unlocked, false);
+    assert.equal(helloOaepCapability.outcome, 'blocked');
+    assert.equal(helloOaepCapability.checks[0].status, 'failed');
+    assert(helloOaepCapability.checks.slice(1, -1).every((check) => check.status === 'not-run'));
+    assert.equal(helloOaepCapability.checks.at(-1).status, 'passed');
   }
   // Check the reported Russian layout in the real installed WebView2, where
   // module controls and the sidebar previously occupied the same vertical area.
@@ -190,7 +202,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');
