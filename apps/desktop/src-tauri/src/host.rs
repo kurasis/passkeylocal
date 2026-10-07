@@ -290,9 +290,17 @@ async fn hello_key_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result
     focused(&window)?;
     let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
     let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    let session = app
+        .state::<NativeState>()
+        .active
+        .lock()
+        .map_err(|_| Error::new("UNAVAILABLE"))?
+        .clone();
     let report = tauri::async_runtime::spawn_blocking(move || {
         hello::proof::run(hwnd, || {
-            app.state::<NativeState>().serial.load(Ordering::SeqCst) == serial
+            let state = app.state::<NativeState>();
+            state.serial.load(Ordering::SeqCst) == serial
+                && state.active.lock().is_ok_and(|active| *active == session)
         })
     })
     .await

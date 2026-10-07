@@ -27,8 +27,10 @@ impl Drop for Handle {
     }
 }
 struct Probe {
-    provider: Handle,
+    // Rust drops fields in declaration order. Release any remaining key
+    // handle before its provider, including a failed-deletion exit.
     key: Handle,
+    provider: Handle,
     name: Vec<u16>,
     hwnd: usize,
     secret: Zeroizing<[u8; 32]>,

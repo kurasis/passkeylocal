@@ -35,7 +35,11 @@ Do not reset Windows Hello or clear the TPM to run this test.
 ## Native sequence and limits
 
 The focused trusted main window chooses its actual HWND. A shared native guard
-permits only one consent test or CNG experiment at a time. IPC accepts no key
+permits only one consent test or CNG experiment at a time. The native callback
+checks both the lock generation and original storage-session identity before
+every next operation, so worker/session replacement also stops later prompts.
+Remaining key handles are freed before the provider even on deletion failure.
+IPC accepts no key
 name/path, ciphertext, secret, algorithm or provider from the renderer.
 
 - Check actual WinRT Hello configuration. Unconfigured/absent Hello stops before
