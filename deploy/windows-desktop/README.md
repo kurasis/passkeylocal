@@ -10,7 +10,7 @@ The reported target experiment stopped at direct Passport public encryption with
 
 Runner admission is working again; earlier billing-denied attempts remain historical. Account payment/limit details were unavailable via the billing API (HTTP 403); no financial settings were changed. See the [full validation record](../../docs/RELEASE_EVIDENCE.md).
 
-The latest build adds **Test protected key** in Settings → Windows Hello. It runs real Microsoft Passport CNG encryption/decryption of a separate random test secret, measures silent-decrypt/private-export rejection and attempts to delete its app-owned test key. The report identifies the exact failed stage/code and can be copied with **Copy test report**. See the [test procedure](../../docs/windows/HELLO_KEY_PROBE.md).
+The latest build includes **Test protected key** in Settings → Windows Hello. It performs public-only BCrypt encryption and attempts Microsoft Passport CNG decryption of a separate random test secret, measures silent-decrypt/private-export rejection and attempts to delete its app-owned test key. The report identifies the exact failed stage/code and can be copied with **Copy test report**. See the [test procedure](../../docs/windows/HELLO_KEY_PROBE.md).
 
 **Hello vault unlock is still disabled.** The key experiment is the next required proof step; per-key TPM attestation, observed fresh prompts, fresh-process and account/machine-copy tests remain open, as do the actual credential envelope and enrollment. Continue unlocking with the master password. The owner's Windows 11 Pro 25H2 and Kensington VeriMark Desktop are reported target details, not evidence from the hosted runner.
 
