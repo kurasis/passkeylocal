@@ -4,7 +4,7 @@
 use serde::Serialize;
 
 #[cfg(windows)]
-mod windows;
+pub(super) mod windows;
 #[cfg(windows)]
 pub use windows::run;
 

@@ -1,5 +1,13 @@
 # Windows Hello eligibility decision
 
+The [Platform KSP inner-envelope experiment](HELLO_TPM_INNER.md) now measures
+the next, separate wrapping layer through two fixed native commands. Read-only
+provider properties precede an app-owned synthetic OAEP/SHA-256 key experiment,
+same-process handle reopening, negative controls, strict export-denial tests
+and cleanup. It does not consume real vault material or PRF output and does not
+claim per-key TPM attestation, fresh-process proof or Hello authorization.
+All four gates remain open; real enrollment/unlock remains unavailable.
+
 The native [WebAuthn PRF increment](HELLO_PRF_PROOF.md) now implements read-only
 capability and synthetic PRF/AES/cleanup checks. The
 [owner's installed-source report](../../deploy/windows-desktop/hello-target-72a0df6-prf.json)

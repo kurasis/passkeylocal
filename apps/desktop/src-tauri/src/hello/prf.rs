@@ -96,7 +96,7 @@ pub(super) trait Provider {
     fn capability(&self) -> Capability;
 }
 
-fn check(test: &'static str, result: Result<(), Failure>) -> PrfCheck {
+pub(super) fn check(test: &'static str, result: Result<(), Failure>) -> PrfCheck {
     match result {
         Ok(()) => PrfCheck {
             test,

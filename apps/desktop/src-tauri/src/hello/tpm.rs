@@ -1,0 +1,261 @@
+//! Synthetic Platform KSP inner-envelope measurements, not Hello authorization.
+use super::{
+    prf::{check, interrupted, PrfCheck},
+    proof::{ExportCheck, Failure, Outcome},
+};
+use serde::Serialize;
+
+#[cfg(windows)]
+mod windows;
+#[cfg(windows)]
+pub use windows::run;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Experiment {
+    Capability,
+    Synthetic,
+}
+
+const STEPS: [&str; 10] = [
+    "tpm-provider-open",
+    "tpm-provider-properties",
+    "tpm-key-create",
+    "tpm-key-policy",
+    "tpm-key-readback",
+    "tpm-public-wrap",
+    "tpm-unwrap-first",
+    "tpm-reopen-unwrap",
+    "tpm-negative-controls",
+    "private-export",
+];
+
+#[derive(Clone, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Metadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub implementation_flags: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tpm_version: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub interface_type: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_name_bytes: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub export_policy: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_usage: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Report {
+    pub version: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_commit: Option<&'static str>,
+    pub purpose: &'static str,
+    pub algorithm: &'static str,
+    pub eligible: bool,
+    pub enrolled: bool,
+    pub unlocked: bool,
+    pub outcome: &'static str,
+    pub checks: Vec<PrfCheck>,
+    pub tpm: Metadata,
+    pub per_key_tpm_evidence: &'static str,
+    pub authorization: &'static str,
+    pub process_scope: &'static str,
+    pub export_checks: Vec<ExportCheck>,
+    pub remaining: [&'static str; 4],
+}
+
+trait Provider {
+    fn step(&mut self, step: &'static str) -> Result<(), Failure>;
+    fn cleanup(&mut self) -> Result<(), Failure>;
+    fn metadata(&self) -> Metadata;
+    fn exports(&self) -> Vec<ExportCheck>;
+}
+
+fn exercise(
+    provider: &mut impl Provider,
+    current: impl Fn() -> bool,
+    experiment: Experiment,
+) -> Report {
+    let mut report = Report {
+        version: 1,
+        source_commit: option_env!("PASSKEY_SOURCE_COMMIT"),
+        purpose: if experiment == Experiment::Capability {
+            "tpm-inner-capability"
+        } else {
+            "synthetic-tpm-inner"
+        },
+        algorithm: "platform-rsa-oaep-sha256",
+        eligible: false,
+        enrolled: false,
+        unlocked: false,
+        outcome: "blocked",
+        checks: Vec::new(),
+        tpm: Metadata::default(),
+        per_key_tpm_evidence: "not-verified",
+        authorization: "no-hello-authorization",
+        process_scope: "same-process",
+        export_checks: Vec::new(),
+        remaining: [
+            "per-key-tpm-proof",
+            "fresh-authorization-proof",
+            "fresh-process-proof",
+            "account-machine-copy-proof",
+        ],
+    };
+    let steps = if experiment == Experiment::Capability {
+        &STEPS[..2]
+    } else {
+        &STEPS[..]
+    };
+    let mut running = true;
+    for step in steps {
+        if !running {
+            report.checks.push(PrfCheck {
+                test: step,
+                status: Outcome::NotRun,
+                native_code: None,
+                operation: None,
+            });
+            continue;
+        }
+        let result = if current() {
+            provider.step(step)
+        } else {
+            Err(interrupted("tpm-session-changed"))
+        };
+        let result = if result.is_ok() && !current() {
+            Err(interrupted("tpm-session-changed"))
+        } else {
+            result
+        };
+        let value = check(step, result);
+        running = value.status == Outcome::Passed;
+        if !running {
+            report.outcome = match value.status {
+                Outcome::Cancelled => "cancelled",
+                Outcome::Interrupted => "interrupted",
+                _ => "blocked",
+            };
+        }
+        report.checks.push(value);
+    }
+    if experiment == Experiment::Synthetic {
+        let cleanup = check("test-key-delete", provider.cleanup());
+        if cleanup.status != Outcome::Passed {
+            running = false;
+            report.outcome = "blocked";
+        }
+        report.checks.push(cleanup);
+    }
+    report.tpm = provider.metadata();
+    report.export_checks = provider.exports();
+    if running && !current() {
+        running = false;
+        report.outcome = "interrupted";
+    }
+    if running {
+        report.outcome = if experiment == Experiment::Capability {
+            "tpm-capability-observed"
+        } else {
+            "tpm-inner-roundtrip-passed"
+        };
+    }
+    report
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    struct Fake {
+        calls: Vec<&'static str>,
+        fail: Option<&'static str>,
+    }
+    impl Provider for Fake {
+        fn step(&mut self, s: &'static str) -> Result<(), Failure> {
+            self.calls.push(s);
+            if self.fail == Some(s) {
+                Err(Failure::failed())
+            } else {
+                Ok(())
+            }
+        }
+        fn cleanup(&mut self) -> Result<(), Failure> {
+            self.step("test-key-delete")
+        }
+        fn metadata(&self) -> Metadata {
+            Metadata::default()
+        }
+        fn exports(&self) -> Vec<ExportCheck> {
+            vec![]
+        }
+    }
+    fn fake(fail: Option<&'static str>) -> Fake {
+        Fake {
+            calls: vec![],
+            fail,
+        }
+    }
+    #[test]
+    fn capability_never_creates_or_deletes_a_key() {
+        let mut p = fake(None);
+        let r = exercise(&mut p, || true, Experiment::Capability);
+        assert_eq!(p.calls, &STEPS[..2]);
+        assert_eq!(r.outcome, "tpm-capability-observed");
+    }
+    #[test]
+    fn each_failure_stops_later_operations_and_always_cleans_up() {
+        for failed in STEPS.into_iter().chain(["test-key-delete"]) {
+            let mut p = fake(Some(failed));
+            let r = exercise(&mut p, || true, Experiment::Synthetic);
+            assert_eq!(r.outcome, "blocked");
+            assert_eq!(p.calls.last(), Some(&"test-key-delete"));
+            let i = r.checks.iter().position(|c| c.test == failed).unwrap();
+            assert_eq!(r.checks[i].status, Outcome::Failed);
+            if i < r.checks.len() - 1 {
+                assert!(r.checks[i + 1..r.checks.len() - 1]
+                    .iter()
+                    .all(|c| c.status == Outcome::NotRun));
+            }
+        }
+    }
+    #[test]
+    fn pre_and_post_stage_invalidation_cannot_publish_success() {
+        // Also invalidate during cleanup, after the last private stage.
+        for invalid_at in 0..=STEPS.len() * 2 {
+            let calls = std::cell::Cell::new(0);
+            let mut p = fake(None);
+            let r = exercise(
+                &mut p,
+                || {
+                    let n = calls.get();
+                    calls.set(n + 1);
+                    n < invalid_at
+                },
+                Experiment::Synthetic,
+            );
+            assert_eq!(r.outcome, "interrupted");
+            assert_eq!(p.calls.last(), Some(&"test-key-delete"));
+            if invalid_at < STEPS.len() * 2 {
+                assert!(r.checks.iter().any(|c| c.status == Outcome::Interrupted));
+            } else {
+                // Operations completed, but lock during cleanup still invalidates
+                // the final outcome. Do not invent a failed native operation.
+                assert!(r.checks.iter().all(|c| c.status == Outcome::Passed));
+            }
+        }
+    }
+    #[test]
+    fn success_keeps_authorization_and_hardware_gates_open() {
+        let r = exercise(&mut fake(None), || true, Experiment::Synthetic);
+        assert_eq!(r.outcome, "tpm-inner-roundtrip-passed");
+        assert!(!r.eligible && !r.enrolled && !r.unlocked);
+        assert_eq!(r.remaining.len(), 4);
+        let value = serde_json::to_value(r).unwrap();
+        assert_eq!(value["perKeyTpmEvidence"], "not-verified");
+        assert_eq!(value["authorization"], "no-hello-authorization");
+        assert_eq!(value["processScope"], "same-process");
+    }
+}
