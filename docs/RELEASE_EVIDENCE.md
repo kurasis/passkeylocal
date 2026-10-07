@@ -1,5 +1,49 @@
 # Release evidence and gate status
 
+## Authorized OAEP failure and owned creation handle (2026-10-07)
+
+Owner evidence from published source `fbd4347fa0e1507a25885e26fc4d0df66c19f1fe`:
+the owner saw and completed a fingerprint prompt during the capability test;
+public wrap PASS, actual `authorized-oaep-sha256-decrypt` FAIL with
+`0x80090027`, test-key deletion PASS, all eligibility flags false. Silent/export/
+second-decrypt checks were NOT RUN by design. The prompt's originating native
+call is not established; key finalization may prompt, so this does not prove
+the private unwrap was authorized or OAEP/SHA-256 is supported. This is a
+reported physical result, not independently executed CI.
+
+Review found that authorized decrypt reopened its key silently. Authorized
+decrypts now borrow the owned flags-zero creation handle whose native parent HWND
+was set before finalization, recheck mandatory policy, reset key context/fresh
+gesture per call and use the same OAEP/SHA-256 decrypt. Silent probes retain
+independent silent opens/decrypts. Native session identity is rechecked directly
+before the private call, even within a stage after context/gesture setters.
+All primary refusal, export, cleanup, epoch and single-flight gates remain
+intact, and vault enrollment/unlock stays unavailable. This does not establish
+the parameter error's root cause or a successful target fix.
+
+Added a real Windows API regression using an isolated named software RSA key
+and hidden app-owned window: exercise key HWND context, owned creation versus
+silent reopened handles and actual OAEP decrypt, reject actual silent success
+as authorization evidence, delete the exact fixture key, and check deleted
+handles/keys cannot be selected or reopened. It also rejects a stale generation
+at the real private-call boundary without touching output/length and preserves
+a real native error when the same invalid parameters reach CNG in a current
+generation. No software provider is selectable in
+production; this regression supplies no Passport/TPM/physical consent proof.
+The first Windows PR run [37606330878](https://github.com/kurasis/passkeylocal/actions/runs/37606330878)
+had 43 native tests PASS, one FAIL, one resource test ignored. The new test
+rejected provider-level HWND setup with `NTE_NOT_SUPPORTED` (`0x80090029`). This
+run was cancelled during post-failure cache saving to retrieve its complete
+native log; subsequent interop/resource/packaging gates were NOT RUN. That
+unsupported route was removed from the final change, rather than permitting an
+unowned UI open. General CI [37606331048](https://github.com/kurasis/passkeylocal/actions/runs/37606331048)
+passed all ten jobs for the initial PR head `33d27d0`.
+
+Local Windows GNU Clippy with warnings denied and all eight portable proof-runner
+regressions **PASS**. Final Windows execution and the corrected target retest are
+initially **NOT RUN**; new CI results will be recorded after execution. The first
+failed/cancelled attempt remains a historical failure, not a successful proof.
+
 ## Source-correlated silent decrypt and authorized capability diagnostic (2026-10-07)
 
 The third owner report names published source `0a3bf261dfdf2f246a08b1c9136056d5a730083d`:

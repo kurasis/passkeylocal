@@ -63,7 +63,10 @@ name/path, ciphertext, secret, algorithm or provider from the renderer.
   in Passport; all production decrypts still use `NCryptDecrypt` on the original
   Passport key. This is not a software private-key fallback. Test full-buffer
   private decrypts, not size queries that may bypass authorization checks.
-- Reopen the app key before each private operation. Silent attempts before and
+- Reopen the app key for each silent operation. Authorized decrypts use the
+  flags-zero creation handle, whose parent HWND is set before finalization;
+  key context and the fresh-gesture request are set again for every decrypt.
+  Check the exact mandatory stored policy on each selected handle. Silent attempts before and
   after each authorized decrypt must return `NTE_SILENT_CONTEXT`. Unexpected
   success or any other error stops the proof. Normal decrypts request
   `PinCacheIsGestureRequired`, use owned-window context and must match the random
@@ -180,6 +183,53 @@ Even a capability pass leaves every hardware/freshness/account/process gate
 open and all eligibility/enrollment/unlock flags false. It establishes only
 that this target can decrypt the chosen algorithm in the authorized call path.
 It cannot replace the primary proof's required silent-access refusal.
+
+## Authorized failure and UI-mode alignment (2026-10-07)
+
+The owner reports seeing and completing a fingerprint prompt during the
+independent capability test from source
+`fbd4347fa0e1507a25885e26fc4d0df66c19f1fe`. The report passes public wrap but
+fails the actual `authorized-oaep-sha256-decrypt` with `0x80090027`;
+cleanup passes and all enrollment/unlock eligibility stays false. The report
+does not identify which native operation displayed that prompt; app-key
+finalization can request consent before decryption. Thus seeing a successful
+prompt does not establish an authorized private unwrap or a successful secret
+comparison. The owner result is not independently reproduced by CI.
+
+Code review found that the authorized decrypt used a key handle opened with
+`NCRYPT_SILENT_FLAG`, even though `NCryptDecrypt` itself allowed UI. Authorized
+decrypts now borrow the original flags-zero creation handle, whose native parent
+HWND was set before finalization. Set the key's context and fresh-gesture request
+again before each decrypt, and re-read its exact mandatory policy. Silent probes
+continue reopening independent handles and use silent decrypt, without a gesture
+request. Borrowing the original handle never duplicates ownership or frees it
+early. It remains alive until exact app-key cleanup.
+
+A real Windows API test rejected the attempted provider-level parent HWND with
+`NTE_NOT_SUPPORTED`. That route was removed, rather than opening with permitted
+UI before a parent could be set. The final route uses key-level HWND context;
+it performs no authorized key open and no provider-level HWND setup. Native
+session identity is checked again immediately before the private call, including
+after context/gesture setters. Session interruption returns no accepted result
+and never skips cleanup.
+
+The [NCryptOpenKey documentation](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptopenkey)
+describes the silent flag as a request to suppress KSP UI. The
+[parent HWND property](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers#ncrypt_window_handle_property)
+defines ownership for key UI. The pinned KeePassWinHello candidate opens
+its authorized key with flags zero, but uses different padding, so that source
+does not prove this target supports OAEP. The SDK does not promise that a
+silent-open handle caused the owner's parameter error; using the owned creation
+handle is a controlled parameter correction, **not a confirmed root cause or
+target fix**. Repeated prompts on that handle, silent attempts on reopened
+handles and fresh-process behavior still require independent physical proof.
+
+Repeat **Test OAEP with confirmation** in the latest installer and share the
+full JSON, including build source and failed operation, and whether any Windows
+prompt appeared. RSA-OAEP/SHA-256, public-only BCrypt wrap, secret comparison,
+export policy, primary silent refusal requirements and native cleanup/epoch/
+single-flight guards are unchanged. No PKCS#1 v1.5, SHA-1 or software-private-key
+fallback is introduced. Vault enrollment/unlock remains unavailable.
 
 ## What a successful report does not establish
 
