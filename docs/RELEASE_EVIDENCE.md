@@ -27,9 +27,41 @@ identifiers stop before key creation when Hello is absent. Local typecheck,
 Windows GNU Clippy with warnings denied, 40 Linux native tests (one existing
 resource test intentionally ignored), all eight final proof-runner regressions,
 11 isolated UI scenarios and both production builds/target isolation **PASS**.
-Packaged Windows smoke and a target authorized-decrypt report remain **NOT RUN**
-at this point; CI results will be recorded after actual execution. Physical
+Packaged Windows checks passed in the CI execution recorded below. A target
+authorized-decrypt report remains **NOT RUN**. Physical
 TPM/freshness/process/account gates and vault enrollment/unlock remain **BLOCKED**.
+
+General CI [37602394549](https://github.com/kurasis/passkeylocal/actions/runs/37602394549)
+and Windows CI [37602394535](https://github.com/kurasis/passkeylocal/actions/runs/37602394535)
+**PASS** for head `0d53cdce7d4b068d4b6095c44bfc0d2db2b25297`, tested PR merge
+`fbd4347fa0e1507a25885e26fc4d0df66c19f1fe`. All 11 PR checks passed; [PR #8](https://github.com/kurasis/passkeylocal/pull/8)
+merged automatically. Actual main merge `f37f6658dab88a7a59a9f15104d0eb96555b44db`
+has the identical tested Git tree. Windows executed 43 native tests (the 5 GiB
+test was separately executed and passed), fresh native KDBX/Python parity,
+fresh encrypted-file interop/full 10,000-file restore/search (64.2932914 s /
+0.1079788 s), and independent recovery (88 passed / 15 skipped). General CI
+passed all 10 jobs, including 161 TypeScript tests, 11 isolated UI scenarios,
+eight production PWA e2e scenarios and independent recovery across platforms.
+
+The hosted 5 GiB gate passed in 38.487053 s with sampled peak working set
+9,596,928 bytes (26.4442382 s encryption / 11.3783048 s verification).
+NSIS installation and packaged smoke **PASS**. Both installed native diagnostics
+embed the exact tested build source, report all eligibility flags false and
+stop at actual `device-not-present` before app-key creation or an OS prompt;
+this establishes no successful target authorized unwrap or hardware proof.
+Downloaded installer: 217,833,973 bytes, SHA-256
+`5d9bd857c9d30f2df3545d771112abc699b648a51024f35891b40a02e61267c9`, independently
+matched to its original checksum sidecar and build metadata. Build, smoke,
+resource and signed official WebView2 metadata name the same tested source.
+[Windows download/evidence folder](../deploy/windows-desktop/README.md) is updated.
+
+A new [Cloudflare upload ZIP](../deploy/cloudflare-pages/README.md) is published
+for code source `0d53cdc`: 205,182 bytes, SHA-256
+`692f358c33d695472ef077c650c20983b8a99e0685b58ef14255abd25bac62d4`.
+All ten production files and its sidecar were independently compared; the old
+archive remains retained. Target authorized OAEP capability and every
+hardware/freshness/process/account gate remain **NOT RUN/BLOCKED**. No target
+cryptographic fix or complete Hello implementation is claimed.
 
 ## Reported silent-before failure and precise diagnostics (2026-10-07)
 
