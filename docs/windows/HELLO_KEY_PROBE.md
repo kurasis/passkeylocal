@@ -54,7 +54,12 @@ name/path, ciphertext, secret, algorithm or provider from the renderer.
   already-zero intrinsic policy without a redundant write) and mandatory
   authorization policy. Read back the exact policy; unsupported settings,
   changed values or missing properties are blockers, without software fallback.
-- Encrypt 32 random synthetic bytes with RSA-OAEP/SHA-256. Test full-buffer
+- Export only the app key's bounded RSA public blob. Import that public component
+  into the fixed Microsoft Primitive Provider with `BCryptImportKeyPair` and
+  encrypt 32 random synthetic bytes with `BCryptEncrypt` RSA-OAEP/SHA-256.
+  Public encryption has no private-key/Hello dependency. The private key stays
+  in Passport; all production decrypts still use `NCryptDecrypt` on the original
+  Passport key. This is not a software private-key fallback. Test full-buffer
   private decrypts, not size queries that may bypass authorization checks.
 - Reopen the app key before each private operation. Silent attempts before and
   after each authorized decrypt must return `NTE_SILENT_CONTEXT`. Unexpected
@@ -69,12 +74,41 @@ name/path, ciphertext, secret, algorithm or provider from the renderer.
 
 The implementation uses pinned maintained Windows 0.62.2 bindings. Official
 references are [NCryptDecrypt](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptdecrypt),
+[NCryptExportKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptexportkey),
+[BCryptImportKeyPair](https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptimportkeypair),
+[BCryptEncrypt](https://learn.microsoft.com/en-us/windows/win32/api/bcrypt/nf-bcrypt-bcryptencrypt),
 [key properties](https://learn.microsoft.com/en-us/windows/win32/seccng/key-storage-property-identifiers),
 and the [current SDK ncrypt.h](https://github.com/microsoft/win32metadata/blob/main/generation/WinSDK/RecompiledIdlHeaders/um/ncrypt.h).
 The provider-specific `NgcCacheType` property is a candidate observed in
 [KeePassWinHello](https://github.com/Angelelz/KeePassWinHello/blob/581faa6d67eff58af8b6b8240a860f2cbd5925b0/src/AuthProviders/WinHelloProvider.cs),
 not a public SDK guarantee. No deprecated alias or weaker padding is tried.
 The candidate's presence/readback does not prove its security semantics.
+
+## Reported target failure and public-wrap correction (2026-10-07)
+
+The owner supplied a version-1 report from the reported Windows 11 Pro 25H2 /
+Kensington VeriMark Desktop computer: Hello configuration, Passport provider
+open, app-key creation, key policy and policy readback passed. `public-wrap`
+failed with `0x80090027` (`NTE_INVALID_PARAMETER`); every subsequent private
+operation was NOT RUN. App test-key deletion passed and all vault eligibility
+flags remained false. The report does not include a source/build identifier,
+so it cannot establish which installer was tested or the exact rejected
+parameter. It is not evidence of a fingerprint failure or TPM key protection.
+
+The earlier path called `NCryptEncrypt` directly on the Passport key. The
+correction separates public encryption from protected private decryption using
+the fixed public-only export/import route described above. OAEP/SHA-256 and
+every authorization/export gate remain mandatory; no weaker padding is tried.
+The report now distinguishes `public-key-export`, `public-key-import` and
+`public-oaep-sha256-encrypt` errors. BCrypt NTSTATUS errors are converted to
+HRESULT by the maintained bindings, as are the other native report codes.
+
+A Windows API regression uses a **test-only unnamed ephemeral software RSA
+key** to verify this exact public-wrap helper interoperates with NCrypt
+OAEP/SHA-256 decrypt and rejects a wrong OAEP hash and corrupted ciphertext.
+It requires no enrollment and supplies no Passport/TPM/sensor evidence. The
+corrected path still requires a fresh report on the intended computer; even a
+successful public wrap cannot prove Passport supports the next private step.
 
 ## What a successful report does not establish
 

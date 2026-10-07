@@ -26,6 +26,98 @@ impl Drop for Handle {
         }
     }
 }
+struct PublicAlgorithm(BCRYPT_ALG_HANDLE);
+impl Drop for PublicAlgorithm {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = BCryptCloseAlgorithmProvider(self.0, 0);
+        }
+    }
+}
+struct PublicKey(BCRYPT_KEY_HANDLE);
+impl Drop for PublicKey {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = BCryptDestroyKey(self.0);
+        }
+    }
+}
+
+/// Encrypt using only the app key's public RSA component. Passport remains
+/// the sole owner of the private key and the sole production decrypt provider.
+/// Public encryption needs no Hello authorization or private-key operation.
+fn wrap_public_key(
+    key: NCRYPT_KEY_HANDLE,
+    secret: &[u8; 32],
+) -> std::result::Result<Vec<u8>, Failure> {
+    // Bounded RSA public blob: header, exponent and 2048-bit modulus. Never
+    // request a private/full-private blob or persist/return the public blob.
+    let mut blob = [0u8; 512];
+    let mut actual = 0;
+    unsafe {
+        NCryptExportKey(
+            key,
+            None,
+            BCRYPT_RSAPUBLIC_BLOB,
+            None,
+            Some(&mut blob),
+            &mut actual,
+            NCRYPT_SILENT_FLAG,
+        )
+    }
+    .map_err(|e| failed(e).at("public-key-export"))?;
+    if (actual as usize) < std::mem::size_of::<BCRYPT_RSAKEY_BLOB>() || actual as usize > blob.len()
+    {
+        return Err(Failure::failed().at("public-key-export-length"));
+    }
+
+    let mut algorithm = BCRYPT_ALG_HANDLE::default();
+    unsafe {
+        BCryptOpenAlgorithmProvider(
+            &mut algorithm,
+            BCRYPT_RSA_ALGORITHM,
+            MS_PRIMITIVE_PROVIDER,
+            BCRYPT_OPEN_ALGORITHM_PROVIDER_FLAGS(0),
+        )
+    }
+    .ok()
+    .map_err(|e| failed(e).at("public-rsa-provider-open"))?;
+    let algorithm = PublicAlgorithm(algorithm);
+    let mut public = BCRYPT_KEY_HANDLE::default();
+    unsafe {
+        BCryptImportKeyPair(
+            algorithm.0,
+            None,
+            BCRYPT_RSAPUBLIC_BLOB,
+            &mut public,
+            &blob[..actual as usize],
+            0,
+        )
+    }
+    .ok()
+    .map_err(|e| failed(e).at("public-key-import"))?;
+    // Declared after the algorithm: release this key before its provider.
+    let public = PublicKey(public);
+    let padding = Probe::padding();
+    let mut ciphertext = vec![0; 256];
+    unsafe {
+        BCryptEncrypt(
+            public.0,
+            Some(secret),
+            Some((&padding as *const BCRYPT_OAEP_PADDING_INFO).cast()),
+            None,
+            Some(&mut ciphertext),
+            &mut actual,
+            BCRYPT_PAD_OAEP,
+        )
+    }
+    .ok()
+    .map_err(|e| failed(e).at("public-oaep-sha256-encrypt"))?;
+    if actual != 256 {
+        return Err(Failure::failed().at("public-ciphertext-length"));
+    }
+    Ok(ciphertext)
+}
 struct Probe {
     // Rust drops fields in declaration order. Release any remaining key
     // handle before its provider, including a failed-deletion exit.
@@ -374,24 +466,7 @@ impl Provider for Probe {
                 }
             }
             Stage::PublicWrap => {
-                let padding = Self::padding();
-                let mut ciphertext = vec![0; 256];
-                let mut actual = 0;
-                unsafe {
-                    NCryptEncrypt(
-                        NCRYPT_KEY_HANDLE(self.key.0),
-                        Some(self.secret.as_slice()),
-                        Some((&padding as *const BCRYPT_OAEP_PADDING_INFO).cast()),
-                        Some(&mut ciphertext),
-                        &mut actual,
-                        NCRYPT_PAD_OAEP_FLAG | NCRYPT_SILENT_FLAG,
-                    )
-                }
-                .map_err(failed)?;
-                if actual != 256 {
-                    return Err(Failure::failed());
-                }
-                self.ciphertext = ciphertext;
+                self.ciphertext = wrap_public_key(NCRYPT_KEY_HANDLE(self.key.0), &self.secret)?;
             }
             Stage::PrivateExport => self.export_denied()?,
             Stage::SilentBefore | Stage::SilentAfterFirst | Stage::SilentAfterSecond => {
@@ -452,6 +527,83 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool) -> Result<Report> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn exported_public_wrap_uses_oaep_sha256_and_rejects_corruption() {
+        // An unnamed, ephemeral software key is a Windows API interoperability
+        // fixture only. This provider is never selected by production code and
+        // this test supplies no Passport, consent or TPM evidence.
+        unsafe {
+            let mut provider = NCRYPT_PROV_HANDLE(0);
+            NCryptOpenStorageProvider(&mut provider, MS_KEY_STORAGE_PROVIDER, 0).unwrap();
+            let _provider = Handle(provider.0);
+            let mut key = NCRYPT_KEY_HANDLE(0);
+            NCryptCreatePersistedKey(
+                provider,
+                &mut key,
+                BCRYPT_RSA_ALGORITHM,
+                PCWSTR::null(),
+                CERT_KEY_SPEC(0),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            let _key = Handle(key.0);
+            NCryptSetProperty(
+                NCRYPT_HANDLE(key.0),
+                NCRYPT_LENGTH_PROPERTY,
+                &2048u32.to_le_bytes(),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            NCryptSetProperty(
+                NCRYPT_HANDLE(key.0),
+                NCRYPT_EXPORT_POLICY_PROPERTY,
+                &0u32.to_le_bytes(),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            NCryptFinalizeKey(key, NCRYPT_FLAGS(0)).unwrap();
+            let secret = Zeroizing::new([0x5au8; 32]);
+            let mut ciphertext = wrap_public_key(key, &secret).unwrap();
+            let padding = Probe::padding();
+            let mut plaintext = Zeroizing::new([0u8; 256]);
+            let mut actual = 0;
+            let decrypt = |ciphertext: &[u8],
+                           padding: &BCRYPT_OAEP_PADDING_INFO,
+                           plaintext: &mut [u8],
+                           actual: &mut u32| {
+                NCryptDecrypt(
+                    key,
+                    Some(ciphertext),
+                    Some((padding as *const BCRYPT_OAEP_PADDING_INFO).cast()),
+                    Some(plaintext),
+                    actual,
+                    NCRYPT_PAD_OAEP_FLAG,
+                )
+            };
+            decrypt(&ciphertext, &padding, plaintext.as_mut_slice(), &mut actual).unwrap();
+            assert_eq!(actual, 32);
+            assert!(libsodium_rs::utils::memcmp(
+                &plaintext[..32],
+                secret.as_slice()
+            ));
+            let wrong_hash = BCRYPT_OAEP_PADDING_INFO {
+                pszAlgId: BCRYPT_SHA1_ALGORITHM,
+                ..Default::default()
+            };
+            assert!(decrypt(
+                &ciphertext,
+                &wrong_hash,
+                plaintext.as_mut_slice(),
+                &mut actual
+            )
+            .is_err());
+            ciphertext[0] ^= 1;
+            assert!(decrypt(&ciphertext, &padding, plaintext.as_mut_slice(), &mut actual).is_err());
+        }
+    }
+
     #[test]
     fn native_container_identity_comes_from_the_current_process_token() {
         let sid = super::current_sid().unwrap();
