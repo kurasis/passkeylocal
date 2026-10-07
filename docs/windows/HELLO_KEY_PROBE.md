@@ -50,7 +50,8 @@ name/path, ciphertext, secret, algorithm or provider from the renderer.
   current SID from the native process token, never the renderer or a script;
   omit it from every report. Never overwrite,
   enumerate or open the user's OS Hello keys.
-- Request 2048 bits, decrypt-only usage, zero export policy and mandatory
+- Request 2048 bits, decrypt-only usage, zero export policy (or verify an
+  already-zero intrinsic policy without a redundant write) and mandatory
   authorization policy. Read back the exact policy; unsupported settings,
   changed values or missing properties are blockers, without software fallback.
 - Encrypt 32 random synthetic bytes with RSA-OAEP/SHA-256. Test full-buffer

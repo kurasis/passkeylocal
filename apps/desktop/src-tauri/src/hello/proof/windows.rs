@@ -349,8 +349,14 @@ impl Provider for Probe {
                     &NCRYPT_ALLOW_DECRYPT_FLAG.to_le_bytes(),
                 )
                 .map_err(|e| e.at("set-decrypt-only-usage"))?;
-                self.set(NCRYPT_EXPORT_POLICY_PROPERTY, &0u32.to_le_bytes())
-                    .map_err(|e| e.at("set-no-export-policy"))?;
+                // An intrinsically non-exportable provider can expose a zero
+                // policy without permitting a redundant property write.
+                // The finalized policy and actual export denial are still
+                // mandatory; this does not accept an unsupported readback.
+                if self.number(NCRYPT_EXPORT_POLICY_PROPERTY).ok() != Some(0) {
+                    self.set(NCRYPT_EXPORT_POLICY_PROPERTY, &0u32.to_le_bytes())
+                        .map_err(|e| e.at("set-no-export-policy"))?;
+                }
                 self.set(CACHE_TYPE, &1u32.to_le_bytes())
                     .map_err(|e| e.at("set-mandatory-authorization-policy"))?;
                 self.context(&self.key)
