@@ -1,5 +1,29 @@
 # Release evidence and gate status
 
+## Native Hello protected-key experiment (2026-10-07)
+
+The Settings card now runs a real, separate Microsoft Passport CNG synthetic
+key experiment through fixed, focused-window IPC. It attempts mandatory policy
+readback, RSA-OAEP/SHA-256 wrap and two decrypts, silent decrypts before/after
+authorization, bounded private exports and app-only cleanup. It never receives
+vault credentials and every report explicitly keeps vault eligibility false.
+The native consent diagnostic and key proof share a single-flight guard.
+Exact test-stage/HRESULT reports can be copied; key deletion errors remain
+visible and known failed deletions are retried in the same process.
+
+Local PASS: 161 TypeScript tests; typecheck; both production frontend builds
+and target isolation; nine isolated browser UI scenarios; 37 native tests with
+one existing 5 GiB resource test intentionally ignored in the local unit run;
+Windows GNU Clippy with warnings denied. The Windows packaged build is pending
+and will be recorded before delivery. Synthetic browser/native service doubles
+are not physical hardware evidence. See [procedure and implementation limits](windows/HELLO_KEY_PROBE.md).
+
+The owner reports Windows 11 Pro 25H2 and Kensington VeriMark Desktop and shows
+the existing consent diagnostic passing. This establishes no protected-key
+result, exact build/SKU, per-key TPM binding or fresh unwrap enforcement.
+Native attestation, fresh-process/copy tests, actual vault envelope/enrollment
+and Hello vault unlock remain **NOT RUN/BLOCKED**; no full feature claim.
+
 ## Desktop layout and Windows Hello actions (2026-10-06)
 
 The desktop sidebar previously used a fixed 112-pixel top offset, which put it

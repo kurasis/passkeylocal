@@ -2,7 +2,7 @@
 
 Status: **BLOCKED — no eligible protected-secret provider or physical proof**. This is a deliberate fail-closed implementation of the handoff's rule: "If the proof cannot satisfy the requirements, leave Hello unavailable with an actionable reason ... Continue safe work on the rest of the app."
 
-No Windows 11/TPM/Kensington device is attached to this environment. Microsoft Passport provider RSA decrypt/unwrap support, non-exportability and per-key TPM binding have not been established; repeated/silent operation authorization and cache behavior have not been demonstrated. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no app key was created. Settings show the specific blocker and the master-password fallback. No test provider can be activated by environment, configuration, arguments or IPC.
+No Windows 11/TPM/Kensington device is attached to this environment. Microsoft Passport provider RSA decrypt/unwrap support, non-exportability and per-key TPM binding have not been established on the target device; repeated/fresh authorization and cache behavior have not been demonstrated there. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.
 
 Candidate investigation references were checked against Tauri 2.12.1 source/bindings and the official sources in [SOURCES_AND_REVIEW.md](SOURCES_AND_REVIEW.md): Microsoft Windows Hello app development, NCryptDecrypt, key storage properties and desktop UserConsentVerifier interop. They do not promise an arbitrary Passport-provider decryption algorithm or fresh authorization on every operation. No consent-plus-DPAPI, signature-derived AES key, software fallback, or generic decrypt IPC is implemented. No provider is claimed eligible merely because its name contains Passport.
 
@@ -43,3 +43,22 @@ The installed Windows smoke checks the real WinRT availability command and
 the Russian layout; it does not automate the consent dialog or OS Settings.
 All physical provider/sensor acceptance gates remain NOT RUN/BLOCKED.
 Kensington support and Windows Hello vault unlocking are **not complete**.
+
+## Native protected-key experiment (2026-10-07)
+
+[Test protected key](HELLO_KEY_PROBE.md) is now implemented in the same app.
+It creates a uniquely named application test key in the real Microsoft Passport
+CNG provider, attempts RSA-OAEP/SHA-256 encryption and two authorized decryptions,
+tests silent decrypt before/after them on reopened handles, and attempts three
+private export formats with bounded output buffers. Failures include the exact
+stage and sanitized HRESULT. Cleanup always runs; a failed key deletion is shown
+and retried before another test key is created in the same process.
+
+This is executable capability discovery, **not an eligible provider**. The
+provider-specific `NgcCacheType` property is not in the public SDK header and its
+actual behavior must be established. Unsupported algorithms/properties stop the
+experiment without a weaker fallback. Successful round trips do not attest
+TPM binding, prove that both operations prompted, prove fresh-process behavior,
+or establish account/machine-copy resistance. These remain explicit unresolved
+gates in every report, including a successful one. Vault credential material,
+native envelopes, enrollment and unlock have deliberately not been enabled.

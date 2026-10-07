@@ -8,6 +8,7 @@ export function openNativeExternal(_url: string): void { /* Browser adapter uses
 export async function nativeStatus(): Promise<{ backup: string; hello: string; retention?: number }> { return { backup: 'unconfigured', hello: 'unavailable' }; }
 export async function nativeHelloStatus(): Promise<import('./hello-protocol.ts').HelloStatus> { return { available: false, enrolled: false, reason: 'protected-key-proof-required', helloConfiguration: 'not-probed', mode: 'off' }; }
 export async function verifyNativeHello(): Promise<import('./hello-protocol.ts').HelloVerification> { return { result: 'unknown', purpose: 'diagnostic-only', unlocked: false, enrolled: false }; }
+export async function proveNativeHelloKey(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello proof is not available in browsers'); }
 export async function openNativeHelloSettings(): Promise<void> { /* Not applicable to browsers. */ }
 export async function configureNativeBackup(): Promise<void> { /* Not applicable to browsers. */ }
 export async function retryNativeBackup(): Promise<void> { /* Not applicable to browsers. */ }

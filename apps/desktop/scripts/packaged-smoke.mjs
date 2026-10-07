@@ -94,6 +94,20 @@ try {
   await helloSection.getByRole('button', { name: 'Check Windows Hello', exact: true }).click();
   await expect(helloSection.getByRole('button', { name: 'Windows sign-in settings', exact: true })).toBeEnabled();
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test fingerprint or PIN', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
+  await expect.poll(async () => helloSection.getByRole('button', { name: 'Test protected key', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
+  let helloKeyProof = null;
+  if (helloReport.helloConfiguration !== 'available') {
+    // The hosted runner has no configured Hello. Direct permitted IPC must
+    // stop before creating a key or opening any OS enrollment/consent prompt.
+    helloKeyProof = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_key_proof'));
+    assert.equal(helloKeyProof.eligible, false);
+    assert.equal(helloKeyProof.unlocked, false);
+    assert.equal(helloKeyProof.outcome, 'blocked');
+    assert.equal(helloKeyProof.checks[0].test, 'hello-configuration');
+    assert.equal(helloKeyProof.checks[0].status, 'failed');
+    assert(helloKeyProof.checks.slice(1, -1).every((check) => check.status === 'not-run'));
+    assert.equal(helloKeyProof.checks.at(-1).status, 'passed');
+  }
   // Check the reported Russian layout in the real installed WebView2, where
   // module controls and the sidebar previously occupied the same vertical area.
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
@@ -175,7 +189,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

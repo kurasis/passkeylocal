@@ -14,3 +14,15 @@ export interface HelloVerification {
   unlocked: false;
   enrolled: false;
 }
+
+export type HelloProofStage = 'hello-configuration' | 'provider-open' | 'key-create' | 'key-policy' | 'policy-readback' | 'public-wrap' | 'private-export' | 'silent-before' | 'unwrap-first' | 'silent-after-first' | 'unwrap-second' | 'silent-after-second' | 'test-key-delete';
+export interface HelloKeyProof {
+  version: 1;
+  purpose: 'synthetic-key-proof';
+  eligible: false;
+  unlocked: false;
+  enrolled: false;
+  outcome: 'roundtrip-passed' | 'blocked' | 'cancelled' | 'interrupted';
+  checks: { test: HelloProofStage; status: 'passed' | 'failed' | 'cancelled' | 'interrupted' | 'not-run'; nativeCode?: string; operation?: string }[];
+  remaining: ('per-key-tpm-proof' | 'fresh-authorization-proof' | 'fresh-process-proof' | 'account-machine-copy-proof')[];
+}

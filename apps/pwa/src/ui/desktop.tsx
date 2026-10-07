@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings } from '@platform';
-import type { HelloStatus, HelloVerificationResult } from '../hello-protocol.ts';
+import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey } from '@platform';
+import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
 
@@ -36,6 +36,9 @@ export function DesktopHelloSettings() {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<HelloVerificationResult | null>(null);
   const [failed, setFailed] = useState(false);
+  const [proof, setProof] = useState<HelloKeyProof | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const epoch = useRef(0);
   const inFlight = useRef(false);
   const refresh = async () => {
@@ -53,37 +56,56 @@ export function DesktopHelloSettings() {
     return () => { epoch.current++; window.removeEventListener('focus', focus); };
   }, []);
   if (!desktop) return null;
-  const action = async (verify: boolean) => {
+  const action = async (kind: 'verify' | 'settings' | 'proof') => {
     if (inFlight.current) return;
     inFlight.current = true;
     const attempt = ++epoch.current;
     setBusy(true); setResult(null); setFailed(false);
+    if (kind === 'proof') { setProof(null); setCopied(false); setCopyFailed(false); }
     let completed = false;
     try {
-      if (verify) {
+      if (kind === 'verify') {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
+      } else if (kind === 'proof') {
+        const response = await proveNativeHelloKey();
+        if (epoch.current === attempt) setProof(response);
       } else await openNativeHelloSettings();
       completed = true;
     } catch { if (epoch.current === attempt) setFailed(true); }
     finally {
       inFlight.current = false;
-      if (epoch.current === attempt) { setBusy(false); if (!verify && completed) void refresh(); }
+      if (epoch.current === attempt) { setBusy(false); if (kind === 'settings' && completed) void refresh(); }
     }
   };
   const configuration = status?.helloConfiguration ?? (failed ? 'unknown' : 'not-probed');
+  const cleanupFailed = proof?.checks.some((check) => check.test === 'test-key-delete' && check.status !== 'passed') ?? false;
   return <section className="card stack" aria-labelledby="desktop-hello-title">
     <h2 id="desktop-hello-title">Windows Hello</h2>
     <p role="status">{t(`desktopHello_status_${configuration}`)}</p>
     <p>{t('desktopHelloExplain')}</p>
     <div className="input-row">
       <button type="button" disabled={busy} onClick={() => void refresh()}>{t('desktopHelloCheck')}</button>
-      <button type="button" className="secondary" disabled={busy || configuration !== 'available'} onClick={() => void action(true)}>{t('desktopHelloTest')}</button>
-      <button type="button" className="secondary" disabled={busy} onClick={() => void action(false)}>{t('desktopHelloSettings')}</button>
+      <button type="button" className="secondary" disabled={busy || configuration !== 'available'} onClick={() => void action('verify')}>{t('desktopHelloTest')}</button>
+      <button type="button" className="secondary" disabled={busy} onClick={() => void action('settings')}>{t('desktopHelloSettings')}</button>
     </div>
+    <p>{t('desktopHelloProofExplain')}</p>
+    <button type="button" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('proof')}>{t('desktopHelloProof')}</button>
     {busy && <p role="status">{t('desktopHelloPending')}</p>}
     {result && <Banner kind={result === 'verified' ? 'info' : 'warn'}>{t(`desktopHello_result_${result}`)}</Banner>}
     {failed && <Banner kind="error">{t('desktopHelloError')}</Banner>}
+    {proof && <div className="stack">
+      <Banner kind={proof.outcome === 'roundtrip-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
+      <ul className="hello-proof-checks">{proof.checks.filter((check) => check.status !== 'not-run').map((check) => <li key={check.test}>
+        <span>{t(`desktopHello_proof_${check.test}`)}</span>
+        <span>{t(`desktopHello_proofStatus_${check.status}`)}{check.nativeCode && <> <code>{check.nativeCode}</code></>}</span>
+      </li>)}</ul>
+      {cleanupFailed && <Banner kind="error">{t('desktopHelloProofDeleteFailed')}</Banner>}
+      <details><summary>{t('desktopHelloProofReport')}</summary><pre className="hello-proof-report">{JSON.stringify(proof, null, 2)}</pre></details>
+      <button type="button" className="secondary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(proof, null, 2)).then(() => { setCopied(true); setCopyFailed(false); }, () => { setCopied(false); setCopyFailed(true); })}>{t('desktopHelloProofCopy')}</button>
+      {copied && <p role="status">{t('desktopHelloProofCopied')}</p>}
+      {copyFailed && <p role="status">{t('desktopHelloProofCopyFailed')}</p>}
+    </div>}
     <p className="muted">{t('desktopHelloUnlockBlocked')}</p>
   </section>;
 }

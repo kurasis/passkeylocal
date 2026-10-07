@@ -238,3 +238,7 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 .file-safe-file span { font-size: .8rem; opacity: .75; }
 .file-safe-version { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; }
 @media (max-width: 760px) { .file-safe-layout { grid-template-columns: 1fr; } .file-safe-sidebar { max-height: 260px; } }
+.hello-proof-checks { padding-left: 1.25rem; }
+.hello-proof-checks li { margin: .5rem 0; overflow-wrap: anywhere; }
+.hello-proof-checks li span { display: block; }
+.hello-proof-report { max-height: 22rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }

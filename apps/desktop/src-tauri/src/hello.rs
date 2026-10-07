@@ -3,6 +3,30 @@
 use crate::storage::{Error, Result};
 use serde_json::{json, Value};
 
+#[cfg(any(windows, test))]
+pub mod proof;
+
+#[cfg(windows)]
+static AUTHENTICATING: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+#[cfg(windows)]
+pub(crate) struct Attempt;
+#[cfg(windows)]
+impl Attempt {
+    pub(crate) fn begin() -> Result<Self> {
+        use std::sync::atomic::Ordering;
+        AUTHENTICATING
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| Error::new("BUSY"))?;
+        Ok(Self)
+    }
+}
+#[cfg(windows)]
+impl Drop for Attempt {
+    fn drop(&mut self) {
+        AUTHENTICATING.store(false, std::sync::atomic::Ordering::Release);
+    }
+}
+
 pub fn readiness() -> Value {
     json!({"available": false, "reason": "protected-key-proof-required", "enrolled": false,
         "helloConfiguration": "not-probed", "perKeyTpmEvidence": "not-verified",
@@ -16,7 +40,7 @@ pub fn unlock() -> Result<Value> {
     Err(Error::new("UNAVAILABLE"))
 }
 pub fn revoke() -> Result<Value> {
-    Ok(json!({"enrolled": false, "keyDeletion": "no-app-key-created"}))
+    Ok(json!({"enrolled": false, "keyDeletion": "no-enrollment-key-created"}))
 }
 
 /// Configuration and consent diagnostics are deliberately independent of
@@ -24,7 +48,6 @@ pub fn revoke() -> Result<Value> {
 #[cfg(windows)]
 pub mod diagnostics {
     use super::*;
-    use std::sync::atomic::{AtomicBool, Ordering};
     use windows::{
         Security::Credentials::UI::{UserConsentVerificationResult, UserConsentVerifier},
         Win32::{
@@ -35,8 +58,6 @@ pub mod diagnostics {
         },
     };
     use windows_core::HSTRING;
-
-    static VERIFYING: AtomicBool = AtomicBool::new(false);
 
     struct Apartment;
     impl Apartment {
@@ -51,13 +72,6 @@ pub mod diagnostics {
             unsafe { RoUninitialize() };
         }
     }
-    struct Attempt;
-    impl Drop for Attempt {
-        fn drop(&mut self) {
-            VERIFYING.store(false, Ordering::Release);
-        }
-    }
-
     pub fn check() -> Value {
         let configuration = (|| {
             let _apartment = Apartment::new()?;
@@ -75,10 +89,7 @@ pub mod diagnostics {
     /// A diagnostic OS prompt only. It has no password, envelope or key access.
     /// The text is fixed natively and the HWND comes from the trusted host.
     pub fn verify(hwnd: usize) -> Result<Value> {
-        VERIFYING
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-            .map_err(|_| Error::new("BUSY"))?;
-        let _attempt = Attempt;
+        let _attempt = super::Attempt::begin()?;
         let _apartment = Apartment::new()?;
         let interop: IUserConsentVerifierInterop =
             windows_core::factory::<UserConsentVerifier, IUserConsentVerifierInterop>()
