@@ -26,6 +26,14 @@ no new installer. Native PRF, TPM composition and new physical ceremonies are
 **NOT IMPLEMENTED / NOT RUN** here. Existing Passport reports remain unchanged,
 actual enrollment/unlock stays blocked and all four physical gates remain open.
 
+General CI [37645990383](https://github.com/kurasis/passkeylocal/actions/runs/37645990383)
+**PASS**, all ten checks for head `1a1b0ea6da3f093fc08c869c25b72c73d5227566`.
+[PR #16](https://github.com/kurasis/passkeylocal/pull/16) merged automatically as
+`91e88b3916833210d3fcf74680472730faf5c183`; the merged tree equals the tested PR
+tree. The 16 external research links and all local links in changed documents
+were checked. This final result entry changes documentation only; it adds no
+runtime or physical hardware evidence beyond the referenced checks.
+
 ## Target subject-only claim candidate rejected (2026-10-07)
 
 Saved the [owner-provided 6ae6e24 report](../deploy/windows-desktop/hello-target-6ae6e24.json)
