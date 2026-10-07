@@ -65,6 +65,8 @@ pub struct Check {
 #[serde(rename_all = "camelCase")]
 pub struct Report {
     pub version: u8,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_commit: Option<&'static str>,
     pub purpose: &'static str,
     pub eligible: bool,
     pub unlocked: bool,
@@ -103,6 +105,7 @@ pub(crate) trait Provider {
 pub(crate) fn exercise(provider: &mut impl Provider, current: impl Fn() -> bool) -> Report {
     let mut report = Report {
         version: 1,
+        source_commit: option_env!("PASSKEY_SOURCE_COMMIT"),
         purpose: "synthetic-key-proof",
         eligible: false,
         unlocked: false,

@@ -100,6 +100,7 @@ try {
     // The hosted runner has no configured Hello. Direct permitted IPC must
     // stop before creating a key or opening any OS enrollment/consent prompt.
     helloKeyProof = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_key_proof'));
+    assert.equal(helloKeyProof.sourceCommit, process.env.GITHUB_SHA, 'Installed native probe embeds this build source, not a stale cached binary');
     assert.equal(helloKeyProof.eligible, false);
     assert.equal(helloKeyProof.unlocked, false);
     assert.equal(helloKeyProof.outcome, 'blocked');

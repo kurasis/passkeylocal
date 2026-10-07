@@ -1,4 +1,11 @@
 fn main() {
+    // Public build provenance only. Never embed arbitrary environment values.
+    println!("cargo:rerun-if-env-changed=GITHUB_SHA");
+    if let Ok(source) = std::env::var("GITHUB_SHA") {
+        if source.len() == 40 && source.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            println!("cargo:rustc-env=PASSKEY_SOURCE_COMMIT={source}");
+        }
+    }
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }

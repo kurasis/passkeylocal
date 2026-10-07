@@ -139,6 +139,13 @@ fn failed(error: windows_core::Error) -> Failure {
         operation: None,
     }
 }
+fn require_silent_refusal(result: windows_core::Result<()>) -> std::result::Result<(), Failure> {
+    match result {
+        Err(error) if error.code() == NTE_SILENT_CONTEXT => Ok(()),
+        Err(error) => Err(failed(error).at("silent-oaep-sha256-decrypt")),
+        Ok(()) => Err(Failure::failed().at("silent-decrypt-unexpected-success")),
+    }
+}
 fn current_sid() -> std::result::Result<String, Failure> {
     use windows_sys::Win32::{
         Foundation::{CloseHandle, LocalFree, HANDLE},
@@ -280,14 +287,14 @@ impl Probe {
                 &self.hwnd.to_le_bytes(),
                 NCRYPT_FLAGS(0),
             )
-            .map_err(failed)?;
+            .map_err(|e| failed(e).at("set-window-handle"))?;
             NCryptSetProperty(
                 NCRYPT_HANDLE(key.0),
                 NCRYPT_USE_CONTEXT_PROPERTY,
                 &message,
                 NCRYPT_FLAGS(0),
             )
-            .map_err(failed)?;
+            .map_err(|e| failed(e).at("set-use-context"))?;
         }
         Ok(())
     }
@@ -298,7 +305,7 @@ impl Probe {
         }
     }
     fn decrypt(&self, silent: bool) -> std::result::Result<(), Failure> {
-        let key = self.open()?;
+        let key = self.open().map_err(|e| e.at("decrypt-key-open-silent"))?;
         // Check stored policy again on the reopened key; a handle flag alone
         // is not a durable authorization policy. No secret key leaves CNG.
         let mut cache = [0; 4];
@@ -312,9 +319,12 @@ impl Probe {
                 windows::Win32::Security::OBJECT_SECURITY_INFORMATION(0),
             )
         }
-        .map_err(failed)?;
-        if length != 4 || u32::from_le_bytes(cache) != 1 {
-            return Err(Failure::failed());
+        .map_err(|e| failed(e).at("decrypt-policy-readback"))?;
+        if length != 4 {
+            return Err(Failure::failed().at("decrypt-policy-length"));
+        }
+        if u32::from_le_bytes(cache) != 1 {
+            return Err(Failure::failed().at("decrypt-policy-mismatch"));
         }
         if !silent {
             self.context(&key)?;
@@ -326,7 +336,7 @@ impl Probe {
                     NCRYPT_FLAGS(0),
                 )
             }
-            .map_err(failed)?;
+            .map_err(|e| failed(e).at("decrypt-require-fresh-gesture"))?;
         }
         // Use an actual output buffer. A size-only query can succeed without
         // authorizing a private-key operation and is not an unwrap proof.
@@ -349,23 +359,19 @@ impl Probe {
             )
         };
         if silent {
-            return match result {
-                Err(error) if error.code() == NTE_SILENT_CONTEXT => Ok(()),
-                Err(error) => Err(failed(error)),
-                Ok(()) => Err(Failure::failed()),
-            };
+            return require_silent_refusal(result);
         }
-        result.map_err(failed)?;
+        result.map_err(|e| failed(e).at("authorized-oaep-sha256-decrypt"))?;
         if actual != 32 || !libsodium_rs::utils::memcmp(&plaintext[..32], self.secret.as_slice()) {
-            return Err(Failure::failed());
+            return Err(Failure::failed().at("decrypt-secret-mismatch"));
         }
         Ok(())
     }
     fn export_denied(&self) -> std::result::Result<(), Failure> {
-        for format in [
-            BCRYPT_RSAPRIVATE_BLOB,
-            BCRYPT_RSAFULLPRIVATE_BLOB,
-            NCRYPT_PKCS8_PRIVATE_KEY_BLOB,
+        for (format, operation) in [
+            (BCRYPT_RSAPRIVATE_BLOB, "private-export-rsa"),
+            (BCRYPT_RSAFULLPRIVATE_BLOB, "private-export-rsa-full"),
+            (NCRYPT_PKCS8_PRIVATE_KEY_BLOB, "private-export-pkcs8"),
         ] {
             // Bounded real buffer; unsupported format/errors are not promoted
             // to evidence of non-exportability. Only NTE_PERM is accepted.
@@ -384,8 +390,8 @@ impl Probe {
             };
             match result {
                 Err(error) if error.code() == NTE_PERM => {}
-                Err(error) => return Err(failed(error)),
-                Ok(()) => return Err(Failure::failed()),
+                Err(error) => return Err(failed(error).at(operation)),
+                Ok(()) => return Err(Failure::failed().at(operation)),
             }
         }
         Ok(())
@@ -503,7 +509,7 @@ impl Provider for Probe {
                 if let Ok(mut pending) = PENDING_DELETE.lock() {
                     *pending = Some(self.name.clone());
                 }
-                Err(failed(error))
+                Err(failed(error).at("delete-test-key"))
             }
         }
     }
@@ -588,6 +594,31 @@ mod tests {
                 &plaintext[..32],
                 secret.as_slice()
             ));
+            // A logged-in software key can decrypt silently. That real API
+            // success must be rejected by the production authorization gate.
+            let silent = NCryptDecrypt(
+                key,
+                Some(&ciphertext),
+                Some((&padding as *const BCRYPT_OAEP_PADDING_INFO).cast()),
+                Some(plaintext.as_mut_slice()),
+                &mut actual,
+                NCRYPT_PAD_OAEP_FLAG | NCRYPT_SILENT_FLAG,
+            );
+            assert!(silent.is_ok());
+            let refusal = require_silent_refusal(silent).unwrap_err();
+            assert_eq!(refusal.status, Outcome::Failed);
+            assert_eq!(refusal.operation, Some("silent-decrypt-unexpected-success"));
+            let parameter_error = require_silent_refusal(Err(
+                windows::Win32::Foundation::NTE_INVALID_PARAMETER.into(),
+            ))
+            .unwrap_err();
+            assert_eq!(parameter_error.status, Outcome::Failed);
+            assert_eq!(parameter_error.code, Some(0x80090027));
+            assert_eq!(
+                parameter_error.operation,
+                Some("silent-oaep-sha256-decrypt")
+            );
+            assert!(require_silent_refusal(Err(NTE_SILENT_CONTEXT.into())).is_ok());
             let wrong_hash = BCRYPT_OAEP_PADDING_INFO {
                 pszAlgId: BCRYPT_SHA1_ALGORITHM,
                 ..Default::default()
