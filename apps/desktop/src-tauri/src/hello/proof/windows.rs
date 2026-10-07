@@ -1,9 +1,11 @@
 //! Microsoft Passport CNG capability experiment using maintained SDK bindings.
 //! No OS/account Hello keys are opened, enumerated or changed.
-use super::{exercise, exercise_selected, Experiment, Failure, Outcome, Provider, Report, Stage};
+use super::{
+    exercise, exercise_selected, Experiment, ExportCheck, Failure, Outcome, Provider, Report, Stage,
+};
 use crate::storage::{Error, Result};
 use ::windows::Win32::{
-    Foundation::{NTE_BAD_KEYSET, NTE_PERM, NTE_SILENT_CONTEXT, NTE_USER_CANCELLED},
+    Foundation::{NTE_BAD_KEYSET, NTE_SILENT_CONTEXT, NTE_USER_CANCELLED},
     Security::Cryptography::*,
 };
 use std::sync::Mutex;
@@ -258,6 +260,7 @@ struct Probe<'a> {
     secret: Zeroizing<[u8; 32]>,
     ciphertext: Vec<u8>,
     scheme: RsaPadding,
+    exports: Vec<ExportCheck>,
     current: &'a dyn Fn() -> bool,
 }
 fn failed(error: windows_core::Error) -> Failure {
@@ -344,6 +347,33 @@ fn current_sid() -> std::result::Result<String, Failure> {
         String::from_utf16(std::slice::from_raw_parts(text.0, length))
             .map_err(|_| Failure::failed())
     }
+}
+fn measure_key_exports(
+    key: NCRYPT_KEY_HANDLE,
+    current: impl Fn() -> bool,
+) -> (Vec<ExportCheck>, std::result::Result<(), Failure>) {
+    super::measure_exports(current, |label| {
+        let format = match label {
+            "rsa-private" => BCRYPT_RSAPRIVATE_BLOB,
+            "rsa-full-private" => BCRYPT_RSAFULLPRIVATE_BLOB,
+            "pkcs8-private" => NCRYPT_PKCS8_PRIVATE_KEY_BLOB,
+            _ => unreachable!("Native export formats are fixed"),
+        };
+        let mut output = Zeroizing::new([0u8; 16_384]);
+        let mut actual = 0;
+        unsafe {
+            NCryptExportKey(
+                key,
+                None,
+                format,
+                None,
+                Some(output.as_mut_slice()),
+                &mut actual,
+                NCRYPT_SILENT_FLAG,
+            )
+        }
+        .map_err(failed)
+    })
 }
 impl Probe<'_> {
     fn delete_pending(&self) -> std::result::Result<(), Failure> {
@@ -502,37 +532,16 @@ impl Probe<'_> {
         }
         Ok(())
     }
-    fn export_denied(&self) -> std::result::Result<(), Failure> {
-        for (format, operation) in [
-            (BCRYPT_RSAPRIVATE_BLOB, "private-export-rsa"),
-            (BCRYPT_RSAFULLPRIVATE_BLOB, "private-export-rsa-full"),
-            (NCRYPT_PKCS8_PRIVATE_KEY_BLOB, "private-export-pkcs8"),
-        ] {
-            // Bounded real buffer; unsupported format/errors are not promoted
-            // to evidence of non-exportability. Only NTE_PERM is accepted.
-            let mut output = Zeroizing::new([0u8; 16_384]);
-            let mut actual = 0;
-            let result = unsafe {
-                NCryptExportKey(
-                    NCRYPT_KEY_HANDLE(self.key.0),
-                    None,
-                    format,
-                    None,
-                    Some(output.as_mut_slice()),
-                    &mut actual,
-                    NCRYPT_SILENT_FLAG,
-                )
-            };
-            match result {
-                Err(error) if error.code() == NTE_PERM => {}
-                Err(error) => return Err(failed(error).at(operation)),
-                Ok(()) => return Err(Failure::failed().at(operation)),
-            }
-        }
-        Ok(())
+    fn export_denied(&mut self) -> std::result::Result<(), Failure> {
+        let (checks, result) = measure_key_exports(NCRYPT_KEY_HANDLE(self.key.0), self.current);
+        self.exports = checks;
+        result
     }
 }
 impl Provider for Probe<'_> {
+    fn export_checks(&self) -> Vec<ExportCheck> {
+        self.exports.clone()
+    }
     fn step(&mut self, stage: Stage) -> std::result::Result<(), Failure> {
         match stage {
             Stage::HelloConfiguration => {
@@ -664,6 +673,7 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool, experiment: Experiment) -> R
         secret,
         ciphertext: Vec::new(),
         scheme: RsaPadding::for_experiment(experiment),
+        exports: Vec::new(),
         current: &current,
     };
     Ok(match experiment {
@@ -891,6 +901,36 @@ mod tests {
             )
             .unwrap();
             NCryptFinalizeKey(key, NCRYPT_FLAGS(0)).unwrap();
+            let (export_checks, export_gate) = measure_key_exports(key, || true);
+            export_gate.unwrap();
+            assert_eq!(export_checks.len(), 3);
+            assert!(export_checks.iter().all(|check| check.result == "refused"
+                && check.native_code.as_deref() == Some("0x80090010")));
+            // Positive control: an explicitly exportable software fixture
+            // actually exports. The production gate must stop after success.
+            let mut exportable = NCRYPT_KEY_HANDLE(0);
+            NCryptCreatePersistedKey(
+                provider,
+                &mut exportable,
+                BCRYPT_RSA_ALGORITHM,
+                PCWSTR::null(),
+                CERT_KEY_SPEC(0),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            let _exportable = Handle(exportable.0);
+            NCryptSetProperty(
+                NCRYPT_HANDLE(exportable.0),
+                NCRYPT_EXPORT_POLICY_PROPERTY,
+                &(NCRYPT_ALLOW_EXPORT_FLAG | NCRYPT_ALLOW_PLAINTEXT_EXPORT_FLAG).to_le_bytes(),
+                NCRYPT_FLAGS(0),
+            )
+            .unwrap();
+            NCryptFinalizeKey(exportable, NCRYPT_FLAGS(0)).unwrap();
+            let (checks, result) = measure_key_exports(exportable, || true);
+            assert_eq!(result.unwrap_err().operation, Some("private-export-rsa"));
+            assert_eq!(checks[0].result, "unexpected-success");
+            assert!(checks[1..].iter().all(|check| check.result == "not-run"));
             let secret = Zeroizing::new([0x5au8; 32]);
             let mut ciphertext = wrap_public_key(key, &secret, RsaPadding::OaepSha256).unwrap();
             let padding = Probe::padding();

@@ -6,6 +6,26 @@ enrollment/unlock. It is a real CNG experiment in the existing app, not a
 UserConsentVerifier boolean followed by a credential read. All reports keep
 `eligible`, `enrolled` and `unlocked` false.
 
+## Target repeated decrypt and export result (2026-10-07)
+
+The [9fdbc05 owner report](../../deploy/windows-desktop/hello-target-9fdbc05.json)
+passes both decrypt/secret comparisons and the three explicit silent refusals;
+cleanup passes. Asked about creation and each decrypt, the owner reports
+fingerprint confirmation every time. These are reported same-process results,
+not per-key TPM attestation or fresh-process/account/machine evidence.
+RSA private export returns `NTE_BAD_TYPE` (`0x8009000A`); the original build
+stopped before RSA full-private/PKCS#8. Microsoft documents this as the key not
+being exportable into the requested blob type, not an explicit permission denial.
+
+In the next build, run **Test PKCS#1 key behavior** once to collect `exportChecks`
+for all three fixed formats. Unsuccessful attempts continue to the next format;
+actual success, cancellation or native-session change stops later attempts.
+Only `NTE_PERM` for every format passes the existing aggregate gate. Unavailable
+formats remain unresolved; subsequent results cannot erase that failure.
+Buffers are zeroized and no exported material leaves the native probe. The
+report labels unattempted formats NOT RUN and still performs key cleanup.
+No real credentials, enrollment or production legacy envelope are added.
+
 ## Target compatibility result and next behavior check (2026-10-07)
 
 The [owner report from 6cbe2c4](../../deploy/windows-desktop/hello-target-6cbe2c4.json)

@@ -1,5 +1,46 @@
 # Release evidence and gate status
 
+## Target silent refusals and repeated decrypt passed; export format diagnostics (2026-10-07)
+
+The [owner report from published source 9fdbc05](../deploy/windows-desktop/hello-target-9fdbc05.json)
+passes both constant-time synthetic-secret comparisons and all three silent
+refusals. Policy readback and cleanup also PASS. The owner subsequently reports
+fingerprint confirmation every time in response to the question about key
+creation/first/second decrypt prompts. This is owner-reported same-process
+behavior, not an independently executed hardware test. It supplies no per-key
+TPM, fresh-process, account/machine-copy or cancellation proof. No eligibility,
+enrollment or unlock is promoted.
+
+Private export stops at RSA private blob with `0x8009000A` / `NTE_BAD_TYPE`.
+[Microsoft NCryptExportKey documentation](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptexportkey)
+says this key cannot be exported into the requested blob type. It is not explicit
+permission denial or evidence that all private formats are protected. The later
+two export formats were not attempted by that build.
+
+The native export stage now collects fixed RSA private/full-private/PKCS#8
+results independently after unsuccessful attempts. `exportChecks` identifies
+explicit refusal, unavailable format, other failure, unexpected success and
+unrun formats. Every format must still return `NTE_PERM` to pass the aggregate
+gate; unsupported formats are never blessed. The first unsuccessful unresolved
+format retains its original aggregate code/operation. Success/cancel/session
+invalidation stops further export attempts, zeroizing buffers and performing
+normal unconditional test-key cleanup. Only fixed app test-key formats are
+accepted; no key material or caller-selected export command is returned.
+
+Added portable measurement regressions for mixed format results, strict denial,
+unexpected export success, cancellation and invalidation. Actual Windows CNG
+regressions measure all three formats on a non-exportable software fixture,
+then verify an explicitly exportable fixture fails the gate and stops later
+formats. The isolated UI shows all three classifications without enabling
+unlock or overflowing at 320 pixels. Local checks and general/Windows CI:
+**PENDING**. Local typecheck, both production builds/target isolation, 18 isolated
+UI scenarios, 12 portable proof regressions and Windows GNU Clippy with warnings
+denied **PASS**. Initial Windows test compilation failed because the newly used
+SDK export policy flags are `u32`, not wrapper types; corrected the flag access
+and the full cross-target Clippy rerun passed. Updated target export diagnostics:
+**NOT RUN**. Actual Hello
+credential envelope/enrollment/unlock and remaining physical proof: **BLOCKED**.
+
 ## Target PKCS#1 compatibility passed; explicit key behavior experiment (2026-10-07)
 
 The [owner report from published source 6cbe2c4](../deploy/windows-desktop/hello-target-6cbe2c4.json)

@@ -232,3 +232,22 @@ test('PKCS#1 behavior shares single flight and discards a late report after Lock
   await expect(page.getByText('Две расшифровки PKCS#1 вернули тестовый секрет;', { exact: false })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ behaviors: 1, compatibilities: 0, capabilities: 0, proofs: 0, verifies: 0 });
 });
+
+test('private export details distinguish unsupported formats from permission refusal', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.behaviorFailure('private-export'));
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  await hello.getByRole('button', { name: 'Проверить поведение ключа PKCS#1', exact: true }).click();
+  await expect(hello.getByText('Формат недоступен для этого ключа', { exact: false })).toBeVisible();
+  await expect(hello.getByText('Доступ запрещён', { exact: false })).toBeVisible();
+  await expect(hello.getByText('Проверка экспорта не прошла', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.outcome).toBe('blocked');
+  expect(report.exportChecks).toHaveLength(3);
+  expect(report.checks.at(-1)).toMatchObject({ test: 'test-key-delete', status: 'passed' });
+  expect(report).toMatchObject({ eligible: false, enrolled: false, unlocked: false });
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+});
