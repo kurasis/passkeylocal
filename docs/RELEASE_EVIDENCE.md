@@ -11,6 +11,9 @@ classification and a failed export stage for unsupported operations/formats;
 only all explicit permission denials can pass that stage. A separate exportable
 software impostor control must fail it. Production policy/classifier/gates are
 unchanged; packaging was skipped on the failing run. Final checks follow below.
+The key-initialization call also now uses documented flags zero; key generation,
+decryption, export and deletion retain their silent flags. No interactive
+cryptographic fallback is introduced.
 
 Added the separate [native TPM inner-layer experiment](windows/HELLO_TPM_INNER.md)
 after the owner's completed PRF measurement. Read-only preflight creates no key;

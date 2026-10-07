@@ -305,7 +305,9 @@ impl Provider for Probe<'_> {
                         NCRYPT_RSA_ALGORITHM,
                         PCWSTR(self.name.as_ptr()),
                         CERT_KEY_SPEC(0),
-                        NCRYPT_SILENT_FLAG,
+                        // Documented per-user initialization flags; no key is
+                        // generated until the separate silent FinalizeKey call.
+                        NCRYPT_FLAGS(0),
                     )
                 }
                 .map_err(|e| failed(e, "tpm-create-app-test-key"))?;

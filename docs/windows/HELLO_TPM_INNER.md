@@ -44,6 +44,11 @@ not infer a numeric TPM version from that property. No sample source is imported
   policy zero, finalizes, reads back those policies and observes a bounded
   nonempty object-name property. Only that new key is opened/deleted.
 
+CNG initialization uses documented flags zero (per-user, no overwrite);
+key generation/finalization and all private/export/delete operations use the
+silent flag. Preparation is separate from key generation; an unsupported
+silent cryptographic operation cannot fall back to an interactive one.
+
 The public component alone goes to BCrypt for encrypting 32 random native bytes
 with OAEP/SHA-256. Platform KSP decrypts with `NCRYPT_SILENT_FLAG`; recovered bytes
 must equal the synthetic secret. The test disposes the key and provider handles,
