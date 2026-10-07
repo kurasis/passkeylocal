@@ -1,5 +1,14 @@
 # Windows Hello eligibility decision
 
+The [6ae6e24 owner report](../../deploy/windows-desktop/hello-target-6ae6e24.json)
+completes the no-authority, subject-only attestation capability measurement.
+Passport key creation/policy/readback and exact test-key deletion PASS; the
+claim call returns `NTE_INVALID_PARAMETER` (`0x80090027`). There is no returned
+statement and no verification. This rejects the tested candidate on the reported
+target without identifying the rejected parameter or proving defective hardware.
+Do not request an unchanged rerun. A supported same-decrypt-key acquisition and
+authority contract remains the prerequisite; real enrollment/unlock is blocked.
+
 Native standard TPM certification inspection, Windows RSA signature checks and
 the separate same-key `NCryptCreateClaim` capability experiment are now implemented.
 See [HELLO_ATTESTATION_VERIFIER.md](HELLO_ATTESTATION_VERIFIER.md). Returned claims

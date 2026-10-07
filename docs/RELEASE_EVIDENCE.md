@@ -1,5 +1,36 @@
 # Release evidence and gate status
 
+## Target subject-only claim candidate rejected (2026-10-07)
+
+Saved the [owner-provided 6ae6e24 report](../deploy/windows-desktop/hello-target-6ae6e24.json)
+without adding observations. Its full source SHA matches the existing installer
+build/smoke/resource/WebView2 metadata. Seven stages are present: configuration,
+Passport provider, key creation, policy and readback PASS;
+`attestation-claim` FAIL with `NTE_INVALID_PARAMETER` (`0x80090027`) and operation
+`create-subject-only-attestation-claim`; exact app test-key deletion PASS.
+`attestationClaim.result` is `unavailable`, verification `not-performed`, with
+no returned byte count. Eligibility/enrollment/unlock remain false, outcome
+blocked and all four physical gates open. No new prompt observation was supplied.
+This is owner-reported evidence on the reported Windows 11 Pro 25H2 / Kensington
+VeriMark Desktop setup, not an independently executed physical cloud test.
+
+Re-read the official claim/Hello references and pinned provider implementation;
+see [the acquisition/authority review](windows/SOURCES_AND_REVIEW.md#completed-subject-only-target-measurement).
+The failure rejects this candidate on the reported target. It does not identify
+the rejected parameter, prove missing/defective hardware or establish that
+every attestation route is unsupported. A supported attestation acquisition and
+authority contract for the exact decrypt-only Passport key remains
+**NOT ESTABLISHED**. Trusted AIK certificate/chain/revocation, full fresh
+authorization/process/copy evidence and real enrollment/unlock remain blocked.
+No unchanged retest, VBS/provider substitution, OS key operation or security
+downgrade is requested.
+
+Evidence-only validation: JSON semantics, exact installed-source correlation,
+stage/error/cleanup/false-flag/open-gate consistency, changed Markdown local
+links and whitespace **PASS**. Application code, installer and Cloudflare ZIP
+are unchanged; their earlier CI evidence below remains historical evidence,
+not a new target pass. No replacement installer is needed for this update.
+
 ## Native TPM certification inspection and same-key capability increment (2026-10-07)
 
 Implemented bounded standard TPMS_ATTEST/TPMT_PUBLIC inspection against the

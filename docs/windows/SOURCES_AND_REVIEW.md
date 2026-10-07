@@ -30,6 +30,45 @@ Prepared: 2026-10-05; Windows Hello/Kensington update: 2026-10-06. These are off
 
 ## Same-key attestation investigation (2026-10-07)
 
+### Completed subject-only target measurement
+
+The [6ae6e24 owner report](../../deploy/windows-desktop/hello-target-6ae6e24.json)
+measures the implemented no-authority, subject-only candidate on the owner-reported
+Windows 11 Pro 25H2 / Kensington VeriMark Desktop setup. The exact Windows build,
+reader SKU/revision, driver, TPM and ESS details have not been established. The
+claim call returns `NTE_INVALID_PARAMETER` (`0x80090027`); key creation/policy
+readback and deletion pass. No bytes were returned or verified. The owner did
+not supply additional prompt observations. This is target evidence provided by
+the owner, separate from cloud/hosted API tests. The experiment is complete and
+does not need an unchanged rerun.
+
+S21 and S14 were re-read after this failure. The generic API declares
+`hAuthorityKey` optional and requires `dwFlags = 0`. This does not document
+support for a no-authority `NCRYPT_CLAIM_SUBJECT_ONLY` call on Passport, or
+identify the parameter rejected here. Its newer examples use VBS claim types,
+Software KSP and VBS attestation flags/parameters; that is a different key and
+trust model and cannot establish the required TPM binding by substitution.
+
+The pinned [Chromium implementation](https://github.com/chromium/chromium/blob/544a340956293550ca5eeb89d7a046879527df18/crypto/unexportable_key_win.cc)
+uses Platform Crypto Provider, a distinct attestation key and
+`NCRYPT_CLAIM_WEB_AUTH_SUBJECT_ONLY`. This is an implementation reference,
+not a Microsoft guarantee for Passport. It cannot supply the missing same-key
+Passport acquisition/authority contract. S14's `GetAttestationAsync` concerns
+a KeyCredential signing key; attesting a replacement signing key cannot prove
+our existing decrypt key is TPM-bound.
+
+The current failure therefore blocks the tested candidate, not every possible
+attestation mechanism or the hardware itself. No supported replacement contract
+was established by this review. The next implementation must first establish
+same-subject acquisition/authority and authenticated public-key correspondence,
+then the trusted AIK certificate/chain/EKU/revocation policy. Unverified claim
+bytes, provider flags, a valid untrusted signature, another key's attestation
+or successful fingerprint consent cannot close that gap. This evidence-only
+update adds no claim-type retries, OS key operations, security downgrades or new
+installer; master-password access remains available.
+
+### Earlier private-export source review
+
 Implementation follow-up to the [946514c owner report](../../deploy/windows-desktop/hello-target-946514c.json),
 not part of the original handoff review. S14, S17, S20 and S21 were fetched over
 verified HTTPS and read during this investigation. No physical target test or

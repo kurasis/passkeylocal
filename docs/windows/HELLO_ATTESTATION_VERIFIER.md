@@ -52,8 +52,19 @@ not a hardware certificate or a physical target result.
 
 ## Separate same-key capability experiment
 
-Select **Test key attestation capability** (Russian: **Проверить возможность
-аттестации ключа**) in Windows Settings → Windows Hello. The fixed native command
+**Target measurement completed:** the [6ae6e24 owner report](../../deploy/windows-desktop/hello-target-6ae6e24.json)
+matches the published installer source. Configuration, Passport opening, app-key
+creation, policy/readback and deletion PASS. The subject-only claim call fails
+with `NTE_INVALID_PARAMETER` (`0x80090027`), operation
+`create-subject-only-attestation-claim`. No claim bytes were returned;
+verification was not performed. All four gates remain open and all three
+eligibility/enrollment/unlock flags are false. This is owner-reported target
+evidence, not a cloud-executed hardware test. No new prompt observation was
+provided. Do not request another unchanged run.
+
+The experiment is selected with **Test key attestation capability** (Russian:
+**Проверить возможность аттестации ключа**) in Windows Settings → Windows Hello.
+The fixed native command
 is `hello_attestation_capability`. It uses the existing focused main-window,
 single-flight and native storage-session/generation guards.
 
@@ -98,18 +109,22 @@ applied to an unknown provider blob. Every report retains false eligibility,
 enrollment/unlock and all four remaining physical gates. No unwrap/export stage
 or real vault material is used by this action.
 
-Install the source-correlated build from the [Windows folder](../../deploy/windows-desktop/README.md),
-fully closing the old app first. Run this **new** action once and share the
-complete nonsensitive JSON, including `sourceCommit`, plus whether Windows
-prompted or you cancelled. Never share PINs, biometrics or raw attestation data.
-An unavailable API does not establish absent/defective TPM or Kensington reader.
-Do not repeat the completed PKCS#1 export diagnostic or reset Hello/clear TPM.
+The source-correlated build and completed report are retained in the
+[Windows folder](../../deploy/windows-desktop/README.md). A replacement installer
+is not needed for this evidence update. The error does not identify which
+parameter or provider constraint rejected the candidate, establish that all
+attestation routes are unsupported, or show an absent/defective TPM or reader.
+Do not repeat either completed diagnostic or reset Hello/clear TPM.
 
 ## Remaining prerequisites
 
+The measured no-authority, subject-only candidate failed on the reported target.
 Passport support/output framing for this exact decrypt-only key is **NOT
-ESTABLISHED**. The capability experiment may identify a concrete unsupported
-operation; returned bytes alone cannot resolve that blocker. Trusted AIK chain,
+ESTABLISHED**. The next prerequisite is a supported same-key acquisition and
+authority contract; changing claim types, nonce aliases or VBS parameters by
+trial is not an established fix. The generic API's optional authority parameter
+does not guarantee that every provider/claim combination accepts its absence.
+Returned bytes alone would not resolve the trust blocker. Trusted AIK chain,
 certificate policy/revocation and supported same-key acquisition/normalization
 remain **NOT IMPLEMENTED**. The verifier must receive its expected key/nonce
 from native app state and validate authenticated TPM-bound/non-migratable
