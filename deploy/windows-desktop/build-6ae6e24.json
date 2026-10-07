@@ -1,0 +1,18 @@
+{
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "fileSafePreview": "unavailable: AppContainer/LPAC isolation proof BLOCKED",
+  "signing": "unsigned",
+  "version": "0.1.0",
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "node": "v22.23.3",
+  "sourceCommit": "6ae6e244959668f08fef849fd8018e1c1d21df06",
+  "windowsHello": "vault unlock unavailable: protected-key provider and physical TPM proof BLOCKED",
+  "product": "PassKey Local",
+  "cargoLock": "909e76f511545395d5efc6674e5cb4c24bc437c422aca80faf032ce8b61910c9",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "sha256": "9b5137f9d48e42e3ffd2cd8fdd7aaf9166ddbc98e31e939626a274b5ebadf486",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "architecture": "x86_64-pc-windows-msvc",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN"
+}

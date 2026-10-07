@@ -42,6 +42,42 @@ proof: **NOT RUN / BLOCKED**. Real credential envelope/enrollment/unlock:
 **BLOCKED**. A transient cloud exec-server disconnect was retried after the
 transport recovered; no security/verification checks were bypassed.
 
+Final general CI [37637603317](https://github.com/kurasis/passkeylocal/actions/runs/37637603317)
+and Windows CI [37637603236](https://github.com/kurasis/passkeylocal/actions/runs/37637603236)
+**PASS**, all 11 checks for head `10598ed4ebcefb3940b243dd18e58c220a7836c1` and tested PR merge `6ae6e244959668f08fef849fd8018e1c1d21df06`.
+[PR #14](https://github.com/kurasis/passkeylocal/pull/14) merged automatically as
+`86c1d16784959ff55cd3bb0d5139c8a4b5cdcd7f`; the main merge tree equals the tested PR merge tree.
+General CI: 161 TypeScript tests, 20 isolated UI scenarios, eight production
+PWA scenarios, 55 Linux native tests (one resource test ignored), independent
+fixture signature verification and cross-platform recovery PASS. Windows:
+63 native tests PASS (one resource test ignored and separately executed/PASS),
+actual CNG signature/error/session controls and independent software-fixture
+verification PASS. The correctly signed software impostor leaves actual
+enrollment/unlock unavailable; altered signatures/signers/signed data fail.
+Native KDBX/Python parity, encrypted-file interop/10,000-file restore and
+independent recovery PASS. Hosted 5 GiB gate: 72.6307547 s,
+sampled peak working set 10,481,664 bytes;
+native encrypt/verify 52.9308882 s /
+18.6821846 s.
+
+Actual NSIS install/packaged smoke **PASS**. All five installed native commands
+report exact source `6ae6e244959668f08fef849fd8018e1c1d21df06`, false flags and four open gates;
+each stops at unavailable Hello before key creation. The new action has seven
+stages, cleanup PASS and `attestationClaim` omitted because no API call occurred.
+No hosted provider/TPM/Kensington success is inferred. Owner target capability,
+trusted AIK chain/revocation and supported provider framing remain **NOT RUN /
+BLOCKED**. Actual protected envelope/enrollment/unlock remain **BLOCKED**.
+
+Downloaded installer hash `9b5137f9d48e42e3ffd2cd8fdd7aaf9166ddbc98e31e939626a274b5ebadf486` (217,857,372 bytes) matches its
+original sidecar/build metadata. Build/smoke/resource/signed-WebView2 sources
+all match; original bytes/screens/checksum are published in
+[the Windows folder](../deploy/windows-desktop/README.md).
+[Installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37637603236/artifacts/11491601801).
+Cloudflare ZIP `passkeylocal-cloudflare-pages-10598ed.zip`: 208,232 bytes,
+SHA-256 `24b1c8fe7d993a5409fcc1dd73500f71e5573f39b9eb0ff5dbfd1fff7cb1365a`; ten root files byte-match production output.
+Source provenance is not signed/hardware attestation. The final publication
+changes evidence/archives only, not the tested application tree.
+
 ## Target per-format export measurement completed (2026-10-07)
 
 The [owner report from published source 946514c](../deploy/windows-desktop/hello-target-946514c.json)
