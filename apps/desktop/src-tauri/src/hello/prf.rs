@@ -1,6 +1,9 @@
 //! Fixed synthetic WebAuthn PRF experiments; never vault enrollment or unlock.
 use super::proof::{Failure, Outcome};
 use serde::Serialize;
+use sha2::{Digest, Sha256};
+
+const RP: &str = "passkey-local.desktop.invalid";
 
 #[cfg(all(windows, test))]
 mod abi;
@@ -204,6 +207,35 @@ pub(super) fn invalid(operation: &'static str) -> Failure {
     Failure::failed().at(operation)
 }
 
+fn auth_context(data: &[u8], credential: Option<&[u8]>) -> std::result::Result<(), Failure> {
+    if data.len() < 37
+        || data[..32] != Sha256::digest(RP.as_bytes())[..]
+        || data[32] & 5 != 5
+        || data[32] & 0x18 != 0
+    {
+        return Err(invalid("prf-rp-user-verification-or-backup-flags"));
+    }
+    if let Some(id) = credential {
+        // W3C: rpIdHash(32) + flags(1) + signCount(4) + AAGUID(16)
+        // + credentialIdLength(2). The ID begins immediately after byte 54.
+        const CREDENTIAL_START: usize = 32 + 1 + 4 + 16 + 2;
+        const LENGTH_START: usize = CREDENTIAL_START - 2;
+        if data.len() < CREDENTIAL_START || data[32] & 0x40 == 0 {
+            return Err(invalid("prf-created-credential-context"));
+        }
+        let len = u16::from_be_bytes([data[LENGTH_START], data[LENGTH_START + 1]]) as usize;
+        let end = CREDENTIAL_START + len;
+        if len == 0
+            || len != id.len()
+            || data.get(CREDENTIAL_START..end) != Some(id)
+            || data.len() <= end
+        {
+            return Err(invalid("prf-created-credential-context"));
+        }
+    }
+    Ok(())
+}
+
 fn roundtrip(secret: &[u8; 32]) -> Result<(), Failure> {
     use libsodium_rs::crypto_aead::aes256gcm as aes;
     use zeroize::Zeroizing;
@@ -376,5 +408,79 @@ mod tests {
         } else {
             assert!(roundtrip(&[7; 32]).is_err());
         }
+    }
+    fn wire_fixture() -> (Vec<u8>, Vec<u8>) {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../tests/hello/authenticator-data.json"
+        ))
+        .unwrap();
+        let decode = |key| STANDARD.decode(fixture[key].as_str().unwrap()).unwrap();
+        (decode("authenticatorData"), decode("credentialId"))
+    }
+    #[test]
+    fn independent_w3c_creation_fixture_binds_the_exact_returned_credential() {
+        let (data, credential) = wire_fixture();
+        assert!(auth_context(&data, Some(&credential)).is_ok());
+    }
+
+    #[test]
+    fn independent_creation_fixture_rejects_wrong_ids_lengths_and_every_truncation() {
+        let (data, credential) = wire_fixture();
+        let mut wrong = credential.clone();
+        wrong[0] ^= 1;
+        assert!(auth_context(&data, Some(&wrong)).is_err());
+        // Keep the full valid ID but remove its following public-key bytes.
+        assert!(auth_context(&data[..55 + credential.len()], Some(&credential)).is_err());
+        for n in 0..55 + credential.len() + 1 {
+            assert!(
+                auth_context(&data[..n], Some(&credential)).is_err(),
+                "prefix {n}"
+            );
+        }
+        for len in [0u16, 1, 15, 17, 0x0100, u16::MAX] {
+            let mut changed = data.clone();
+            changed[53..55].copy_from_slice(&len.to_be_bytes());
+            assert!(
+                auth_context(&changed, Some(&credential)).is_err(),
+                "length {len}"
+            );
+        }
+        let mut missing_at = data;
+        missing_at[32] &= !0x40;
+        assert!(auth_context(&missing_at, Some(&credential)).is_err());
+    }
+    #[test]
+    fn independent_assertion_fixture_still_requires_rp_presence_uv_and_no_backup_flags() {
+        use base64::{engine::general_purpose::STANDARD, Engine};
+        let fixture: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../../../tests/hello/authenticator-data.json"
+        ))
+        .unwrap();
+        let data = STANDARD
+            .decode(fixture["assertionData"].as_str().unwrap())
+            .unwrap();
+        assert!(auth_context(&data, None).is_ok());
+        for n in 0..data.len() {
+            assert!(auth_context(&data[..n], None).is_err());
+        }
+        for flags in [0, 1, 4, 0x0d, 0x1d] {
+            let mut changed = data.clone();
+            changed[32] = flags;
+            assert!(auth_context(&changed, None).is_err());
+        }
+        let mut wrong_rp = data;
+        wrong_rp[0] ^= 1;
+        assert!(auth_context(&wrong_rp, None).is_err());
+    }
+    #[test]
+    fn network_order_credential_length_accepts_a_length_above_one_byte() {
+        let (data, _) = wire_fixture();
+        let credential = vec![7; 256];
+        let mut extended = data[..53].to_vec();
+        extended.extend_from_slice(&[1, 0]);
+        extended.extend_from_slice(&credential);
+        extended.extend_from_slice(&data[71..]);
+        assert!(auth_context(&extended, Some(&credential)).is_ok());
     }
 }

@@ -1,5 +1,24 @@
 # Native Windows Hello PRF increment
 
+## Creation-context correction (2026-10-07)
+
+The owner reports API 9 and one available route on Windows build 26200.
+The initial synthetic build `107c49d` stops at a local creation-context check;
+cleanup passes and assertions/PRF/AES are not executed. See the
+[capability report](../../deploy/windows-desktop/hello-target-107c49d-capability.json)
+and [creation result](../../deploy/windows-desktop/hello-target-107c49d-prf.json).
+The report supplies no new fingerprint/prompt observation.
+
+Corrected a two-byte parser error: the ID length occupies bytes 53–54 and
+credential ID begins at 55, following the 37-byte authenticator header and
+16-byte AAGUID. The original test copied the same incorrect layout. An independently
+Python-encoded public-only wire fixture now reproduces rejection before the fix and
+covers the real layout plus negative controls in Linux and Windows tests.
+The [W3C authenticator-data layout](https://www.w3.org/TR/webauthn-3/#sctn-authenticator-data)
+and [attested-credential layout](https://www.w3.org/TR/webauthn-3/#sctn-attested-credential-data)
+are authoritative. All other validation and physical gates remain in effect.
+
+
 The app now implements a native WebAuthn PRF **synthetic capability experiment**,
 based on the [source review](HELLO_INTERNET_RESEARCH.md). It does not yet enroll
 or unlock either real store. All four physical security gates remain open.

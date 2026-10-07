@@ -1,13 +1,13 @@
 //! System32-only WebAuthn calls on a uniquely created app test credential.
 use super::{
-    bindings::*, exercise, interrupted, invalid, Capability, Experiment, Provider, Report,
+    auth_context, bindings::*, exercise, interrupted, invalid, Capability, Experiment, Provider,
+    Report, RP,
 };
 use crate::{
     hello::proof::{Failure, Outcome},
     storage::{Error, Result},
 };
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use sha2::{Digest, Sha256};
 use std::{
     ptr,
     sync::{
@@ -23,7 +23,6 @@ use windows_sys::Win32::{
 };
 use zeroize::{Zeroize, Zeroizing};
 
-const RP: &str = "passkey-local.desktop.invalid";
 const ORIGIN: &str = "https://passkey-local.desktop.invalid";
 const MAX_ID: usize = 4096;
 const MAX_DATA: usize = 65_536;
@@ -201,26 +200,6 @@ unsafe fn select(
         return Err(invalid("hello-route-locked"));
     }
     Ok(found.remove(0))
-}
-
-fn auth_context(data: &[u8], credential: Option<&[u8]>) -> std::result::Result<(), Failure> {
-    if data.len() < 37
-        || data[..32] != Sha256::digest(RP.as_bytes())[..]
-        || data[32] & 5 != 5
-        || data[32] & 0x18 != 0
-    {
-        return Err(invalid("prf-rp-user-verification-or-backup-flags"));
-    }
-    if let Some(id) = credential {
-        if data.len() < 57 || data[32] & 0x40 == 0 {
-            return Err(invalid("prf-created-credential-context"));
-        }
-        let len = u16::from_be_bytes([data[55], data[56]]) as usize;
-        if len != id.len() || data.get(57..57 + len) != Some(id) || data.len() <= 57 + len {
-            return Err(invalid("prf-created-credential-context"));
-        }
-    }
-    Ok(())
 }
 
 unsafe fn prf_secret(
@@ -776,23 +755,6 @@ mod tests {
         assert!(dispatch(&api, 0, &|| false, |_| panic!("must not prompt")).is_err());
     }
     #[test]
-    fn invalid_contexts_cannot_pass_user_verification_or_machine_binding_claims() {
-        let mut data = vec![0; 37];
-        data[..32].copy_from_slice(&Sha256::digest(RP.as_bytes()));
-        data[32] = 5;
-        assert!(auth_context(&data, None).is_ok());
-        for flags in [0, 1, 4, 0x0d, 0x1d] {
-            data[32] = flags;
-            assert!(auth_context(&data, None).is_err());
-        }
-        data[32] = 5;
-        data[0] ^= 1;
-        assert!(auth_context(&data, None).is_err());
-        for n in 0..37 {
-            assert!(auth_context(&data[..n], None).is_err());
-        }
-    }
-    #[test]
     fn cancellation_watcher_refuses_invalidated_and_expired_requests_once() {
         use std::sync::atomic::AtomicUsize;
         for expired in [false, true] {
@@ -899,20 +861,6 @@ mod tests {
         assert_eq!(cap.hello_locked, Some(true));
         list.cAuthenticatorDetails = 33;
         assert!(unsafe { select(&list, &mut cap) }.is_err());
-    }
-    #[test]
-    fn creation_context_requires_the_exact_returned_credential() {
-        let mut data = vec![0; 60];
-        data[..32].copy_from_slice(&Sha256::digest(RP.as_bytes()));
-        data[32] = 0x45;
-        data[56] = 2;
-        data[57..59].copy_from_slice(&[7, 8]);
-        data[59] = 0xa0;
-        assert!(auth_context(&data, Some(&[7, 8])).is_ok());
-        assert!(auth_context(&data, Some(&[7, 9])).is_err());
-        assert!(auth_context(&data[..59], Some(&[7, 8])).is_err());
-        data[32] = 5;
-        assert!(auth_context(&data, Some(&[7, 8])).is_err());
     }
     #[test]
     fn original_native_errors_cannot_be_reclassified_as_cancellation_or_success() {

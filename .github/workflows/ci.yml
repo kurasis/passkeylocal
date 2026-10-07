@@ -147,6 +147,8 @@ jobs:
           rustup toolchain install 1.95.0 --profile minimal --component rustfmt
           cargo +1.95.0 run --locked --manifest-path tools/webauthn-bindings/Cargo.toml
           git diff --exit-code -- apps/desktop/src-tauri/src/hello/prf/bindings.rs
+      - name: Independently verify the public-only WebAuthn wire fixture
+        run: python tests/hello/authenticator_data_fixture.py
       - run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --lib
       - run: cargo build --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --example file_safe_fixture_driver
       - run: python tests/file-safe/interop.py --large

@@ -1,0 +1,43 @@
+{
+  "algorithm": "webauthn-prf-aes256gcm",
+  "eligible": false,
+  "enrolled": false,
+  "remaining": [
+    "per-key-tpm-proof",
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "107c49d6d9d58d269ea5093b78218e76f5383437",
+  "unlocked": false,
+  "version": 1,
+  "webauthn": {
+    "apiVersion": 9,
+    "helloCandidates": 1,
+    "helloLocked": false,
+    "osBuild": 26200,
+    "platformAvailable": true,
+    "routing": "display-name-candidate",
+    "tpmBinding": "not-verified"
+  },
+  "checks": [
+    {
+      "status": "passed",
+      "test": "webauthn-load"
+    },
+    {
+      "status": "passed",
+      "test": "webauthn-api"
+    },
+    {
+      "status": "passed",
+      "test": "hello-platform"
+    },
+    {
+      "status": "passed",
+      "test": "hello-route"
+    }
+  ],
+  "outcome": "webauthn-capability-observed",
+  "purpose": "webauthn-prf-capability"
+}
