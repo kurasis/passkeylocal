@@ -30,8 +30,9 @@ retain parameter failures and distinguish exact refusal. Added isolated UI
 checks for explicit selection, all measured stages, skipped later operations,
 cleanup failure, narrow layout, shared busy state and late-result rejection
 on Lock all. Installed smoke checks the fourth native command and build source
-on the actual hosted Hello-absent path. Local checks, general/Windows CI and
-new installed-app evidence: **PENDING**. Local typecheck, both production
+on the actual hosted Hello-absent path. At initial local validation, general/
+Windows CI and new installed-app evidence were **PENDING**; final execution is
+recorded below. Local typecheck, both production
 frontends/target isolation, Windows GNU Clippy with warnings denied, ten portable
 proof regressions and Rust formatting **PASS**. The first 17-scenario UI run had
 16 PASS and one new test failure: it read a newly collapsed/replaced technical
@@ -41,6 +42,40 @@ to finish and opens the new report before checking its failure fields. The full
 Target behavior test: **NOT RUN**.
 Per-key TPM, observed fresh authorization, fresh process, account/machine-copy
 acceptance and actual Hello vault unlock: **BLOCKED**.
+
+Final general CI [37621824810](https://github.com/kurasis/passkeylocal/actions/runs/37621824810)
+and Windows CI [37621824873](https://github.com/kurasis/passkeylocal/actions/runs/37621824873)
+**PASS** for head `f08abcccffb1d3b68c0c15d16cf8ffdc2e8a91b4` and tested PR merge `9fdbc050877c9968b77c2aa7aa76f807afe3ee3a`. All 11 PR checks passed;
+[PR #11](https://github.com/kurasis/passkeylocal/pull/11) merged automatically.
+Actual main merge `90f720322afa8819d0717725a8c4038428c1febf` has the identical tested Git tree `709ee5ae035e91e4140b56d27d11188806c5693c`.
+General CI: 161 TypeScript tests, all 17 isolated UI scenarios, eight production
+PWA scenarios, 42 Linux native tests (one resource test ignored), dependency
+advisories and cross-platform independent recovery PASS. Windows: 46 native
+tests PASS (one resource test ignored and separately executed/PASS), real
+software CNG regressions, native KDBX/Python parity, full encrypted-file interop/
+10,000-file restore and independent recovery PASS (88 tests passed / 15 skipped
+on Windows). The full restore/search measurements were 96.1433745 s / 0.2064139 s.
+These are hosted API/software
+tests, not physical Passport/TPM/Kensington proof.
+
+The 5 GiB hosted gate passed in 40.0962754 s with sampled peak working
+set 10,543,104 bytes. Native encryption/verification:
+22.7778207 s / 16.5127860 s.
+These are runner measurements, not target-device performance. Actual NSIS
+installation/packaged smoke **PASS**, including file-safe re-unlock metadata.
+All four installed native modes name the exact build source and algorithm,
+keep eligibility/enrollment/unlock false, and stop at actual
+`device-not-present` before key creation; cleanup passes. The new
+target behavior experiment remains **NOT RUN** and all physical gates remain
+**BLOCKED**. The owner's earlier compatibility success is distinct evidence.
+
+Downloaded installer: 217,853,467 bytes, SHA-256 `f710b52afa563e52efd44fed48008e0b80bae675cd5e48ea0cb18aeccf99c118`,
+independently matched to its original sidecar and metadata. All four metadata
+sources and installed native reports match `9fdbc050877c9968b77c2aa7aa76f807afe3ee3a`. The signed official
+WebView2 evidence is retained. Updated [Windows delivery folder](../deploy/windows-desktop/README.md).
+New [Cloudflare ZIP](../deploy/cloudflare-pages/README.md) for `f08abcc`:
+206,404 bytes, SHA-256 `ddd8e7d70b936b1b544089a5e377ace7e5c50936a4eb1d9649ac7839a89a0684`; all ten production files and
+the sidecar independently matched. Older evidence/archives remain available.
 
 ## Repeated authorized OAEP failure and explicit legacy compatibility (2026-10-07)
 
