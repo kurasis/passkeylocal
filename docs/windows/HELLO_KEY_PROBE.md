@@ -17,8 +17,10 @@ driver, TPM and ESS details have not been independently established.
 3. Click **Test protected key**. Windows may prompt during key creation, then
    for two decryptions. Record whether both decryptions actually request fresh
    confirmation; a successful decrypt result alone cannot count those prompts.
-4. Copy the test report. It contains fixed test names/statuses, optional error
-   codes/operation names and remaining gates, not passwords, key names, public
+4. Copy the test report. CI builds include their public `sourceCommit` identifier
+   so a report can be correlated with the downloaded installer. This is build
+   provenance, not signed attestation. It also contains fixed test names/statuses,
+   optional error codes/operation names and remaining gates, not passwords, key names, public
    keys, ciphertext, account IDs or biometric data. If clipboard access fails,
    expand Technical report and select its text.
 
@@ -109,6 +111,36 @@ OAEP/SHA-256 decrypt and rejects a wrong OAEP hash and corrupted ciphertext.
 It requires no enrollment and supplies no Passport/TPM/sensor evidence. The
 corrected path still requires a fresh report on the intended computer; even a
 successful public wrap cannot prove Passport supports the next private step.
+
+## Reported silent-before failure and diagnostic refinement (2026-10-07)
+
+The next owner-supplied report has `public-wrap` PASS, but `silent-before` FAIL
+with `0x80090027` (`NTE_INVALID_PARAMETER`). Subsequent authorized decrypts and
+private exports were NOT RUN; app-key deletion passed. The old report groups
+three native calls into this stage and contains neither an operation name nor
+source identifier. It therefore cannot establish whether silent key reopening,
+mandatory-policy readback or the actual OAEP decrypt rejected a parameter.
+In particular, this error is not proof that silent decryption was denied for
+authorization, and it does not establish OAEP incompatibility.
+
+The refined report distinguishes `decrypt-key-open-silent`,
+`decrypt-policy-readback`, policy length/value mismatches,
+`silent-oaep-sha256-decrypt`, owned-window/context setters, fresh-gesture setup,
+`authorized-oaep-sha256-decrypt`, secret mismatch and individual private-export
+formats. CI builds embed a validated 40-hex source commit, with build-script
+environment-change tracking; installed-app smoke checks the actual IPC report
+matches the build source, catching a stale cached executable. Local builds
+without a valid source identifier omit that optional field.
+
+This increment improves localization of the blocker; it does **not** claim to
+resolve the target cryptographic failure. RSA-OAEP/SHA-256, call flags, real
+output buffers, mandatory stored policy and failure cleanup are unchanged.
+Only `NTE_SILENT_CONTEXT` from the decrypt call can count as silent refusal.
+An extended real Windows regression deliberately observes a test-only software
+key decrypt successfully in silent mode and verifies the production gate rejects
+that success. Parameter errors remain failures with their original native code.
+Another target run is needed to identify the failing operation before changing
+the selected mechanism; there is no automatic weaker-padding fallback.
 
 ## What a successful report does not establish
 

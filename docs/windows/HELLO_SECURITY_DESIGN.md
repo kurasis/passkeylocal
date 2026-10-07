@@ -52,7 +52,9 @@ CNG provider, exports only its public RSA component for BCrypt
 RSA-OAEP/SHA-256 encryption, and attempts two authorized Passport decryptions,
 tests silent decrypt before/after them on reopened handles, and attempts three
 private export formats with bounded output buffers. Failures include the exact
-stage and sanitized HRESULT. Cleanup always runs; a failed key deletion is shown
+stage, exact failing sub-operation and sanitized HRESULT. CI builds also include
+their public source commit for installer/report correlation; this is not signed
+attestation. Cleanup always runs; a failed key deletion is shown
 and retried before another test key is created in the same process.
 
 This is executable capability discovery, **not an eligible provider**. The

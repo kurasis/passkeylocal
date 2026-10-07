@@ -1,5 +1,33 @@
 # Release evidence and gate status
 
+## Reported silent-before failure and precise diagnostics (2026-10-07)
+
+The owner's next report has public-wrap **PASS**, followed by silent-before
+**FAIL** with `0x80090027` (`NTE_INVALID_PARAMETER`). Authorized decrypts/private
+exports are **NOT RUN**, app-key deletion **PASS**, all vault eligibility flags
+false. This report has no operation/source identifier. The aggregate stage
+includes silent key open, mandatory-policy readback and actual OAEP decrypt;
+the exact rejecting call and OAEP/provider compatibility remain unknown.
+It is not an authorization-refusal result and not independently reproduced here.
+
+Reports now identify each decrypt sub-operation and individual private-export
+format. CI-native builds embed only a validated public 40-hex source commit and
+track environment changes so cached binaries cannot retain another build's
+identifier; packaged smoke checks the installed IPC report against its actual
+build source. The optional field is omitted for unidentified local builds.
+This is provenance, not hardware/signature attestation. The mechanism, padding,
+call flags, real output buffers and authorization/cleanup requirements remain
+unchanged. No target-fix or completed Hello feature claim is made.
+
+The extended Windows API regression must confirm a test-only software key's
+actual successful silent decrypt is rejected by the production gate, while
+`NTE_INVALID_PARAMETER` retains its original error and only
+`NTE_SILENT_CONTEXT` counts as authorization refusal. Its Windows execution is
+**NOT RUN** until CI completes. A new target report remains **NOT RUN/BLOCKED**.
+Local typecheck, Windows GNU Clippy with warnings denied and 37 native Linux
+tests **PASS** (one existing resource test intentionally ignored in this local
+unit run). Windows execution and installed-build provenance checks are pending.
+
 ## Reported Hello public-wrap failure and correction (2026-10-07)
 
 Owner-supplied target report: configuration/provider/key creation/policy/readback

@@ -18,6 +18,7 @@ export interface HelloVerification {
 export type HelloProofStage = 'hello-configuration' | 'provider-open' | 'key-create' | 'key-policy' | 'policy-readback' | 'public-wrap' | 'private-export' | 'silent-before' | 'unwrap-first' | 'silent-after-first' | 'unwrap-second' | 'silent-after-second' | 'test-key-delete';
 export interface HelloKeyProof {
   version: 1;
+  sourceCommit?: string;
   purpose: 'synthetic-key-proof';
   eligible: false;
   unlocked: false;
