@@ -1,5 +1,18 @@
 import { test, expect } from "@playwright/test";
 
+test("unlock reloads metadata without concurrent reads or a permanently empty BUSY page", async ({ page }) => {
+  await page.goto("/");
+  const first = page.getByRole("button", { name: "Synthetic private canary 00000", exact: false });
+  await expect(first).toBeVisible();
+  await page.evaluate(() => (window as any).uiTest.exclusiveReads());
+  await page.getByRole("button", { name: "Lock file safe", exact: true }).click();
+  await page.getByLabel("File-safe master password", { exact: true }).fill("synthetic password");
+  await page.getByRole("button", { name: "Unlock file safe", exact: true }).click();
+  await expect(first).toBeVisible();
+  expect(await page.evaluate(() => (window as any).uiTest.readCounts())).toMatchObject({ activeReads: 0, peakReads: 1, busyReads: 0 });
+  await expect(page.getByText("Another file operation is running.", { exact: true })).toHaveCount(0);
+});
+
 test("fresh password admission waits for native status after a lock", async ({
   page,
 }) => {
@@ -34,6 +47,25 @@ test("fresh password admission waits for native status after a lock", async ({
   await expect(unlock).toBeEnabled();
   await unlock.click();
   await expect(firstFile).toBeVisible();
+});
+
+test("a new session loads without waiting for an old metadata reply and ignores it later", async ({ page }) => {
+  await page.goto("/");
+  const first = page.getByRole("button", { name: "Synthetic private canary 00000", exact: false });
+  await expect(first).toBeVisible();
+  await page.evaluate(() => (window as any).uiTest.setDelay());
+  await page.getByRole("searchbox").fill("00002");
+  await expect.poll(() => page.evaluate(() => (window as any).uiTest.readCounts().activeReads)).toBe(1);
+  await page.evaluate(() => { (window as any).uiTest.lock(); (window as any).uiTest.resumeReads(); });
+  await page.getByLabel("File-safe master password", { exact: true }).fill("synthetic password");
+  await page.getByRole("button", { name: "Unlock file safe", exact: true }).click();
+  await expect(first).toBeVisible();
+  await expect(page.getByText("Page 1 · 10000", { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).uiTest.release());
+  await expect.poll(() => page.evaluate(() => (window as any).uiTest.readCounts().activeReads)).toBe(0);
+  await expect(first).toBeVisible();
+  await expect(page.getByText("Page 1 · 10000", { exact: true })).toBeVisible();
+  await expect(page.getByRole("searchbox")).toHaveValue("");
 });
 
 test("10,000-entry synthetic metadata UI is paged, virtualized and keyboard scrollable", async ({

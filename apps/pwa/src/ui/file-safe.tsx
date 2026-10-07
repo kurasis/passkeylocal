@@ -253,11 +253,13 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const [results, setResults] = useState<SafeImportItem[]>([]);
   const [resultsOffset, setResultsOffset] = useState(0);
   const pageRequest = useRef(0);
+  const pageQueue = useRef<Promise<void>>(Promise.resolve());
   const generation = useRef(0);
   const live = useRef(true);
   const tokenRef = useRef<string | null>(null);
   const redact = useCallback(() => {
     generation.current++;
+    pageQueue.current = Promise.resolve();
     // The old status cannot authorize a new password after native revocation.
     setAdmissionReady(false);
     tokenRef.current = null;
@@ -347,18 +349,27 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     const epoch = generation.current;
     const current = tokenRef.current;
     if (!current) return;
-    try {
-      const result = await api.page(current, query);
-      if (
-        live.current &&
-        epoch === generation.current &&
-        current === tokenRef.current &&
-        request === pageRequest.current
-      )
-        setPage(result);
-    } catch (error) {
-      if (live.current && epoch === generation.current) fail(error);
-    }
+    const isCurrent = () =>
+      live.current &&
+      epoch === generation.current &&
+      current === tokenRef.current &&
+      request === pageRequest.current;
+    // Admission refresh and the token effect may both request a page. Native
+    // reads share one store mutex; serialize them and skip superseded queries.
+    // Lock resets the queue, so a new session never waits for an old response.
+    const previous = pageQueue.current;
+    const pending = (async () => {
+      await previous;
+      if (!isCurrent()) return;
+      try {
+        const result = await api.page(current, query);
+        if (isCurrent()) setPage(result);
+      } catch (error) {
+        if (isCurrent()) fail(error);
+      }
+    })();
+    pageQueue.current = pending;
+    await pending;
   }, [api, query, lang, redact]);
   useEffect(() => {
     live.current = true;
@@ -368,6 +379,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     return () => {
       live.current = false;
       generation.current++;
+      pageQueue.current = Promise.resolve();
       tokenRef.current = null;
       clearInterval(interval);
       stop();

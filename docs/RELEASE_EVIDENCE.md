@@ -29,7 +29,33 @@ shared busy state, cleanup failure, narrow layout and discard after Lock all.
 Installed Windows smoke now checks the third fixed command and exact source
 identifier stops before key creation when Hello is absent.
 
-Local typecheck, Windows GNU Clippy with warnings denied, all nine portable
+The first Windows run [37614167780](https://github.com/kurasis/passkeylocal/actions/runs/37614167780)
+for head `b82f146`, tested merge `d502999`, had 45 native tests PASS (one resource
+test ignored and separately PASS), both real CNG padding paths PASS on the
+software fixture, interop/10,000-file restore and recovery PASS. Earlier Hello
+settings/conditional IPC checks did not fail; the failure artifact does not
+retain those reports, so complete native IPC evidence awaits successful smoke.
+Installed smoke then **FAILED** waiting for the file-safe folder after Lock all
+and password re-unlock. The failure screenshot shows an unlocked but empty
+metadata view with BUSY. Key-report/artifact packaging was skipped; this run
+is not a successful release. The UI both explicitly reloads after admission and
+reloads on the new token; concurrent native page reads contend for the store,
+and a newer BUSY response invalidates the earlier successful page. A deterministic
+exclusive-read UI fixture/regression reproduced this unrelated race before the
+fix (failed to display the folder/file metadata after password re-unlock).
+Metadata reloads are now serialized; superseded requests and their errors are
+discarded, and lock/unmount reset the queue so a new session does not wait for
+old replies. Native store/session validation is unchanged. The full local suite
+of 14 UI scenarios, typecheck and both production builds/isolation passed, including
+the previously failing regression and delayed-lock/language-change scenarios.
+An additional session-queue reset regression passed separately: a fresh unlock
+loads without waiting for an old held metadata reply and rejects that reply
+after it is released. The final suite now contains 15 scenarios.
+Final installed Windows smoke and CI execution are pending. General CI
+[37614167791](https://github.com/kurasis/passkeylocal/actions/runs/37614167791)
+passed all ten jobs for the initial head.
+
+Initial local typecheck, Windows GNU Clippy with warnings denied, all nine portable
 proof-runner regressions, 13 isolated UI scenarios and both production frontend
 builds/target isolation **PASS**. Windows API execution/installed smoke and
 general CI: **PENDING**. Target PKCS#1 compatibility:
