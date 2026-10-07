@@ -6,11 +6,15 @@ enrollment/unlock. It is a real CNG experiment in the existing app, not a
 UserConsentVerifier boolean followed by a credential read. All reports keep
 `eligible`, `enrolled` and `unlocked` false.
 
-The next separate action is **Test key attestation capability**, described in
-[HELLO_ATTESTATION_VERIFIER.md](HELLO_ATTESTATION_VERIFIER.md). It measures a
-different API on the same new app test key, not another raw private-format export.
-The standard TPM component inspector and actual Windows signature verifier are
-implemented, while provider framing and trusted AIK verification remain open.
+The separate **Test key attestation capability** action is now measured on the
+owner's target. The [6ae6e24 report](../../deploy/windows-desktop/hello-target-6ae6e24.json)
+passes configuration, Passport opening, key creation/policy/readback and deletion,
+but the subject-only claim call fails with `NTE_INVALID_PARAMETER` (`0x80090027`).
+No blob was returned and verification was not performed. Do not repeat it
+unchanged. See [the completed result and prerequisites](HELLO_ATTESTATION_VERIFIER.md).
+The standard component/signature verifiers are implemented; supported acquisition
+of an attestation for this exact decrypt-only key and trusted AIK validation
+remain unresolved. All four gates and false flags are preserved.
 
 ## All three target export formats are unavailable (2026-10-07)
 
