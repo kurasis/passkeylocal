@@ -1,5 +1,41 @@
 # Release evidence and gate status
 
+## Corrected PRF layout final evidence (2026-10-07)
+
+[PR #18](https://github.com/kurasis/passkeylocal/pull/18) code head `6c1ebc44799111e82c8233316bf27c25817590d3`;
+installed/tested PR merge source `72a0df66fe107b6ef15e4c81aa010c261662287b`. [General CI 37656775121](https://github.com/kurasis/passkeylocal/actions/runs/37656775121)
+and [Windows CI 37656774985](https://github.com/kurasis/passkeylocal/actions/runs/37656774985)
+**PASS**, all 11 checks. Automatic merge `287d368f0a4e8bf6776115f7677949e174245521` has the tested PR tree.
+
+The independent public-only W3C/COSE wire fixture first FAILed on the old parser
+and now PASSes. Local: independent Python layout/curve verification, 65 native
+Linux tests (resource gate ignored), formatting and Windows GNU production/all-target
+Clippy PASS. Hosted: 161 TypeScript tests, 22 isolated UI scenarios, eight PWA
+scenarios, Python OS/version matrix, offline kit, fresh recovery/interop, binding
+regeneration and both independent public fixtures PASS. Windows: 79
+routine native tests PASS with ABI/resource gates separately executed/PASS;
+actual MSVC/official-header comparison and native KDBX/Python parity PASS.
+Fresh file-safe 10,000-file restore: 96.211 s. Native hosted
+5 GiB primitive measurement: 48.033 s process; sampled peak
+working set 10,514,432 bytes.
+
+Actual per-user NSIS installation/packaged UI/worker/native storage/lock PASS.
+All four original metadata source SHAs match the installed source and all seven
+native diagnostic reports match it. Hosted API 7
+stops PRF before creation; the corrected pure parser is tested with independent
+wire data, not a physical reader. Downloaded installer SHA-256 independently
+matches the original sidecar/build metadata: `37ad92d238cdafc97509894a73901e84491ed00dd5bfac515f8e879ef6ce662f`,
+217,878,107 bytes. Artifact link, original small metadata and
+screenshots are published in [the Windows download folder](../deploy/windows-desktop/).
+The unversioned sidecar now matches this installer. Cloudflare/frontend artifacts
+remain unchanged because the corrected code is native-only.
+
+This final publication changes evidence/metadata only, preserving the tested app,
+fixture and workflow bytes. Owner API-9 readiness and the old local-parser failure
+remain owner-reported evidence; no new fingerprint observation or physical PRF,
+TPM/fresh-process/account/machine pass is invented. Actual enrollment/unlock stays
+unavailable and all four physical gates remain open.
+
 ## Owner PRF creation-context result and wire-layout fix (2026-10-07)
 
 Saved the owner [capability](../deploy/windows-desktop/hello-target-107c49d-capability.json)
@@ -29,7 +65,7 @@ below. New controls cover every header/ID truncation, wrong IDs/lengths,
 missing AT, RP/UP/UV/backup rejection and multi-byte network-order lengths.
 Physical PRF comparisons, TPM, fresh authorization/process/account/machine proof
 and real-store enrollment/unlock remain NOT RUN / BLOCKED. Hosted checks and a
-corrected installer are pending completion.
+corrected installer have completed; see the final evidence above.
 
 Local validation PASS: 65 native Linux tests (one resource gate ignored), independent
 Python fixture encoding/layout/curve verification, app formatting and Windows GNU
