@@ -14,8 +14,13 @@ visible and known failed deletions are retried in the same process.
 Local PASS: 161 TypeScript tests; typecheck; both production frontend builds
 and target isolation; nine isolated browser UI scenarios; 37 native tests with
 one existing 5 GiB resource test intentionally ignored in the local unit run;
-Windows GNU Clippy with warnings denied. The Windows packaged build is pending
-and will be recorded before delivery. Synthetic browser/native service doubles
+Windows GNU Clippy with warnings denied. Final general CI [37585002441](https://github.com/kurasis/passkeylocal/actions/runs/37585002441)
+and Windows CI [37585002476](https://github.com/kurasis/passkeylocal/actions/runs/37585002476)
+PASS for head `cac0f40e750bcfffc926abc23ba7e2eee69b0f9b`, tested PR merge
+`3fc5c57fcb57815030ce489ff05952ce7fe62293`. The main merge
+`2c8955490944fb3514bf33b5f424679177f111c6` has its identical tested Git tree.
+Windows passed 39 native tests plus the separately executed resource gate;
+independent recovery passed 88 tests with 15 skipped. Synthetic browser/native service doubles
 are not physical hardware evidence. See [procedure and implementation limits](windows/HELLO_KEY_PROBE.md).
 
 The owner reports Windows 11 Pro 25H2 and Kensington VeriMark Desktop and shows
@@ -23,6 +28,24 @@ the existing consent diagnostic passing. This establishes no protected-key
 result, exact build/SKU, per-key TPM binding or fresh unwrap enforcement.
 Native attestation, fresh-process/copy tests, actual vault envelope/enrollment
 and Hello vault unlock remain **NOT RUN/BLOCKED**; no full feature claim.
+
+The installed NSIS app passed actual proof IPC refusal on `device-not-present`,
+with no key creation or consent/enrollment prompt. Its report has all three
+vault eligibility flags false; all protected-key stages are NOT RUN, and cleanup
+confirms no app test key was created. The same smoke passed password/native
+save/lock, independent file-safe unlock and long lock-interval persistence.
+The actual 10,000-file restore took 92.256 s and search 0.1162 s. The 5 GiB
+optimized gate took 78.940 s at sampled peak working set 8,409,088 bytes;
+native encryption took 31.612 s and verification 46.761 s. These hosted
+measurements are not physical-device evidence.
+
+Downloaded installer: 217,831,045 bytes, SHA-256
+`ce02dea783c5c4c53721cf43a58656907e3d34c219c8a1016833a94439e45409`, matched to
+its original checksum sidecar and build/smoke/resource exact-source metadata.
+See the [updated installer/evidence folder](../deploy/windows-desktop/README.md)
+and [Cloudflare upload archive](../deploy/cloudflare-pages/README.md). The latter
+has all ten production root files verified, SHA-256
+`41bde0f2ba83c02ffee90f09ede44638bcd0e50b8d2ec2bb4d36f41bcca68cc8`.
 
 ## Desktop layout and Windows Hello actions (2026-10-06)
 

@@ -1,12 +1,12 @@
 # Cloudflare Pages upload archives
 
-Download [passkeylocal-cloudflare-pages-9259379.zip](passkeylocal-cloudflare-pages-9259379.zip)
+Download [passkeylocal-cloudflare-pages-cac0f40.zip](passkeylocal-cloudflare-pages-cac0f40.zip)
 by opening the file on GitHub and choosing **Download raw file** (the download
 icon), then upload the ZIP through Cloudflare Pages **Direct Upload**.
 
 This production build comes from source commit
-[`9259379`](https://github.com/kurasis/passkeylocal/commit/9259379)
-and includes the responsive navigation/layout fix, restore completion, 6 / 12 / 24 hour inactivity choices,
+[`cac0f40`](https://github.com/kurasis/passkeylocal/commit/cac0f40)
+and retains the responsive navigation/layout fix, restore completion, 6 / 12 / 24 hour inactivity choices,
 continued auto-lock after changing language, Colorful / Light / Dark themes and
 Face ID / passkey unlock. See [design previews](../../docs/DESIGN.md). The archive has `index.html`, `_headers`,
 `sw.js`, the manifest, icons and compiled assets at the site root. No build
@@ -16,7 +16,7 @@ The adjacent `.zip.sha256` file contains the archive checksum. To verify a
 download with a SHA-256 tool:
 
 ```sh
-sha256sum -c passkeylocal-cloudflare-pages-9259379.zip.sha256
+sha256sum -c passkeylocal-cloudflare-pages-cac0f40.zip.sha256
 ```
 
 Use HTTPS and a stable hostname; passkeys and local vault data belong to that
@@ -24,7 +24,7 @@ origin. Turn off Cloudflare Web Analytics and Rocket Loader, and enable
 **Always Use HTTPS**. See [deployment instructions](../../docs/DEPLOYMENT.md)
 for security headers, updates and domain migration.
 
-The experimental encrypted File Safe is a Windows desktop feature. Its storage/recovery documentation is in [the operating guide](../../docs/file-safe/OPERATING_GUIDE.md). The Windows installer is distributed separately through the Windows Actions workflow; do not upload an `.exe` to Cloudflare Pages.
+Windows Hello protected-key diagnostics and the encrypted File Safe are Windows desktop features; they are not loaded by this web build. The experimental encrypted File Safe is a Windows desktop feature. Its storage/recovery documentation is in [the operating guide](../../docs/file-safe/OPERATING_GUIDE.md). The Windows installer is distributed separately through the Windows Actions workflow; do not upload an `.exe` to Cloudflare Pages.
 
 These are versioned build artifacts. After changing application code, build
 again and add a new archive named for its source commit; an older archive does
