@@ -2,6 +2,16 @@
 
 ## Platform KSP inner-envelope implementation (2026-10-07)
 
+Initial [Windows CI 37669160028](https://github.com/kurasis/passkeylocal/actions/runs/37669160028)
+failed one software-oracle assertion (85 native tests passed, two ignored).
+Actual wrap/recovery, reopening and negative controls reached completion; raw
+private export on Software KSP returned `NTE_NOT_SUPPORTED` (`0x80090029`),
+not the test's assumed `NTE_PERM`. The oracle now requires the existing strict
+classification and a failed export stage for unsupported operations/formats;
+only all explicit permission denials can pass that stage. A separate exportable
+software impostor control must fail it. Production policy/classifier/gates are
+unchanged; packaging was skipped on the failing run. Final checks follow below.
+
 Added the separate [native TPM inner-layer experiment](windows/HELLO_TPM_INNER.md)
 after the owner's completed PRF measurement. Read-only preflight creates no key;
 synthetic proof measures only a unique app-owned Platform KSP RSA-OAEP/SHA-256

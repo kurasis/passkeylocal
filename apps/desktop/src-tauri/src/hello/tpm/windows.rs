@@ -467,6 +467,7 @@ pub fn run(current: impl Fn() -> bool, experiment: Experiment) -> Result<Report>
 #[cfg(test)]
 mod tests {
     use super::*;
+    static SOFTWARE_CONTROLS: Mutex<()> = Mutex::new(());
     #[test]
     fn emulator_unknown_version_and_unknown_interface_are_not_hardware_candidates() {
         let mut info = TPM_DEVICE_INFO {
@@ -520,6 +521,7 @@ mod tests {
     }
     #[test]
     fn software_control_exercises_actual_wrap_unwrap_negative_controls_and_export_policy() {
+        let _control = SOFTWARE_CONTROLS.lock().unwrap();
         // This oracle checks native crypto plumbing. It cannot select a software
         // provider in the installed command or supply physical TPM evidence.
         let mut p = software_probe();
@@ -532,11 +534,55 @@ mod tests {
             p.step("tpm-negative-controls")?;
             let reopened = open(p.provider.0, &p.name)?;
             p.unwrap(reopened.0)?;
-            p.step("private-export")?;
-            assert!(p.exports.iter().all(|e| e.result == "refused"));
+            let observation = p.step("private-export");
+            assert_eq!(p.exports.len(), 3);
+            // Software KSP may reject the operation with NTE_NOT_SUPPORTED;
+            // that is not explicit permission denial and must fail the stage.
+            assert!(p.exports.iter().all(|e| {
+                e.result == "refused"
+                    || (e.result == "failed" && e.native_code.as_deref() == Some("0x80090029"))
+                    || (e.result == "unsupported-format"
+                        && e.native_code.as_deref() == Some("0x8009000A"))
+            }));
+            assert_eq!(
+                observation.is_ok(),
+                p.exports.iter().all(|e| e.result == "refused")
+            );
             p.current = &|| false;
             let e = p.unwrap(p.key.0).unwrap_err();
             assert_eq!(e.status, Outcome::Interrupted);
+            Ok::<_, Failure>(())
+        })();
+        let cleanup = p.cleanup();
+        cleanup.unwrap();
+        result.unwrap();
+    }
+
+    #[test]
+    fn software_exportable_impostor_fails_the_export_denial_stage() {
+        let _control = SOFTWARE_CONTROLS.lock().unwrap();
+        // Explicitly exportable synthetic software key, selected only by cfg(test).
+        let mut p = software_probe();
+        let result = (|| {
+            p.step("tpm-key-create")?;
+            set(
+                p.key.0,
+                NCRYPT_LENGTH_PROPERTY,
+                2048,
+                "software-control-length",
+            )?;
+            set(
+                p.key.0,
+                NCRYPT_EXPORT_POLICY_PROPERTY,
+                NCRYPT_ALLOW_EXPORT_FLAG | NCRYPT_ALLOW_PLAINTEXT_EXPORT_FLAG,
+                "software-control-exportable",
+            )?;
+            unsafe { NCryptFinalizeKey(NCRYPT_KEY_HANDLE(p.key.0), NCRYPT_SILENT_FLAG) }
+                .map_err(|e| failed(e, "software-control-finalize"))?;
+            let e = p.step("private-export").unwrap_err();
+            assert_eq!(e.status, Outcome::Failed);
+            assert_eq!(e.code, None);
+            assert!(p.exports.iter().any(|e| e.result == "unexpected-success"));
             Ok::<_, Failure>(())
         })();
         let cleanup = p.cleanup();
