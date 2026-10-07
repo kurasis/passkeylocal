@@ -24,6 +24,7 @@
     "allow-hello-status",
     "allow-hello-verify",
     "allow-hello-key-proof",
+    "allow-hello-oaep-capability",
     "allow-hello-settings",
     "allow-hello-unlock",
     "allow-hello-revoke",

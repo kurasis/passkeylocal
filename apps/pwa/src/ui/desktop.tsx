@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey } from '@platform';
+import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep } from '@platform';
 import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
@@ -56,19 +56,19 @@ export function DesktopHelloSettings() {
     return () => { epoch.current++; window.removeEventListener('focus', focus); };
   }, []);
   if (!desktop) return null;
-  const action = async (kind: 'verify' | 'settings' | 'proof') => {
+  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability') => {
     if (inFlight.current) return;
     inFlight.current = true;
     const attempt = ++epoch.current;
     setBusy(true); setResult(null); setFailed(false);
-    if (kind === 'proof') { setProof(null); setCopied(false); setCopyFailed(false); }
+    if (kind === 'proof' || kind === 'capability') { setProof(null); setCopied(false); setCopyFailed(false); }
     let completed = false;
     try {
       if (kind === 'verify') {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
-      } else if (kind === 'proof') {
-        const response = await proveNativeHelloKey();
+      } else if (kind === 'proof' || kind === 'capability') {
+        const response = await (kind === 'proof' ? proveNativeHelloKey() : testNativeHelloOaep());
         if (epoch.current === attempt) setProof(response);
       } else await openNativeHelloSettings();
       completed = true;
@@ -91,11 +91,14 @@ export function DesktopHelloSettings() {
     </div>
     <p>{t('desktopHelloProofExplain')}</p>
     <button type="button" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('proof')}>{t('desktopHelloProof')}</button>
+    <p>{t('desktopHelloCapabilityExplain')}</p>
+    <button type="button" className="secondary" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('capability')}>{t('desktopHelloCapability')}</button>
     {busy && <p role="status">{t('desktopHelloPending')}</p>}
     {result && <Banner kind={result === 'verified' ? 'info' : 'warn'}>{t(`desktopHello_result_${result}`)}</Banner>}
     {failed && <Banner kind="error">{t('desktopHelloError')}</Banner>}
     {proof && <div className="stack">
-      <Banner kind={proof.outcome === 'roundtrip-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
+      <p>{t(proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
+      <Banner kind={proof.outcome === 'roundtrip-passed' || proof.outcome === 'capability-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
       <ul className="hello-proof-checks">{proof.checks.filter((check) => check.status !== 'not-run').map((check) => <li key={check.test}>
         <span>{t(`desktopHello_proof_${check.test}`)}</span>
         <span>{t(`desktopHello_proofStatus_${check.status}`)}{check.nativeCode && <> <code>{check.nativeCode}</code></>}</span>

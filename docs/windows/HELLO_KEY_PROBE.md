@@ -142,6 +142,45 @@ that success. Parameter errors remain failures with their original native code.
 Another target run is needed to identify the failing operation before changing
 the selected mechanism; there is no automatic weaker-padding fallback.
 
+## Source-correlated decrypt failure and separate capability test (2026-10-07)
+
+The third owner-supplied report names source
+`0a3bf261dfdf2f246a08b1c9136056d5a730083d`, matching the published PR #7
+installer. Public wrap passes; `silent-before` fails with `0x80090027` at
+`silent-oaep-sha256-decrypt`. Thus reopening the exact app key and reading its
+mandatory policy succeeded; the actual `NCryptDecrypt` call rejected a
+parameter. Authorized decrypts/private exports remain NOT RUN, cleanup passes,
+and all eligibility flags remain false. This reported result is not a physical
+test run by CI. It still does not distinguish OAEP/SHA-256 support from silent
+flag behavior or establish successful authorization denial.
+
+Settings now offers an **independent, explicitly invoked** action, **Test OAEP
+with confirmation**, backed by the argument-free `hello_oaep_capability` command.
+It creates its own unique synthetic key with the same fixed Passport provider,
+stored authorization/export policy, public wrap, real buffer and OAEP/SHA-256
+parameters. It attempts **one** decrypt with owned-window context and a fresh
+gesture request, with Windows confirmation allowed, then deletes its key.
+Silent attempts, the second decrypt and private export are explicitly NOT RUN.
+The primary security proof still stops on a failed silent operation; neither
+automatic continuation nor weaker padding is introduced.
+
+Fully close the old app, install the latest build, open Settings → Windows
+Hello and click **Test OAEP with confirmation**. Note whether a Windows prompt
+appears and whether you confirm or cancel it; never share a PIN or biometric
+data. Copy the complete technical report including `sourceCommit` and failed
+`operation`. Its purpose is `synthetic-oaep-capability`; a successful synthetic
+comparison reports `capability-passed`, never `roundtrip-passed`. The report
+does not infer that a gesture actually occurred merely because a private call
+succeeded. Failure may localize a policy/context setter before the decrypt.
+Both experiments share the native single-flight guard, generation checks,
+focus/trust requirements and exact app-key cleanup. A result after lock cannot
+enable or resurrect an unlock state. No settings or vault credentials change.
+
+Even a capability pass leaves every hardware/freshness/account/process gate
+open and all eligibility/enrollment/unlock flags false. It establishes only
+that this target can decrypt the chosen algorithm in the authorized call path.
+It cannot replace the primary proof's required silent-access refusal.
+
 ## What a successful report does not establish
 
 Per-key TPM attestation/non-migration, reliable fresh prompt enforcement,

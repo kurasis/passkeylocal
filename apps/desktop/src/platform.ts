@@ -47,6 +47,7 @@ export async function nativeStatus(): Promise<{ backup: string; hello: string; r
 export async function nativeHelloStatus(): Promise<import('../../pwa/src/hello-protocol.ts').HelloStatus> { return invoke('hello_status'); }
 export async function verifyNativeHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloVerification> { return invoke('hello_verify'); }
 export async function proveNativeHelloKey(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_key_proof'); }
+export async function testNativeHelloOaep(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_oaep_capability'); }
 export async function openNativeHelloSettings(): Promise<void> { await invoke('hello_settings'); }
 export async function configureNativeBackup(): Promise<void> { await invoke('configure_backup'); }
 export async function retryNativeBackup(): Promise<void> { await invoke('retry_backup'); }
