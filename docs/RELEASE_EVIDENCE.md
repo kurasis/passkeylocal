@@ -58,10 +58,48 @@ passed all ten jobs for the initial head.
 Initial local typecheck, Windows GNU Clippy with warnings denied, all nine portable
 proof-runner regressions, 13 isolated UI scenarios and both production frontend
 builds/target isolation **PASS**. Windows API execution/installed smoke and
-general CI: **PENDING**. Target PKCS#1 compatibility:
+general CI were pending at that point. Target PKCS#1 compatibility:
 **NOT RUN**. Per-key TPM, fresh authorization, fresh process and account/machine
 acceptance and actual enrollment/unlock: **BLOCKED**. See
 [the experiment limits](windows/HELLO_KEY_PROBE.md).
+
+Final general CI [37616751642](https://github.com/kurasis/passkeylocal/actions/runs/37616751642)
+and Windows CI [37616751627](https://github.com/kurasis/passkeylocal/actions/runs/37616751627)
+**PASS** for head `4c18104424eab35bc7f4af56c29ba091fc3f37b6`, tested PR merge
+`6cbe2c4177866382d9696105a198c550849a1218`. All 11 PR checks passed;
+[PR #10](https://github.com/kurasis/passkeylocal/pull/10) merged automatically.
+Actual main merge `8342a7b64a3b67ec9558d0d660845a6a1d45cd9f` has the identical
+tested Git tree `3d2aba6715ee63f96f0c89394af81d9fd5e0b7d0`.
+General CI passed 161 TypeScript tests, all 15 isolated UI scenarios, eight
+production PWA scenarios, dependency advisories and cross-platform recovery.
+Windows executed 45 native tests (one resource test ignored in that run and
+separately executed/PASS), both actual software CNG padding paths, fresh native
+KDBX/Python parity, encrypted-file interop/full 10,000-file restore/search
+(95.1276041 s / 0.1163646 s) and independent recovery (88 passed / 15 skipped).
+
+The hosted 5 GiB gate passed in 87.5640075 s with sampled peak working set
+10,514,432 bytes (74.8503865 s encryption / 12.0132429 s verification). These
+are this runner's measurements, not target-device performance. Actual NSIS
+installation and packaged smoke **PASS**, including file-safe metadata after
+Lock all and password re-unlock. All three installed native commands name the
+exact build source/algorithm, keep eligibility false and stop at actual
+`device-not-present` before app-key creation; cleanup passes. No successful
+Passport private operation, target legacy compatibility or physical TPM/
+freshness proof is supplied by this host.
+
+Downloaded installer: 217,848,427 bytes, SHA-256
+`cdddf166cb62eb555b47df3893ca9ea832089100f1e12ec6679a92bff6ea28e3`, independently
+matched to its original sidecar and metadata. Build, installed smoke, resource
+and signed official WebView2 metadata name the same tested source. The
+[Windows download/evidence folder](../deploy/windows-desktop/README.md) is updated.
+The first failed smoke remains a failure in the historical record.
+
+New [Cloudflare ZIP](../deploy/cloudflare-pages/README.md) for code source
+`4c18104`: 205,786 bytes, SHA-256
+`8b2c73d7c49c07699ed13d851ebccbb73292155ab09a0216d33ab06e69f85408`.
+All ten production files and its sidecar were independently compared; older
+archives remain retained. Target compatibility is **NOT RUN**, the four physical
+gates and actual enrollment/unlock remain **BLOCKED**.
 
 ## Authorized OAEP failure and owned creation handle (2026-10-07)
 

@@ -1,0 +1,18 @@
+{
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "node": "v22.23.3",
+  "product": "PassKey Local",
+  "signing": "unsigned",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "windowsHello": "vault unlock unavailable: protected-key provider and physical TPM proof BLOCKED",
+  "sourceCommit": "6cbe2c4177866382d9696105a198c550849a1218",
+  "fileSafePreview": "unavailable: AppContainer/LPAC isolation proof BLOCKED",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "architecture": "x86_64-pc-windows-msvc",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "sha256": "cdddf166cb62eb555b47df3893ca9ea832089100f1e12ec6679a92bff6ea28e3",
+  "version": "0.1.0",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "cargoLock": "909e76f511545395d5efc6674e5cb4c24bc437c422aca80faf032ce8b61910c9"
+}
