@@ -1,5 +1,52 @@
 # Release evidence and gate status
 
+## Platform KSP final hosted evidence (2026-10-07)
+
+[PR #20](https://github.com/kurasis/passkeylocal/pull/20) code head `fdc5bfabb8623fe4f380511c052e7749ff648b0c`;
+installed/tested PR merge source `3e31f8c645300cef8c2acf0e7e386a6fcc5847b5`. [General CI 37670862603](https://github.com/kurasis/passkeylocal/actions/runs/37670862603)
+and [Windows CI 37670862608](https://github.com/kurasis/passkeylocal/actions/runs/37670862608)
+PASS, all 11 exact-head checks. Automatic merge `2f467124202dfc0758f8cb3f095a627eb0584cfd` equals the tested PR tree.
+
+Local: typecheck, 161 TypeScript tests, 69 Linux native tests (one resource ignored),
+Windows GNU production/all-target Clippy, both frontend builds, 24 isolated UI
+scenarios and eight production PWA scenarios PASS. Hosted: all ten general jobs,
+Python OS/version matrix, offline kit, fresh interop/recovery, binding regeneration
+and both independent public-only fixtures PASS. Windows: 87 routine native tests
+PASS (ABI/resource separately excluded), explicit MSVC/header ABI and native 5 GiB
+resource gates PASS, native KDBX/Python parity and fresh file-safe/Python recovery
+PASS. Fresh 10,000-file restore: 127.796 s. Hosted 5 GiB primitive:
+75.141 s process, sampled peak working set 10,522,624 bytes.
+
+The initial software control's export expectation failed; only the oracle changed
+for unsupported export classification, preserving the production denial requirement.
+A subsequent [Windows run 37670414947](https://github.com/kurasis/passkeylocal/actions/runs/37670414947)
+failed on libsodium DNS before tests. DNS recovered; the original MSVC archive
+SHA-256 `4b310d0602b6217d68b3000df19af595841ba101910af8d335096f9c45c9f36a`
+and original vendor minisign signature were independently verified locally.
+No substitute artifact, altered checksum, skipped signature or TLS bypass was used.
+
+Actual NSIS installation, installed/built EXE equality, packaged UI/real IPC/worker,
+module isolation/native storage/lock PASS. All four original metadata source SHAs
+and all nine diagnostic reports match the installed source. Hosted PRF and TPM
+preflight stop before credential/key creation. Software oracles exercise actual
+RSA crypto/export plumbing, reject software in hardware preflight and reject an
+exportable impostor; none supply physical TPM/Kensington proof.
+Downloaded installer SHA-256 independently matches original metadata/sidecar:
+`0fd6e8b4791b119012cd75b923df66b44a60bbed9588991595026058e8673009`, 217,894,083 bytes. Original small metadata,
+screenshots and artifact link are in [the Windows download folder](../deploy/windows-desktop/).
+
+New [Cloudflare ZIP](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-dcd058a.zip): 209,726 bytes,
+SHA-256 `95d9307e130143f55e2571ab8abfbeaf5cb885785a2a1882d42b0469881f7452`; all ten files equal the tested local production output.
+Web source is `dcd058ac11a8454f577193f2cc196caab9e4e2ee`; later changes are native
+or test/docs-only and preserve that frontend. No server deployment occurred.
+
+This final publication changes evidence/docs/versioned artifacts only, retaining
+tested application/test/workflow bytes. Owner TPM measurement, trusted per-key
+hardware proof, PRF composition, fresh authorization/process/account/machine copies
+and durable crash cleanup remain outstanding. All four gates remain open; real
+Hello enrollment/unlock remains unavailable. The completed owner PRF result and
+four fresh fingerprint observations are retained without an unchanged rerun.
+
 ## Platform KSP inner-envelope implementation (2026-10-07)
 
 Initial [Windows CI 37669160028](https://github.com/kurasis/passkeylocal/actions/runs/37669160028)

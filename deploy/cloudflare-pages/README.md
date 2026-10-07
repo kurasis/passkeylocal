@@ -1,11 +1,11 @@
 # Cloudflare Pages upload archives
 
-Download [passkeylocal-cloudflare-pages-582813c.zip](passkeylocal-cloudflare-pages-582813c.zip)
+Download [passkeylocal-cloudflare-pages-dcd058a.zip](passkeylocal-cloudflare-pages-dcd058a.zip)
 by opening the file on GitHub and choosing **Download raw file** (the download
 icon), then upload the ZIP through Cloudflare Pages **Direct Upload**.
 
 This production build comes from source commit
-[`582813c`](https://github.com/kurasis/passkeylocal/commit/582813c)
+[`dcd058a`](https://github.com/kurasis/passkeylocal/commit/dcd058a)
 and retains the responsive navigation/layout fix, restore completion, 6 / 12 / 24 hour inactivity choices,
 continued auto-lock after changing language, Colorful / Light / Dark themes and
 Face ID / passkey unlock. See [design previews](../../docs/DESIGN.md). The archive has `index.html`, `_headers`,
@@ -13,8 +13,8 @@ Face ID / passkey unlock. See [design previews](../../docs/DESIGN.md). The archi
 command or Node.js runtime is needed on the server.
 
 All ten archive files match the current production output byte for byte.
-Archive size: 208,644 bytes; SHA-256:
-`6324fd41e57729a0b13e638f2bca4b2284b6958e667ef5129bb229b60ad6e47e`.
+Archive size: 209,726 bytes; SHA-256:
+`95d9307e130143f55e2571ab8abfbeaf5cb885785a2a1882d42b0469881f7452`.
 The eight production PWA e2e scenarios passed for this source, including
 passkeys, backup replacement and the 6 / 12 / 24 hour inactivity choices.
 
@@ -22,7 +22,7 @@ The adjacent `.zip.sha256` file contains the archive checksum. To verify a
 download with a SHA-256 tool:
 
 ```sh
-sha256sum -c passkeylocal-cloudflare-pages-582813c.zip.sha256
+sha256sum -c passkeylocal-cloudflare-pages-dcd058a.zip.sha256
 ```
 
 Use HTTPS and a stable hostname; passkeys and local vault data belong to that
