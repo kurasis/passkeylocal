@@ -30,6 +30,8 @@ fn main() {
             "hello_pkcs1_compatibility",
             "hello_pkcs1_behavior",
             "hello_attestation_capability",
+            "hello_webauthn_capability",
+            "hello_prf_proof",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

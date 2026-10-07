@@ -1,5 +1,10 @@
 # Windows Hello eligibility decision
 
+The native [WebAuthn PRF increment](HELLO_PRF_PROOF.md) now implements read-only
+capability and synthetic PRF/AES/cleanup checks. It does not enable real
+enrollment/unlock or establish TPM binding. Physical PRF results and a separately
+verified hardware envelope remain prerequisites.
+
 The [broader internet review](HELLO_INTERNET_RESEARCH.md) identifies native
 WebAuthn PRF as the recommended next experiment, including a concrete
 creation-input compatibility fix and a possible separate TPM-sealed inner layer.

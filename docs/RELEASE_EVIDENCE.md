@@ -1,5 +1,29 @@
 # Release evidence and gate status
 
+## Native WebAuthn PRF implementation (2026-10-07)
+
+Implemented the fixed native adapter and two argument-free main-window actions;
+see [the contract, owner procedure and limits](windows/HELLO_PRF_PROOF.md).
+API-9 route detection is read-only. The separate synthetic experiment requires
+creation PRF input, exact-ID assertions, repeat/change comparisons, real libsodium
+AES-GCM negative controls and exact test-passkey cleanup. Native cancellation,
+60-second ceremony deadlines, single flight and session guards reject late results.
+Original native codes are preserved. Diagnostics return no secrets or credential IDs.
+Private bindings are reproducible from locked Microsoft metadata, with an independent
+MSVC/pinned official-header ABI comparison added to Windows tests.
+
+Initial local typecheck and Windows GNU production/all-target Clippy passed.
+The generation output reproduced byte-for-byte. New native/UI checks and hosted
+installation are being executed; final results are recorded after completion.
+The first new UI run passed 21/22 scenarios; the remaining scenario had an ambiguous
+text locator matching both a paragraph and collapsed JSON. Its locator is now specific.
+A local official-header compilation was not executable with the workspace's header-only
+GNU wrapper; actual MSVC/header comparison is delegated to Windows CI, not counted as
+passed locally. Existing vault formats/recovery and release gates are unchanged.
+Physical Hello PRF, TPM inner layer, fresh process/account/machine proof and durable
+crash cleanup remain **NOT RUN / NOT IMPLEMENTED**. All four gates remain open;
+real enrollment/unlock remain unavailable even after a synthetic PRF pass.
+
 ## Broader Windows Hello integration research (2026-10-07)
 
 The [source review](windows/HELLO_INTERNET_RESEARCH.md) identifies native WebAuthn

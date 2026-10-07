@@ -313,6 +313,44 @@ async fn hello_attestation_capability(
 ) -> Result<Value> {
     hello_experiment(window, app, hello::proof::Experiment::AttestationCapability).await
 }
+#[tauri::command]
+async fn hello_webauthn_capability(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_prf_experiment(window, app, hello::prf::Experiment::Capability).await
+}
+#[tauri::command]
+async fn hello_prf_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_prf_experiment(window, app, hello::prf::Experiment::Synthetic).await
+}
+async fn hello_prf_experiment(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    experiment: hello::prf::Experiment,
+) -> Result<Value> {
+    focused(&window)?;
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    let session = app
+        .state::<NativeState>()
+        .active
+        .lock()
+        .map_err(|_| Error::new("UNAVAILABLE"))?
+        .clone();
+    let report = tauri::async_runtime::spawn_blocking(move || {
+        hello::prf::run(
+            hwnd,
+            || {
+                let state = app.state::<NativeState>();
+                state.serial.load(Ordering::SeqCst) == serial
+                    && state.active.lock().is_ok_and(|active| *active == session)
+            },
+            experiment,
+        )
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))??;
+    trusted(&window)?;
+    serde_json::to_value(report).map_err(|_| Error::new("UNAVAILABLE"))
+}
 async fn hello_experiment(
     window: WebviewWindow,
     app: tauri::AppHandle,
@@ -540,6 +578,8 @@ pub fn run() {
             hello_pkcs1_compatibility,
             hello_pkcs1_behavior,
             hello_attestation_capability,
+            hello_webauthn_capability,
+            hello_prf_proof,
             hello_settings,
             hello_unlock,
             hello_revoke,

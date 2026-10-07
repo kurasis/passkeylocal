@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation } from '@platform';
+import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation, nativeWebauthnCapability, proveNativeHelloPrf } from '@platform';
 import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
@@ -56,7 +56,7 @@ export function DesktopHelloSettings() {
     return () => { epoch.current++; window.removeEventListener('focus', focus); };
   }, []);
   if (!desktop) return null;
-  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation') => {
+  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation' | 'webauthn' | 'prf') => {
     if (inFlight.current) return;
     inFlight.current = true;
     const attempt = ++epoch.current;
@@ -68,7 +68,7 @@ export function DesktopHelloSettings() {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
       } else if (kind !== 'settings') {
-        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation }[kind]());
+        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation, webauthn: nativeWebauthnCapability, prf: proveNativeHelloPrf }[kind]());
         if (epoch.current === attempt) setProof(response);
       } else await openNativeHelloSettings();
       completed = true;
@@ -79,7 +79,7 @@ export function DesktopHelloSettings() {
     }
   };
   const configuration = status?.helloConfiguration ?? (failed ? 'unknown' : 'not-probed');
-  const cleanupFailed = proof?.checks.some((check) => check.test === 'test-key-delete' && check.status !== 'passed') ?? false;
+  const cleanupFailed = proof?.checks.some((check) => (check.test === 'test-key-delete' || check.test === 'test-passkey-delete') && check.status !== 'passed') ?? false;
   return <section className="card stack" aria-labelledby="desktop-hello-title">
     <h2 id="desktop-hello-title">Windows Hello</h2>
     <p role="status">{t(`desktopHello_status_${configuration}`)}</p>
@@ -88,6 +88,11 @@ export function DesktopHelloSettings() {
       <button type="button" disabled={busy} onClick={() => void refresh()}>{t('desktopHelloCheck')}</button>
       <button type="button" className="secondary" disabled={busy || configuration !== 'available'} onClick={() => void action('verify')}>{t('desktopHelloTest')}</button>
       <button type="button" className="secondary" disabled={busy} onClick={() => void action('settings')}>{t('desktopHelloSettings')}</button>
+    </div>
+    <p>{t('desktopHelloPrfExplain')}</p>
+    <div className="input-row">
+      <button type="button" className="secondary" disabled={busy} onClick={() => void action('webauthn')}>{t('desktopHelloWebauthn')}</button>
+      <button type="button" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('prf')}>{t('desktopHelloPrf')}</button>
     </div>
     <p>{t('desktopHelloProofExplain')}</p>
     <button type="button" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('proof')}>{t('desktopHelloProof')}</button>
@@ -103,7 +108,7 @@ export function DesktopHelloSettings() {
     {result && <Banner kind={result === 'verified' ? 'info' : 'warn'}>{t(`desktopHello_result_${result}`)}</Banner>}
     {failed && <Banner kind="error">{t('desktopHelloError')}</Banner>}
     {proof && <div className="stack">
-      <p>{t(proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
+      <p>{t(proof.purpose === 'synthetic-webauthn-prf' ? 'desktopHelloPrf' : proof.purpose === 'webauthn-prf-capability' ? 'desktopHelloWebauthn' : proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
       <Banner kind={proof.outcome === 'roundtrip-passed' || proof.outcome === 'capability-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
       <ul className="hello-proof-checks">{proof.checks.filter((check) => check.status !== 'not-run').map((check) => <li key={check.test}>
         <span>{t(check.test === 'public-wrap' && proof.algorithm === 'rsa-pkcs1-v1_5' ? proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloPkcs1Wrap' : 'desktopHelloCompatibilityWrap' : `desktopHello_proof_${check.test}`)}</span>
@@ -117,6 +122,7 @@ export function DesktopHelloSettings() {
         </li>)}</ul>
       </div> : null}
       {proof.attestationClaim && <Banner kind="warn">{t(`desktopHello_attestation_${proof.attestationClaim.result}`)}{proof.attestationClaim.bytes !== undefined && <> {t('desktopHelloAttestationBytes')}: {proof.attestationClaim.bytes}.</>}</Banner>}
+      {proof.webauthn && <p>{t('desktopHelloWebauthnBuild')}: {proof.webauthn.osBuild ?? '—'}. API: {proof.webauthn.apiVersion ?? '—'}. {t('desktopHelloPrfTrust')}</p>}
       {cleanupFailed && <Banner kind="error">{t('desktopHelloProofDeleteFailed')}</Banner>}
       <details><summary>{t('desktopHelloProofReport')}</summary><pre className="hello-proof-report">{JSON.stringify(proof, null, 2)}</pre></details>
       <button type="button" className="secondary" onClick={() => void navigator.clipboard.writeText(JSON.stringify(proof, null, 2)).then(() => { setCopied(true); setCopyFailed(false); }, () => { setCopied(false); setCopyFailed(true); })}>{t('desktopHelloProofCopy')}</button>
