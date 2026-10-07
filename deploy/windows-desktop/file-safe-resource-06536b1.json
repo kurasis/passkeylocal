@@ -1,0 +1,44 @@
+{
+  "sourceCommit": "06536b18916f2402d9d0fb66a517e58d114180c8",
+  "status": "PASS",
+  "architecture": "x64",
+  "machine": {
+    "tpmAndReader": "Physical TPM/Kensington authorization NOT TESTED; hosted virtual machine",
+    "cpu": [
+      {
+        "Name": "AMD EPYC 7763 64-Core Processor                ",
+        "NumberOfCores": 2,
+        "NumberOfLogicalProcessors": 4
+      }
+    ],
+    "physicalMemoryBytes": 17174360064,
+    "disks": [
+      {
+        "DeviceID": "C:",
+        "FileSystem": "NTFS",
+        "Size": 160467759104,
+        "FreeSpace": 33032859648
+      },
+      {
+        "DeviceID": "D:",
+        "FileSystem": "NTFS",
+        "Size": 161059172352,
+        "FreeSpace": 151202037760
+      }
+    ],
+    "runnerImage": "20260925.250.1"
+  },
+  "native": {
+    "encryption_seconds": 27.6545526,
+    "frame_bytes": 1048576,
+    "plaintext_bytes": "5368709120",
+    "status": "PASS",
+    "total_seconds": 45.0265437,
+    "verification_seconds": 17.3718981
+  },
+  "fixture": "5 GiB synthetic repeated canary",
+  "limits": "Hosted runner; no physical Windows/TPM or stalled-I/O measurement; working set includes executable/runtime, not just crypto buffers",
+  "seconds": 45.8993652,
+  "sampledPeakWorkingSetBytes": 8429568,
+  "os": "Microsoft Windows NT 10.0.26100.0"
+}

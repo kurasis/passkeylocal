@@ -1,5 +1,56 @@
 # Release evidence and gate status
 
+## Billing recheck and current-main validation (2026-10-07)
+
+Validated source: `06536b18916f2402d9d0fb66a517e58d114180c8` on `main`.
+The authenticated account is `kurasis`. The read-only user billing usage API
+returned HTTP 403 (`Resource not accessible by integration`), so payment status,
+remaining allowance and spending limits could not be inspected. No payment,
+plan or budget setting was changed. Runner admission is working again: the
+previously denied [general CI run, attempt 2](https://github.com/kurasis/passkeylocal/actions/runs/37587546983/attempts/2)
+actually executed all ten jobs and **PASS**. Historical billing-denied attempts
+below remain unexecuted; this result does not establish the financial cause of
+their denial.
+
+Local **PASS** on this source: typecheck; 161 TypeScript tests; npm audit
+(zero reported vulnerabilities); both production frontend builds and target
+isolation; nine isolated desktop UI scenarios and eight production-CSP PWA
+browser scenarios; Rust formatting; 37 native unit tests (one existing 5 GiB
+resource test intentionally ignored in this local unit run); 91 independent
+Python tests, with 12 platform/tool skips (one Windows ACL test and eleven
+KeePassXC tests because that executable is absent locally). Fresh native
+KDBX save/restart/edit/history/password rotation matched independent Python
+recovery. Fresh Rust/Python encrypted-file fixtures verified in both directions;
+the 10,000-file synthetic native restore/search returned PASS (8.783 s / 0.347 s
+on this Linux host). Hosted CI additionally ran KeePassXC recovery, the five
+OS/Python recovery variants and the offline Windows recovery kit successfully.
+Fresh browser fixtures passed all 65 independent recovery/security/KeePassXC
+tests; Python dependency audit reported no known vulnerabilities. The published
+Cloudflare ZIP matches all ten files of this current production build byte for
+byte and its SHA-256 sidecar.
+
+The separately dispatched [Windows run 37588409253](https://github.com/kurasis/passkeylocal/actions/runs/37588409253)
+completed **PASS** on the same current-main source: Rust formatting and Clippy
+with warnings denied; 39 native tests (one resource test ignored only in this
+unit run); fresh native KDBX/Python parity; fresh encrypted-file interop; full
+10,000-file restore/search (95.251 s / 0.206 s); both frontend builds and target
+isolation; the separately executed optimized 5 GiB resource test (45.899 s wall
+time, 8,429,568 bytes sampled peak working set; 27.655 s encryption and 17.372 s
+verification); Python recovery corpus (88 passed / 15 skipped); actual per-user
+NSIS installation and packaged-app smoke, including native password/save/lock,
+independent file-safe locking, Russian layout, long inactivity preferences and
+proof IPC refusal before key creation on `device-not-present`.
+
+Downloaded current-main installer: 217,829,228 bytes, SHA-256
+`50fc3bb66a8d9274a1de21872e55e1e14293cfc03562a24c793391c80bbf9647`, independently
+matched against the original checksum sidecar and build metadata. Build, smoke,
+resource and official signed WebView2 metadata all name the tested source.
+The [Windows download folder](../deploy/windows-desktop/README.md) now links this
+artifact and retains its reports/screenshots alongside previous evidence. These
+delivery-only changes do not alter application code or the verified Cloudflare ZIP.
+Physical Windows Hello/TPM/Kensington authorization remains untested here and
+Hello vault unlock remains disabled.
+
 ## Native Hello protected-key experiment (2026-10-07)
 
 The Settings card now runs a real, separate Microsoft Passport CNG synthetic
@@ -116,7 +167,7 @@ run exists and passed; nothing is marked passed because it "should work".
 run. Passing automated tests is not a security audit; no
 independent review has been performed.
 
-Last updated: 2026-10-06 (experimental file-safe validation; prior deployed-site results below are historical).
+Last updated: 2026-10-07 (current-main billing recheck and validation; prior deployed-site results below are historical).
 
 ## Experimental native file safe (2026-10-06)
 
