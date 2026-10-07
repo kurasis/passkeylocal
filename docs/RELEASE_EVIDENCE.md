@@ -1,5 +1,52 @@
 # Release evidence and gate status
 
+## Platform KSP inner-envelope implementation (2026-10-07)
+
+Initial [Windows CI 37669160028](https://github.com/kurasis/passkeylocal/actions/runs/37669160028)
+failed one software-oracle assertion (85 native tests passed, two ignored).
+Actual wrap/recovery, reopening and negative controls reached completion; raw
+private export on Software KSP returned `NTE_NOT_SUPPORTED` (`0x80090029`),
+not the test's assumed `NTE_PERM`. The oracle now requires the existing strict
+classification and a failed export stage for unsupported operations/formats;
+only all explicit permission denials can pass that stage. A separate exportable
+software impostor control must fail it. Production policy/classifier/gates are
+unchanged; packaging was skipped on the failing run. Final checks follow below.
+The key-initialization call also now uses documented flags zero; key generation,
+decryption, export and deletion retain their silent flags. No interactive
+cryptographic fallback is introduced.
+
+Added the separate [native TPM inner-layer experiment](windows/HELLO_TPM_INNER.md)
+after the owner's completed PRF measurement. Read-only preflight creates no key;
+synthetic proof measures only a unique app-owned Platform KSP RSA-OAEP/SHA-256
+key, no-export/decrypt-only policy readback, bounded opaque object-name length,
+actual wrap/recovery, handle/provider disposal and reopening, bracketed negative
+controls, three strict private-export denials and unconditional exact-key cleanup.
+The numeric TPM version comes from read-only System32 TBS device information;
+unknown/emulator interfaces are rejected. The pinned Microsoft PCP sample returns
+`PCP_PLATFORM_TYPE` as text, so it is not misread as a numeric version.
+No source crypto implementation/dependency or OS security-setting change is added.
+
+Reports distinguish provider metadata from per-key hardware proof and same-process
+reopening from fresh launch. All four gates and false eligibility/enrollment/unlock
+remain in effect. Native guards and UI invalidation reject late results.
+Durable crash cleanup, trusted hardware proof, PRF composition, fresh-process/copy
+tests and real enrollment remain outstanding. Hosted/owner TPM results are not
+invented; publication evidence will identify the exact tested installer.
+
+Local typecheck, formatting, Windows GNU production/all-target Clippy and 69
+Linux native tests PASS (one resource gate ignored). All 161 TypeScript tests,
+both frontend builds, eight production PWA scenarios and 24 isolated desktop UI scenarios PASS; the first UI
+invocation could not launch the absent default Playwright browser, and the
+repository-supported system Chromium override passed the complete suite.
+New orchestration tests cover every failure, cleanup and all pre/post-stage
+invalidations, including invalidation during cleanup. The first final-cleanup
+control correctly suppressed the outcome but its test incorrectly required a
+failed native stage; the corrected assertion preserves completed operation
+statuses and requires the interrupted final outcome. Windows-only
+tests use a software oracle for crypto plumbing and explicitly reject that
+provider in hardware preflight; they cannot pass physical TPM gates. UI and
+hosted checks are recorded after execution.
+
 ## Owner PRF roundtrip success (2026-10-07)
 
 Saved the [owner's successful synthetic report](../deploy/windows-desktop/hello-target-72a0df6-prf.json)

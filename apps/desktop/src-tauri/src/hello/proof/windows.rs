@@ -251,6 +251,13 @@ fn wrap_public_key(
     }
     Ok(ciphertext)
 }
+pub(in crate::hello) fn wrap_oaep_public(
+    key: NCRYPT_KEY_HANDLE,
+    secret: &[u8; 32],
+) -> std::result::Result<Vec<u8>, Failure> {
+    wrap_public_key(key, secret, RsaPadding::OaepSha256)
+}
+
 struct Probe<'a> {
     // Rust drops fields in declaration order. Release any remaining key
     // handle before its provider, including a failed-deletion exit.

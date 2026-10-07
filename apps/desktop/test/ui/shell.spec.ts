@@ -334,3 +334,43 @@ test('pending native PRF cannot be duplicated or publish results after Lock All'
   await expect(page.locator('.hello-proof-report')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts().prf)).toBe(1);
 });
+
+test('TPM diagnostic needs no Hello enrollment and cannot enable real unlock', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  await page.evaluate(() => (window as any).helloTest.configure('not-configured'));
+  await hello.getByRole('button', { name: 'Проверить Windows Hello', exact: true }).click();
+  await hello.getByRole('button', { name: 'Проверить провайдер TPM', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).helloTest.counts().tpmProofs)).toBe(0);
+  const probe = hello.getByRole('button', { name: 'Проверить внутренний слой TPM', exact: true });
+  await expect(probe).toBeEnabled();
+  await probe.click();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.purpose).toBe('synthetic-tpm-inner');
+  expect(report.tpm).toMatchObject({ exportPolicy: 0, keyUsage: 1 });
+  expect(report.checks).toHaveLength(11);
+  expect(report.exportChecks.every((c: { result: string }) => c.result === 'refused')).toBe(true);
+  expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false, false, false]);
+  expect(report.perKeyTpmEvidence).toBe('not-verified');
+  expect(report.authorization).toBe('no-hello-authorization');
+  expect(report.processScope).toBe('same-process');
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await probe.click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+});
+
+test('pending TPM work shares single flight and discards a late result after Lock All', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  await page.getByRole('button', { name: 'Проверить внутренний слой TPM', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Проверить провайдер TPM', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Проверить Windows Hello PRF', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.locator('.hello-proof-report')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts().tpmProofs)).toBe(1);
+});

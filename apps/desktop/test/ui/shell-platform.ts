@@ -22,6 +22,8 @@ let behaviors = 0;
 let attestations = 0;
 let webauthn = 0;
 let prf = 0;
+let tpmCapabilities = 0;
+let tpmProofs = 0;
 let attestationResult: 'returned-unverified' | 'unavailable' = 'returned-unverified';
 let behaviorFailure: 'silent-before' | 'private-export' | 'test-key-delete' | null = null;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
@@ -109,6 +111,23 @@ export async function proveNativeHelloPrf(): Promise<HelloKeyProof> {
     checks: [...capability.checks, ...(['prf-create', 'prf-first', 'prf-repeat', 'prf-changed', 'prf-roundtrip'] as const).map((test) => ({ test, status: 'passed' as const })),
       { test: 'test-passkey-delete', status: proofCleanupFailed ? 'failed' : 'passed', ...(proofCleanupFailed ? { nativeCode: '0x80090029', operation: 'delete-prf-test-passkey' } : {}) }] };
 }
+export async function nativeTpmCapability(): Promise<HelloKeyProof> {
+  tpmCapabilities++;
+  return { version: 1, purpose: 'tpm-inner-capability', algorithm: 'platform-rsa-oaep-sha256', eligible: false, enrolled: false, unlocked: false,
+    outcome: 'tpm-capability-observed', tpm: { implementationFlags: 1, tpmVersion: 2, interfaceType: 3 }, perKeyTpmEvidence: 'not-verified', authorization: 'no-hello-authorization', processScope: 'same-process',
+    remaining: ['per-key-tpm-proof', 'fresh-authorization-proof', 'fresh-process-proof', 'account-machine-copy-proof'],
+    checks: [{ test: 'tpm-provider-open', status: 'passed' }, { test: 'tpm-provider-properties', status: 'passed' }] };
+}
+export async function proveNativeTpmInner(): Promise<HelloKeyProof> {
+  tpmProofs++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  const capability = await nativeTpmCapability(); tpmCapabilities--;
+  return { ...capability, purpose: 'synthetic-tpm-inner', outcome: proofCleanupFailed ? 'blocked' : 'tpm-inner-roundtrip-passed',
+    tpm: { ...capability.tpm, keyNameBytes: 34, exportPolicy: 0, keyUsage: 1 },
+    exportChecks: (['rsa-private', 'rsa-full-private', 'pkcs8-private'] as const).map((format) => ({ format, result: 'refused', nativeCode: '0x80090010' })),
+    checks: [...capability.checks, ...(['tpm-key-create', 'tpm-key-policy', 'tpm-key-readback', 'tpm-public-wrap', 'tpm-unwrap-first', 'tpm-reopen-unwrap', 'tpm-negative-controls', 'private-export'] as const).map((test) => ({ test, status: 'passed' as const })),
+      { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
+}
 Object.assign(window, { helloTest: {
   configure(value: HelloConfiguration) { configuration = value; },
   outcome(value: HelloVerificationResult) { verification = value; },
@@ -119,5 +138,5 @@ Object.assign(window, { helloTest: {
   behaviorFailure(value: typeof behaviorFailure) { behaviorFailure = value; },
   attestationResult(value: typeof attestationResult) { attestationResult = value; },
   release() { release?.(); },
-  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations, webauthn, prf }; },
+  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations, webauthn, prf, tpmCapabilities, tpmProofs }; },
 } });

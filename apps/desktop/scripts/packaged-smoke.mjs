@@ -108,6 +108,28 @@ try {
   assert(helloWebauthnCapability.webauthn.apiVersion > 0);
   assert.equal(helloWebauthnCapability.webauthn.tpmBinding, 'not-verified');
   for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloWebauthnCapability[key], false);
+  await expect(helloSection.getByRole('button', { name: 'Check TPM provider', exact: true })).toBeEnabled();
+  await expect(helloSection.getByRole('button', { name: 'Test TPM inner layer', exact: true })).toBeEnabled();
+  const helloTpmCapability = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_tpm_capability'));
+  assert.equal(helloTpmCapability.sourceCommit, process.env.GITHUB_SHA);
+  assert.equal(helloTpmCapability.purpose, 'tpm-inner-capability');
+  assert.equal(helloTpmCapability.checks.length, 2);
+  assert.equal(helloTpmCapability.authorization, 'no-hello-authorization');
+  assert.equal(helloTpmCapability.perKeyTpmEvidence, 'not-verified');
+  assert.equal(helloTpmCapability.processScope, 'same-process');
+  for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloTpmCapability[key], false);
+  let helloTpmProof = null;
+  if (helloTpmCapability.outcome === 'blocked') {
+    // Exercise permitted IPC only when preflight prevents key creation.
+    helloTpmProof = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_tpm_proof'));
+    assert.equal(helloTpmProof.sourceCommit, process.env.GITHUB_SHA);
+    assert.equal(helloTpmProof.purpose, 'synthetic-tpm-inner');
+    assert.equal(helloTpmProof.outcome, 'blocked');
+    assert.equal(helloTpmProof.checks.length, 11);
+    assert(helloTpmProof.checks.slice(2, -1).every((check) => check.status === 'not-run'));
+    assert.deepEqual(helloTpmProof.checks.at(-1), { test: 'test-key-delete', status: 'passed' });
+    for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloTpmProof[key], false);
+  }
   let helloPrfProof = null;
   if (helloWebauthnCapability.outcome === 'blocked') {
     // A blocked read-only preflight stops before make/get, even if this runner
@@ -265,7 +287,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloTpmCapability, helloTpmProof, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

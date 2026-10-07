@@ -30,6 +30,8 @@
     "allow-hello-attestation-capability",
     "allow-hello-webauthn-capability",
     "allow-hello-prf-proof",
+    "allow-hello-tpm-capability",
+    "allow-hello-tpm-proof",
     "allow-hello-settings",
     "allow-hello-unlock",
     "allow-hello-revoke",
