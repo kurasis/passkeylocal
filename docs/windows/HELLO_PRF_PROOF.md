@@ -1,5 +1,18 @@
 # Native Windows Hello PRF increment
 
+## Owner target success (2026-10-07)
+
+The [source-correlated owner report](../../deploy/windows-desktop/hello-target-72a0df6-prf.json)
+from installed source `72a0df66fe107b6ef15e4c81aa010c261662287b` passes all ten
+stages on Windows 11 Pro 25H2 / build 26200, API 9, Kensington VeriMark Desktop.
+Creation and three assertions yield the expected same-input/changed-input PRF
+behavior; synthetic AES-GCM checks and exact test-passkey deletion pass.
+The owner separately confirms a new fingerprint request at creation and each of
+the three assertions. These are same-process owner measurements, not independent
+TPM proof or completed fresh-authorization/process/account/machine acceptance.
+All four gates remain open and real enrollment/unlock remains unavailable.
+The completed experiment needs no unchanged rerun or replacement installer.
+
 ## Creation-context correction (2026-10-07)
 
 The owner reports API 9 and one available route on Windows build 26200.

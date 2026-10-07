@@ -2,6 +2,20 @@
 
 Baseline source: `be52275e23a5c8bc0eabbf62198f4ee0c4f75d4d`. Final implementation is identified by the Git commit containing this report and CI artifact `build.json`; do not substitute the baseline SHA for the installer SHA. Local environment: Debian 13 x64, Node 24.19, Python 3.12.14, Rust 1.90.0, Chromium 151.0.7922.173. No physical Windows/TPM/Kensington/iPhone is attached.
 
+## Owner PRF measurement (2026-10-07)
+
+The [owner report](../../deploy/windows-desktop/hello-target-72a0df6-prf.json)
+matches the original PR #18 installer metadata at full source
+`72a0df66fe107b6ef15e4c81aa010c261662287b`. Windows 11 Pro 25H2 / build 26200,
+API 9 and Kensington VeriMark Desktop pass all ten same-process synthetic
+PRF/AES/cleanup stages. The owner separately reports fingerprint confirmation
+at creation and each of the three assertions. This completes that diagnostic
+measurement only. No H-01 through H-16 gate below is closed: per-key TPM,
+complete fresh authorization/process/account/machine/cancellation/lifecycle proof
+and real Hello enrollment/unlock remain outstanding. See
+[the current security decision](HELLO_SECURITY_DESIGN.md) and
+[the release ledger](../RELEASE_EVIDENCE.md). No unchanged PRF retest is required.
+
 ## Executed local evidence
 
 - Before changes: typecheck, 158 TypeScript tests and web build passed; Python 76 passed / 12 skipped.

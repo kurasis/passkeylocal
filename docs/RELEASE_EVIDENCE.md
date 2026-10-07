@@ -1,5 +1,31 @@
 # Release evidence and gate status
 
+## Owner PRF roundtrip success (2026-10-07)
+
+Saved the [owner's successful synthetic report](../deploy/windows-desktop/hello-target-72a0df6-prf.json)
+for Windows 11 Pro 25H2 with a Kensington VeriMark Desktop reader. Its full source
+`72a0df66fe107b6ef15e4c81aa010c261662287b` matches the original build, installed-app
+smoke, resource and WebView2 metadata for the already published PR #18 installer.
+The report observes Windows build 26200, API 9 and one unlocked routing candidate.
+All ten stages PASS: capability/route, creation PRF, first/repeated same-input
+assertions, changed-input assertion, actual synthetic AES-GCM roundtrip/negative
+controls and exact test-passkey deletion. The owner separately reports a new
+fingerprint confirmation at creation and at each of the three assertions.
+
+This completes the same-process PRF measurement on the owner's target and confirms
+the corrected creation-context parser permits the experiment. It is owner-reported
+evidence, not a cloud-run hardware test or independent attestation. Repeated prompts
+are useful observations but do not establish the entire fresh-authorization gate.
+TPM binding is explicitly `not-verified`; `eligible`, `enrolled` and `unlocked` are
+false. Per-key TPM, fresh authorization, fresh process and account/machine copy
+gates remain open; real Hello enrollment/unlock remains unavailable.
+
+This evidence-only change requires no new installer or unchanged PRF retest.
+Next implementation needs a separately verified TPM inner envelope (or another
+supported hardware contract), cross-process authorization/account/machine tests,
+cancellation and durable cleanup before real-store integration. The earlier
+creation failure and hosted-only results below remain historical evidence.
+
 ## Corrected PRF layout final evidence (2026-10-07)
 
 [PR #18](https://github.com/kurasis/passkeylocal/pull/18) code head `6c1ebc44799111e82c8233316bf27c25817590d3`;
