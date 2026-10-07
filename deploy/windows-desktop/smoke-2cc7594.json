@@ -1,0 +1,122 @@
+{
+  "sourceCommit": "2cc75940c1d2c2b119d62a76cf40bb73f4cec1a9",
+  "runtime": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "installer": "per-user silent install completed on hosted runner",
+  "installedExecutableSha256": "ef57cf7e11bb34c164524dd2ec48465137b0abf64165daaefde4f99c3ffbdcbc",
+  "automation": "Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch",
+  "fixture": "synthetic fresh vault with one entry",
+  "status": "PASS",
+  "helloConfiguration": "device-not-present",
+  "helloKeyProof": {
+    "checks": [
+      {
+        "status": "failed",
+        "test": "hello-configuration"
+      },
+      {
+        "status": "not-run",
+        "test": "provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "policy-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "public-wrap"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-before"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-first"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-first"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-second"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-second"
+      },
+      {
+        "status": "not-run",
+        "test": "private-export"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-key-proof",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "unlocked": false,
+    "version": 1
+  },
+  "russianSettingsLayout": {
+    "modules": {
+      "top": -1166.203125,
+      "bottom": -1091.8125,
+      "left": 0,
+      "right": 1013
+    },
+    "nav": {
+      "top": -1053.8125,
+      "bottom": -573.046875,
+      "left": 24,
+      "right": 230
+    },
+    "main": {
+      "top": -1091.8125,
+      "bottom": 1368.140625,
+      "left": 230,
+      "right": 1013
+    },
+    "desktop": true,
+    "overflow": false
+  },
+  "evidence": [
+    "actual per-user NSIS installation",
+    "installed executable equals built binary",
+    "packaged asset origin",
+    "WebView2 password saving/autofill disabled with native readback",
+    "React UI",
+    "real Tauri IPC and revocable session",
+    "crypto worker/Argon2 WASM",
+    "native KDBX save",
+    "6/12/24 hour preferences with native readback and reload",
+    "password lock and fallback",
+    "unproved Hello denied",
+    "independent native file-safe create/folder/lock/password re-unlock",
+    "one module does not cross-unlock another",
+    "Lock all redacts both modules",
+    "no foreign requests"
+  ],
+  "limits": [
+    "native dialogs not automated",
+    "clean offline machine and standard-user installation not exercised",
+    "physical offline/TPM/Kensington/Safari not tested"
+  ]
+}

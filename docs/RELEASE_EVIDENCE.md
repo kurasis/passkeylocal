@@ -16,12 +16,36 @@ mandatory authorization policies, silent/export refusal, cleanup and eligibility
 gates are unchanged. Reports identify which public sub-operation failed.
 See [procedure and limitations](windows/HELLO_KEY_PROBE.md).
 
-Local Windows GNU Clippy with warnings denied **PASS**. The new Windows API test
+Local Windows GNU Clippy with warnings denied and 37 Linux native tests **PASS**
+(one existing resource test intentionally ignored in the local unit run).
+The new Windows API test
 exercises the actual public helper and NCrypt OAEP/SHA-256 round trip, wrong-hash
 and corruption rejection using an unnamed ephemeral **test-only software key**.
-Its execution is **NOT RUN** until Windows CI completes; it supplies no Passport,
+Its actual execution **PASS** in Windows CI; it supplies no Passport,
 TPM or physical sensor evidence. Target retest remains **NOT RUN/BLOCKED**;
 vault enrollment/unlock stays unavailable.
+
+General CI [37592611407](https://github.com/kurasis/passkeylocal/actions/runs/37592611407)
+and Windows CI [37592611341](https://github.com/kurasis/passkeylocal/actions/runs/37592611341)
+**PASS** for head `678fe4d66f60d657c85e7c6500175d4a61dc767f`, tested PR merge
+`2cc75940c1d2c2b119d62a76cf40bb73f4cec1a9`. Actual main merge
+`0a21054f89c124f35b2f074d31ea7a567667baa4` has its identical tested Git tree.
+Windows passed 40 native tests and the separately executed optimized 5 GiB
+gate; fresh encrypted-file interop/full 10,000-file restore/search (67.317 s /
+0.148 s); independent recovery (88 passed / 15 skipped); both frontend builds
+and target isolation; actual per-user NSIS installation and packaged smoke.
+The resource gate took 50.972 s at sampled peak working set 9,535,488 bytes
+(30.743 s encryption / 19.289 s verification). Hosted proof IPC stopped before
+key creation at `device-not-present`, with all vault eligibility flags false;
+this is a negative IPC result, not a successful Passport public-wrap retest.
+
+Downloaded installer: 217,829,158 bytes, SHA-256
+`eb4cbd1e74e9b70302edab2433933468a8c0ebe38054a374f71a537fcdf2667e`, independently
+matched against the original checksum sidecar and build metadata. Build, smoke,
+resource and signed official WebView2 metadata name the tested source. The
+[Windows download folder](../deploy/windows-desktop/README.md) links this artifact
+and retains its evidence. Application changes are Windows-native only; the
+verified Cloudflare ZIP continues to match the web application source.
 
 ## Billing recheck and current-main validation (2026-10-07)
 

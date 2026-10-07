@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "os": "Microsoft Windows NT 10.0.26100.0",
+  "seconds": 50.9719385,
+  "limits": "Hosted runner; no physical Windows/TPM or stalled-I/O measurement; working set includes executable/runtime, not just crypto buffers",
+  "native": {
+    "encryption_seconds": 30.7433661,
+    "frame_bytes": 1048576,
+    "plaintext_bytes": "5368709120",
+    "status": "PASS",
+    "total_seconds": 50.0319804,
+    "verification_seconds": 19.2885309
+  },
+  "architecture": "x64",
+  "fixture": "5 GiB synthetic repeated canary",
+  "machine": {
+    "tpmAndReader": "Physical TPM/Kensington authorization NOT TESTED; hosted virtual machine",
+    "cpu": [
+      {
+        "Name": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+        "NumberOfCores": 2,
+        "NumberOfLogicalProcessors": 4
+      }
+    ],
+    "disks": [
+      {
+        "DeviceID": "C:",
+        "FileSystem": "NTFS",
+        "Size": 160467759104,
+        "FreeSpace": 33042870272
+      },
+      {
+        "DeviceID": "D:",
+        "FileSystem": "NTFS",
+        "Size": 161059172352,
+        "FreeSpace": 150889910272
+      }
+    ],
+    "physicalMemoryBytes": 17174360064,
+    "runnerImage": "20260925.250.1"
+  },
+  "sampledPeakWorkingSetBytes": 9535488,
+  "sourceCommit": "2cc75940c1d2c2b119d62a76cf40bb73f4cec1a9"
+}
