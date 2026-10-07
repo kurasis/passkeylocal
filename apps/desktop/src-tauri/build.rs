@@ -28,6 +28,7 @@ fn main() {
             "hello_key_proof",
             "hello_oaep_capability",
             "hello_pkcs1_compatibility",
+            "hello_pkcs1_behavior",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

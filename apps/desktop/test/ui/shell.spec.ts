@@ -182,3 +182,53 @@ test('PKCS#1 compatibility shares single flight and discards late results after 
   await expect(page.getByText('Подтверждена только совместимость со старым алгоритмом;', { exact: false })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ compatibilities: 1, capabilities: 0, proofs: 0, verifies: 0 });
 });
+
+test('PKCS#1 behavior is explicit, shows measured stages and cannot enable unlock', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  await hello.getByRole('button', { name: 'Проверить совместимость PKCS#1', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).helloTest.counts().behaviors)).toBe(0);
+  const behavior = hello.getByRole('button', { name: 'Проверить поведение ключа PKCS#1', exact: true });
+  await behavior.click();
+  await expect(hello.getByText('Две расшифровки PKCS#1 вернули тестовый секрет;', { exact: false })).toBeVisible();
+  await expect(hello.locator('.hello-proof-checks')).not.toContainText('OAEP');
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report).toMatchObject({ purpose: 'synthetic-pkcs1-behavior', algorithm: 'rsa-pkcs1-v1_5', outcome: 'behavior-passed', eligible: false, enrolled: false, unlocked: false });
+  expect(report.checks).toHaveLength(13);
+  expect(report.checks.every((check: { status: string }) => check.status === 'passed')).toBe(true);
+  expect(report.remaining).toHaveLength(4);
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.setViewportSize({ width: 320, height: 780 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
+  await page.evaluate(() => (window as any).helloTest.behaviorFailure('silent-before'));
+  await behavior.click();
+  await expect(hello.getByText('Две расшифровки PKCS#1 вернули тестовый секрет;', { exact: false })).toHaveCount(0);
+  await expect(behavior).toBeEnabled();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  await expect(hello.locator('pre')).toContainText('silent-decrypt-unexpected-success');
+  const failed = JSON.parse(await hello.locator('pre').innerText());
+  expect(failed.outcome).toBe('blocked');
+  expect(failed.checks.find((check: { test: string }) => check.test === 'silent-before')).toMatchObject({ status: 'failed', operation: 'silent-decrypt-unexpected-success' });
+  expect(failed.checks.find((check: { test: string }) => check.test === 'unwrap-first').status).toBe('not-run');
+  expect(failed.checks.at(-1)).toMatchObject({ test: 'test-key-delete', status: 'passed' });
+  await page.evaluate(() => (window as any).helloTest.behaviorFailure('test-key-delete'));
+  await behavior.click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+});
+
+test('PKCS#1 behavior shares single flight and discards a late report after Lock all', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  await page.getByRole('button', { name: 'Проверить поведение ключа PKCS#1', exact: true }).click();
+  for (const name of ['Проверить поведение ключа PKCS#1', 'Проверить совместимость PKCS#1', 'Проверить OAEP с подтверждением', 'Проверить защищённый ключ', 'Проверить отпечаток или PIN']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled();
+  }
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.getByText('Две расшифровки PKCS#1 вернули тестовый секрет;', { exact: false })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ behaviors: 1, compatibilities: 0, capabilities: 0, proofs: 0, verifies: 0 });
+});

@@ -1,5 +1,47 @@
 # Release evidence and gate status
 
+## Target PKCS#1 compatibility passed; explicit key behavior experiment (2026-10-07)
+
+The [owner report from published source 6cbe2c4](../deploy/windows-desktop/hello-target-6cbe2c4.json)
+passes real authorized PKCS#1 v1.5 decryption and constant-time synthetic-secret
+comparison, with policy readback/public wrap and test-key deletion also PASS.
+This is the first reported target private-decrypt success, distinct from the
+previous OAEP parameter failures. No new prompt observation accompanies this
+report. Silent access, second decrypt and private export remain NOT RUN;
+eligibility, enrollment and unlock remain false. This is owner-reported target
+evidence, not an independently executed cloud hardware test, and does not
+approve legacy padding for an actual vault envelope.
+
+Added separate argument-free `hello_pkcs1_behavior`, explicitly selected by
+**Test PKCS#1 key behavior**. It uses a new random synthetic secret and one
+unique app-owned Passport key: public wrap, silent refusal, authorized decrypt,
+silent refusal, second authorized decrypt, silent refusal, all private-export
+formats, unconditional deletion. Existing OAEP modes and the shorter legacy
+compatibility test retain their scope; there is no automatic fallback. Only
+`NTE_SILENT_CONTEXT` counts as silent refusal; other errors preserve their code
+and scheme-specific operation. Success is `behavior-passed`, with all four
+physical gates and false eligibility/enrollment/unlock unchanged. Actual
+credential envelope/enrollment remain unimplemented.
+
+Added portable regressions for every behavior stage failure, cleanup failure,
+cancellation and invalidation before every stage/after completion. Extended
+actual Windows software CNG tests to reject successful silent legacy decrypt,
+retain parameter failures and distinguish exact refusal. Added isolated UI
+checks for explicit selection, all measured stages, skipped later operations,
+cleanup failure, narrow layout, shared busy state and late-result rejection
+on Lock all. Installed smoke checks the fourth native command and build source
+on the actual hosted Hello-absent path. Local checks, general/Windows CI and
+new installed-app evidence: **PENDING**. Local typecheck, both production
+frontends/target isolation, Windows GNU Clippy with warnings denied, ten portable
+proof regressions and Rust formatting **PASS**. The first 17-scenario UI run had
+16 PASS and one new test failure: it read a newly collapsed/replaced technical
+report before completion, producing empty JSON. The test now waits for the action
+to finish and opens the new report before checking its failure fields. The full
+17-scenario UI rerun **PASS**; no product behavior was changed for that test correction.
+Target behavior test: **NOT RUN**.
+Per-key TPM, observed fresh authorization, fresh process, account/machine-copy
+acceptance and actual Hello vault unlock: **BLOCKED**.
+
 ## Repeated authorized OAEP failure and explicit legacy compatibility (2026-10-07)
 
 The [owner report](../deploy/windows-desktop/hello-target-f382542.json) from

@@ -1,5 +1,13 @@
 # Windows Hello eligibility decision
 
+The [6cbe2c4 owner report](../../deploy/windows-desktop/hello-target-6cbe2c4.json)
+now passes authorized PKCS#1 v1.5 decryption and synthetic-secret comparison;
+cleanup passes. Prompt observations and silent/second-decrypt/export results
+are absent. A separately selected `hello_pkcs1_behavior` measures those native
+operations on a new test key while preserving all physical gates and false
+eligibility. Legacy padding is not approved for a real credential envelope;
+actual enrollment/unlock remain unavailable. See [the next procedure](HELLO_KEY_PROBE.md#target-compatibility-result-and-next-behavior-check-2026-10-07).
+
 The source-correlated `f382542` target retest still fails actual authorized
 OAEP decrypt with `NTE_INVALID_PARAMETER` on the owned creation handle. That
 change did not solve the target failure. A separately selected synthetic
@@ -29,7 +37,7 @@ enroll, unlock or substitute for the primary security proof. See
 
 Status: **BLOCKED — no eligible protected-secret provider or physical proof**. This is a deliberate fail-closed implementation of the handoff's rule: "If the proof cannot satisfy the requirements, leave Hello unavailable with an actionable reason ... Continue safe work on the rest of the app."
 
-No Windows 11/TPM/Kensington device is attached to this environment. Microsoft Passport provider RSA decrypt/unwrap support, non-exportability and per-key TPM binding have not been established on the target device; repeated/fresh authorization and cache behavior have not been demonstrated there. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.
+No Windows 11/TPM/Kensington device is attached to this environment. The owner has reported a successful synthetic PKCS#1 v1.5 Passport decrypt, but non-exportability and per-key TPM binding have not been established on the target device; repeated/fresh authorization and cache behavior have not been demonstrated there. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.
 
 Candidate investigation references were checked against Tauri 2.12.1 source/bindings and the official sources in [SOURCES_AND_REVIEW.md](SOURCES_AND_REVIEW.md): Microsoft Windows Hello app development, NCryptDecrypt, key storage properties and desktop UserConsentVerifier interop. They do not promise an arbitrary Passport-provider decryption algorithm or fresh authorization on every operation. No consent-plus-DPAPI, signature-derived AES key, software fallback, or generic decrypt IPC is implemented. No provider is claimed eligible merely because its name contains Passport.
 

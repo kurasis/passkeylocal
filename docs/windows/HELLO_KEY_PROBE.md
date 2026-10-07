@@ -6,6 +6,28 @@ enrollment/unlock. It is a real CNG experiment in the existing app, not a
 UserConsentVerifier boolean followed by a credential read. All reports keep
 `eligible`, `enrolled` and `unlocked` false.
 
+## Target compatibility result and next behavior check (2026-10-07)
+
+The [owner report from 6cbe2c4](../../deploy/windows-desktop/hello-target-6cbe2c4.json)
+passes actual authorized PKCS#1 v1.5 decrypt and comparison of the random test
+secret; cleanup also passes. It adds no prompt observation. This is a measured
+target padding-path difference from the earlier OAEP failures, not an exact
+explanation of the rejected OAEP parameter or approval of legacy padding.
+Silent/second-decrypt/export checks were NOT RUN. All physical gates remain open.
+
+Select **Test PKCS#1 key behavior** (Russian: **Проверить поведение ключа PKCS#1**)
+in the next published build. This separate fixed native mode uses legacy padding
+only for synthetic measurements and runs the complete sequence below on a new
+app test key. It requires three silent refusals, two successful decrypts and
+explicit refusal of each private export format. Any failure stops later steps;
+cleanup still runs. Normal decrypts permit the owned Windows prompt and request
+a fresh gesture. Observe whether key creation and each decryption actually prompt,
+and whether you confirm or cancel; a successful JSON result cannot count prompts.
+Share the complete nonsensitive JSON and those observations, never PINs or
+biometric data. `synthetic-pkcs1-behavior` / `behavior-passed` never establishes
+TPM binding, fresh-process or account/machine-copy protection. There is no
+production credential/envelope access and no automatic OAEP fallback.
+
 ## Run on the intended computer
 
 The owner reports Windows 11 Pro 25H2 and Kensington VeriMark Desktop, with the
