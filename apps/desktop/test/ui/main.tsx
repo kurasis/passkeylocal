@@ -37,6 +37,10 @@ let statusWaiters: Array<() => void> = [];
 let lock = () => {};
 let delay = false;
 let release = () => {};
+let exclusiveReads = false;
+let activeReads = 0;
+let peakReads = 0;
+let busyReads = 0;
 const token = "a".repeat(32);
 const root = { id: "f".repeat(32), parent_id: null, name: "" };
 const api: FileSafeApi = {
@@ -89,24 +93,36 @@ const api: FileSafeApi = {
   activity() {},
   async interval() {},
   async page(_token, query) {
-    const result = files.filter((f) => f.name.includes(query.search));
-    const page: SafePage = {
-      snapshot_id: "s",
-      sequence: "9007199254740993",
-      root_id: root.id,
-      folder_id: root.id,
-      folders: [],
-      ancestors: [root],
-      files: result.slice(query.offset, query.offset + query.limit),
-      total: result.length,
-      folders_total: 0,
-      storage_bytes: "9007199254740993",
-    };
-    if (delay)
-      return new Promise((resolve) => {
-        release = () => resolve(page);
-      });
-    return page;
+    activeReads++;
+    peakReads = Math.max(peakReads, activeReads);
+    if (exclusiveReads && activeReads > 1) {
+      activeReads--;
+      busyReads++;
+      throw { code: "BUSY" };
+    }
+    try {
+      if (exclusiveReads) await new Promise((resolve) => setTimeout(resolve, 100));
+      const result = files.filter((f) => f.name.includes(query.search));
+      const page: SafePage = {
+        snapshot_id: "s",
+        sequence: "9007199254740993",
+        root_id: root.id,
+        folder_id: root.id,
+        folders: [],
+        ancestors: [root],
+        files: result.slice(query.offset, query.offset + query.limit),
+        total: result.length,
+        folders_total: 0,
+        storage_bytes: "9007199254740993",
+      };
+      if (delay)
+        return await new Promise((resolve) => {
+          release = () => resolve(page);
+        });
+      return page;
+    } finally {
+      activeReads--;
+    }
   },
   async change() {},
   async import() {
@@ -133,9 +149,17 @@ Object.assign(window, {
     setDelay() {
       delay = true;
     },
+    resumeReads() { delay = false; },
     release() {
+      delay = false;
       release();
     },
+    exclusiveReads() {
+      exclusiveReads = true;
+      peakReads = 0;
+      busyReads = 0;
+    },
+    readCounts() { return { activeReads, peakReads, busyReads }; },
     lock() {
       unlocked = false;
       nativeGeneration++;

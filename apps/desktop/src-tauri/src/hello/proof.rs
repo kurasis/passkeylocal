@@ -45,6 +45,8 @@ const STEPS: [Stage; 12] = [
 pub enum Experiment {
     SecurityProof,
     AuthorizedOaepCapability,
+    // Explicit synthetic compatibility discovery, never an OAEP fallback.
+    Pkcs1Compatibility,
 }
 impl Experiment {
     fn includes(self, stage: Stage) -> bool {
@@ -90,6 +92,7 @@ pub struct Report {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_commit: Option<&'static str>,
     pub purpose: &'static str,
+    pub algorithm: &'static str,
     pub eligible: bool,
     pub unlocked: bool,
     pub enrolled: bool,
@@ -139,6 +142,11 @@ pub(crate) fn exercise_selected(
         purpose: match experiment {
             Experiment::SecurityProof => "synthetic-key-proof",
             Experiment::AuthorizedOaepCapability => "synthetic-oaep-capability",
+            Experiment::Pkcs1Compatibility => "synthetic-pkcs1-compatibility",
+        },
+        algorithm: match experiment {
+            Experiment::Pkcs1Compatibility => "rsa-pkcs1-v1_5",
+            _ => "rsa-oaep-sha256",
         },
         eligible: false,
         unlocked: false,
@@ -146,6 +154,7 @@ pub(crate) fn exercise_selected(
         outcome: match experiment {
             Experiment::SecurityProof => "roundtrip-passed",
             Experiment::AuthorizedOaepCapability => "capability-passed",
+            Experiment::Pkcs1Compatibility => "compatibility-passed",
         },
         checks: Vec::with_capacity(13),
         remaining: [
@@ -338,6 +347,80 @@ mod tests {
         assert_eq!(report.checks.last().unwrap().status, Outcome::Failed);
     }
     #[test]
+    fn legacy_compatibility_is_explicit_and_never_promotes_or_replaces_oaep() {
+        let experiment = Experiment::Pkcs1Compatibility;
+        let mut synthetic = provider(None);
+        let report = exercise_selected(&mut synthetic, || true, experiment);
+        assert_eq!(report.purpose, "synthetic-pkcs1-compatibility");
+        assert_eq!(report.algorithm, "rsa-pkcs1-v1_5");
+        assert_eq!(report.outcome, "compatibility-passed");
+        assert!(!report.eligible && !report.enrolled && !report.unlocked);
+        assert_eq!(report.remaining.len(), 4);
+        assert_eq!(synthetic.calls.len(), 8);
+        for check in &report.checks {
+            if !experiment.includes(check.test) && check.test != Stage::TestKeyDelete {
+                assert_eq!(check.status, Outcome::NotRun);
+            }
+        }
+        for stage in STEPS
+            .into_iter()
+            .filter(|stage| experiment.includes(*stage))
+        {
+            let mut synthetic = provider(Some(stage));
+            let failed = exercise_selected(&mut synthetic, || true, experiment);
+            assert_eq!(failed.outcome, "blocked");
+            assert_eq!(synthetic.calls.last(), Some(&Stage::TestKeyDelete));
+            let index = failed
+                .checks
+                .iter()
+                .position(|check| check.test == stage)
+                .unwrap();
+            assert!(failed.checks[index + 1..12]
+                .iter()
+                .all(|check| check.status == Outcome::NotRun));
+        }
+        let mut synthetic = provider(None);
+        synthetic.cleanup_failure = true;
+        assert_eq!(
+            exercise_selected(&mut synthetic, || true, experiment).outcome,
+            "blocked"
+        );
+        for allowed in [6, 7] {
+            let calls = std::cell::Cell::new(0);
+            let mut synthetic = provider(None);
+            let report = exercise_selected(
+                &mut synthetic,
+                || {
+                    calls.set(calls.get() + 1);
+                    calls.get() <= allowed
+                },
+                experiment,
+            );
+            assert_eq!(report.outcome, "interrupted");
+            assert_eq!(synthetic.calls.contains(&Stage::UnwrapFirst), allowed == 7);
+            assert_eq!(synthetic.calls.last(), Some(&Stage::TestKeyDelete));
+        }
+        // A failed OAEP private call still stops that action. It cannot run or
+        // return a compatibility pass as an automatic fallback.
+        for experiment in [
+            Experiment::SecurityProof,
+            Experiment::AuthorizedOaepCapability,
+        ] {
+            let mut synthetic = provider(Some(Stage::UnwrapFirst));
+            let report = exercise_selected(&mut synthetic, || true, experiment);
+            assert_eq!(report.algorithm, "rsa-oaep-sha256");
+            assert_eq!(report.outcome, "blocked");
+            assert_eq!(
+                synthetic
+                    .calls
+                    .iter()
+                    .filter(|stage| **stage == Stage::UnwrapFirst)
+                    .count(),
+                1
+            );
+        }
+    }
+    #[test]
     fn capability_session_invalidation_prevents_or_discards_authorized_decryption() {
         for allowed in [6, 7] {
             let mut provider = provider(None);
@@ -412,6 +495,7 @@ mod tests {
         for experiment in [
             Experiment::SecurityProof,
             Experiment::AuthorizedOaepCapability,
+            Experiment::Pkcs1Compatibility,
         ] {
             let mut provider = Cancelled(false);
             let report = exercise_selected(&mut provider, || true, experiment);
