@@ -45,6 +45,67 @@ fn failed(error: windows_core::Error) -> Failure {
         operation: None,
     }
 }
+fn current_sid() -> std::result::Result<String, Failure> {
+    use windows_sys::Win32::{
+        Foundation::{CloseHandle, LocalFree, HANDLE},
+        Security::Authorization::ConvertSidToStringSidW,
+        Security::{GetTokenInformation, TokenUser, TOKEN_QUERY, TOKEN_USER},
+        System::Threading::{GetCurrentProcess, OpenProcessToken},
+    };
+    struct Token(HANDLE);
+    impl Drop for Token {
+        fn drop(&mut self) {
+            unsafe {
+                CloseHandle(self.0);
+            }
+        }
+    }
+    struct Text(*mut u16);
+    impl Drop for Text {
+        fn drop(&mut self) {
+            unsafe {
+                LocalFree(self.0.cast());
+            }
+        }
+    }
+    let os_error = || failed(windows_core::Error::from_thread()).at("current-user-sid");
+    unsafe {
+        let mut token = std::ptr::null_mut();
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token) == 0 {
+            return Err(os_error());
+        }
+        let token = Token(token);
+        // Aligned, bounded TokenUser storage. No impersonation or caller SID.
+        let mut data = [0usize; 128];
+        let mut actual = 0;
+        if GetTokenInformation(
+            token.0,
+            TokenUser,
+            data.as_mut_ptr().cast(),
+            std::mem::size_of_val(&data) as u32,
+            &mut actual,
+        ) == 0
+        {
+            return Err(os_error());
+        }
+        if actual < std::mem::size_of::<TOKEN_USER>() as u32
+            || actual as usize > std::mem::size_of_val(&data)
+        {
+            return Err(Failure::failed());
+        }
+        let user = &*data.as_ptr().cast::<TOKEN_USER>();
+        let mut text = std::ptr::null_mut();
+        if ConvertSidToStringSidW(user.User.Sid, &mut text) == 0 {
+            return Err(os_error());
+        }
+        let text = Text(text);
+        let length = (0..184)
+            .find(|index| *text.0.add(*index) == 0)
+            .ok_or_else(Failure::failed)?;
+        String::from_utf16(std::slice::from_raw_parts(text.0, length))
+            .map_err(|_| Failure::failed())
+    }
+}
 impl Probe {
     fn delete_pending(&self) -> std::result::Result<(), Failure> {
         let mut pending = PENDING_DELETE.lock().map_err(|_| Failure::failed())?;
@@ -254,6 +315,16 @@ impl Provider for Probe {
                 self.delete_pending()?;
             }
             Stage::KeyCreate => {
+                // Passport containers are current SID // domain / subdomain /
+                // identity. Keep the SID natively; never return it in reports.
+                self.name = format!(
+                    "{}//PassKeyLocal.Proof/v1/{}",
+                    current_sid()?,
+                    uuid::Uuid::new_v4()
+                )
+                .encode_utf16()
+                .chain(Some(0))
+                .collect();
                 let mut key = NCRYPT_KEY_HANDLE(0);
                 unsafe {
                     NCryptCreatePersistedKey(
@@ -360,17 +431,26 @@ pub fn run(hwnd: usize, current: impl Fn() -> bool) -> Result<Report> {
     libsodium_rs::ensure_init().map_err(|_| Error::new("UNAVAILABLE"))?;
     let mut secret = Zeroizing::new([0u8; 32]);
     libsodium_rs::random::fill_bytes(secret.as_mut_slice());
-    let name = format!("PassKeyLocal.Proof.v1.{}", uuid::Uuid::new_v4())
-        .encode_utf16()
-        .chain(Some(0))
-        .collect();
     let mut probe = Probe {
         provider: Handle(0),
         key: Handle(0),
-        name,
+        name: Vec::new(),
         hwnd,
         secret,
         ciphertext: Vec::new(),
     };
     Ok(exercise(&mut probe, current))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn native_container_identity_comes_from_the_current_process_token() {
+        let sid = super::current_sid().unwrap();
+        assert!(sid.starts_with("S-1-"));
+        assert!(sid.len() < 184);
+        assert!(sid
+            .bytes()
+            .all(|b| b.is_ascii_digit() || b == b'S' || b == b'-'));
+    }
 }

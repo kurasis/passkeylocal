@@ -41,7 +41,10 @@ name/path, ciphertext, secret, algorithm or provider from the renderer.
 - Check actual WinRT Hello configuration. Unconfigured/absent Hello stops before
   key creation; cleanup of any known prior test key still runs.
 - Open only Microsoft Passport Key Storage Provider and create a current-user,
-  uniquely named `PassKeyLocal.Proof.v1.<UUID>` RSA key. Never overwrite,
+  uniquely named `<current-SID>//PassKeyLocal.Proof/v1/<UUID>` RSA key using
+  Passport's account/domain/subdomain/identity naming convention. Obtain the
+  current SID from the native process token, never the renderer or a script;
+  omit it from every report. Never overwrite,
   enumerate or open the user's OS Hello keys.
 - Request 2048 bits, decrypt-only usage, zero export policy and mandatory
   authorization policy. Read back the exact policy; unsupported settings,

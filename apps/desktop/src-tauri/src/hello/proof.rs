@@ -74,7 +74,7 @@ pub struct Report {
     pub remaining: [&'static str; 4],
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct Failure {
     pub status: Outcome,
     pub code: Option<u32>,
