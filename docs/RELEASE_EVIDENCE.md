@@ -32,6 +32,20 @@ it is not a newly executed hardware test. Local report/source consistency,
 13 distinct stages, all three original export results, false flags/four gates,
 74 relative-document links/anchors and whitespace validation: **PASS**.
 
+General CI [37633159938](https://github.com/kurasis/passkeylocal/actions/runs/37633159938)
+**PASS**, all ten PR checks, for documentation head
+`ac0202ed16aa82e3ff6d6a10d67a1f564380e9e0`.
+[PR #13](https://github.com/kurasis/passkeylocal/pull/13) merged automatically as
+`311658034850dfd558ea3dccec3ed6a9c1165a59`; the main merge tree matches the tested
+PR merge tree. CI executed 161 TypeScript tests, 18 isolated UI scenarios,
+eight production PWA scenarios, 44 Linux native tests (one resource test
+ignored), independent recovery (Linux/macOS 91 passed / 12 skipped; Windows
+88 passed / 15 skipped), fresh browser-to-Python fixtures and the offline
+Windows recovery kit. Dependency advisories: zero. The Windows installer
+workflow is excluded for this docs/deploy-only change; no native Windows
+installer or physical Hello test was rerun. This follow-up records the completed
+CI outcome only and does not change application files or release artifacts.
+
 ## Target silent refusals and repeated decrypt passed; export format diagnostics (2026-10-07)
 
 The [owner report from published source 9fdbc05](../deploy/windows-desktop/hello-target-9fdbc05.json)
