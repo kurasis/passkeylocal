@@ -30,6 +30,11 @@ Prepared: 2026-10-05; Windows Hello/Kensington update: 2026-10-06. These are off
 
 ## Same-key attestation investigation (2026-10-07)
 
+The subsequent [broader Windows Hello integration review](HELLO_INTERNET_RESEARCH.md)
+adds W3C/native WebAuthn PRF contracts, current compatibility reports, pinned
+manager implementations and a proposed PRF/TPM composition. It recommends a
+new synthetic path without relabeling the existing Passport failures as success.
+
 ### Completed subject-only target measurement
 
 The [6ae6e24 owner report](../../deploy/windows-desktop/hello-target-6ae6e24.json)

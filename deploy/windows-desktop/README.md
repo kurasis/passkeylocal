@@ -1,5 +1,10 @@
 # Windows desktop test installers
 
+The [latest integration research](../../docs/windows/HELLO_INTERNET_RESEARCH.md)
+recommends native WebAuthn PRF for the next experiment, with a separately proven
+TPM layer for machine binding. This research does not change the installer or
+enable Hello vault unlock; the completed claim test below needs no rerun.
+
 Latest attestation capability build: [successful Windows run 37637603236](https://github.com/kurasis/passkeylocal/actions/runs/37637603236), [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37637603236/artifacts/11491601801). Code head `10598ed4ebcefb3940b243dd18e58c220a7836c1`; installed/tested PR merge source `6ae6e244959668f08fef849fd8018e1c1d21df06`. [PR #14](https://github.com/kurasis/passkeylocal/pull/14) merged automatically as `86c1d16784959ff55cd3bb0d5139c8a4b5cdcd7f`; its main merge tree equals the tested PR tree `ea9ecdb059d0aa26e469b5ee471be255c7d0906d`.
 
 Installer SHA-256: `9b5137f9d48e42e3ffd2cd8fdd7aaf9166ddbc98e31e939626a274b5ebadf486` (217,857,372 bytes), independently matched to the original sidecar/build metadata. [Build metadata](build-6ae6e24.json), [installed-app evidence](smoke-6ae6e24.json), [5 GiB measurement](file-safe-resource-6ae6e24.json), [signed official WebView2 evidence](webview2-download-6ae6e24.json), [Russian settings](windows-settings-6ae6e24.png) and [locked window](windows-locked-6ae6e24.png) are retained here. Previous installers/metadata and target reports remain available.
