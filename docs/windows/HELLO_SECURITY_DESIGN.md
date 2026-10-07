@@ -1,11 +1,22 @@
 # Windows Hello eligibility decision
 
+The [946514c owner report](../../deploy/windows-desktop/hello-target-946514c.json)
+completes the private-format diagnostic: all three raw private formats return
+`NTE_BAD_TYPE`, while both synthetic PKCS#1 decrypt comparisons, three strict
+silent refusals and cleanup pass. This closes the measurement task, not the
+non-exportability/TPM gate. No unchanged retest or replacement installer is
+needed. A supported, verified attestation route for the exact decrypt-only
+Passport key remains unestablished; see the
+[source review](SOURCES_AND_REVIEW.md#same-key-attestation-investigation-2026-10-07).
+No new prompt observation is inferred from this JSON. Actual enrollment/unlock
+remain unavailable and all four physical gates remain open.
+
 The [9fdbc05 owner report](../../deploy/windows-desktop/hello-target-9fdbc05.json)
 now passes both synthetic PKCS#1 decrypts and three explicit silent refusals.
 The owner reports fingerprint confirmation every time for the queried prompts.
 Private export returns `NTE_BAD_TYPE`, meaning the requested format is unavailable
-for this key; that does not establish non-exportability. The next diagnostic
-reports every fixed private export format without accepting unsupported types
+for this key; that does not establish non-exportability. The subsequent diagnostic
+reported every fixed private export format without accepting unsupported types
 as denial. Per-key TPM, fresh-process/account/machine/cancellation proof and
 actual credential envelope/enrollment remain outstanding; vault unlock stays
 disabled. See [the export result/procedure](HELLO_KEY_PROBE.md#target-repeated-decrypt-and-export-result-2026-10-07).
@@ -47,7 +58,7 @@ enroll, unlock or substitute for the primary security proof. See
 
 Status: **BLOCKED — no eligible protected-secret provider or physical proof**. This is a deliberate fail-closed implementation of the handoff's rule: "If the proof cannot satisfy the requirements, leave Hello unavailable with an actionable reason ... Continue safe work on the rest of the app."
 
-No Windows 11/TPM/Kensington device is attached to this environment. The owner has reported a successful synthetic PKCS#1 v1.5 Passport decrypt, but non-exportability and per-key TPM binding have not been established on the target device; repeated/fresh authorization and cache behavior have not been demonstrated there. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.
+No Windows 11/TPM/Kensington device is attached to this environment. The owner has reported successful repeated synthetic PKCS#1 v1.5 Passport decrypts, three strict silent refusals and fingerprint confirmation for the earlier queried prompts. These are same-process observations; fresh-process authorization, complete cancellation behavior, non-exportability and per-key TPM binding have not been established on the target device. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.
 
 Candidate investigation references were checked against Tauri 2.12.1 source/bindings and the official sources in [SOURCES_AND_REVIEW.md](SOURCES_AND_REVIEW.md): Microsoft Windows Hello app development, NCryptDecrypt, key storage properties and desktop UserConsentVerifier interop. They do not promise an arbitrary Passport-provider decryption algorithm or fresh authorization on every operation. No consent-plus-DPAPI, signature-derived AES key, software fallback, or generic decrypt IPC is implemented. No provider is claimed eligible merely because its name contains Passport.
 

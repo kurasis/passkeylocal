@@ -6,7 +6,16 @@ Installer SHA-256: `8ac0609e492b602014538292e28bd6dc04d775cdd408b9dfa57b5421cf68
 
 The [9fdbc05 owner report](hello-target-9fdbc05.json) passes both PKCS#1 test-secret comparisons and three explicit silent refusals. The owner reports fingerprint confirmation every time for the queried creation/first/second decrypt prompts. Cleanup passes. Private RSA export returns `0x8009000A` / `NTE_BAD_TYPE`; Microsoft documents this as the key not being exportable into that blob type. The original build stopped before the other two formats. This is owner-reported same-process behavior, not per-key TPM attestation, fresh-process/account/machine/cancellation proof or approval of legacy vault wrapping.
 
-Fully close the old app and install this build. Open Settings → Windows Hello → **Test PKCS#1 key behavior** (Russian: **Проверить поведение ключа PKCS#1**). Copy the complete JSON, including `exportChecks` and `sourceCommit`, which must be `946514c0dd590f703cd5398d9d39ec7c28d0491d`. Share no PIN or biometric data. There is no need to rerun the unchanged OAEP or shorter compatibility action. See [the procedure and limits](../../docs/windows/HELLO_KEY_PROBE.md#target-repeated-decrypt-and-export-result-2026-10-07).
+The [completed 946514c target report](hello-target-946514c.json) has the exact
+published source identifier. All three private formats return `NTE_BAD_TYPE` /
+`unsupported-format`; both decrypt comparisons, three strict silent refusals
+and cleanup pass. It adds no prompt observation. The aggregate export gate
+remains failed: unavailable formats do not prove non-exportability or TPM
+binding. **Do not repeat this unchanged diagnostic.** There is no new installer
+for this evidence-only update. The integration now needs a supported, verified
+attestation path for this exact decrypt-only key; no such path is established
+or implemented. See [the result and limits](../../docs/windows/HELLO_KEY_PROBE.md#all-three-target-export-formats-are-unavailable-2026-10-07)
+and [the source review](../../docs/windows/SOURCES_AND_REVIEW.md#same-key-attestation-investigation-2026-10-07).
 
 The fixed native export stage now collects RSA private, RSA full-private and PKCS#8 private results separately after unsuccessful attempts. It distinguishes explicit permission refusal, unavailable format, other failure, unexpected success and NOT RUN. Only `NTE_PERM` for every format passes the unchanged aggregate gate. An unavailable format remains unresolved even if subsequent formats return refusal. The first unresolved code/operation is retained. Success/cancellation/native session change stops later export attempts. Real bounded output buffers are zeroized; no exported material leaves the probe. Normal unconditional app test-key cleanup remains unchanged. No caller-selected key, format or ciphertext is exposed.
 

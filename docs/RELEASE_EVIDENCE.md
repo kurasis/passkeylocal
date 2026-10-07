@@ -1,5 +1,37 @@
 # Release evidence and gate status
 
+## Target per-format export measurement completed (2026-10-07)
+
+The [owner report from published source 946514c](../deploy/windows-desktop/hello-target-946514c.json)
+measures RSA private, RSA full-private and PKCS#8 private export; each returns
+`NTE_BAD_TYPE` (`0x8009000A`) / `unsupported-format`. Both synthetic PKCS#1
+decrypt/secret comparisons, all three strict silent refusals, policy readback
+and test-key deletion PASS. The aggregate export stage remains FAILED, retaining
+`private-export-rsa` and the original code. All four remaining gates and false
+eligibility/enrollment/unlock flags are preserved. No new prompt observation
+is inferred; earlier fingerprint observations belong to the 9fdbc05 report.
+This is owner-reported same-process behavior, not independently executed
+hardware attestation. The private-format diagnostic task is complete; unchanged
+retests would not resolve it.
+
+Official source review found that provider implementation flags are not per-key
+TPM evidence. The documented KeyCredential attestation example concerns a
+signing credential; it does not establish attestation of our existing CNG
+decrypt-only key. `NCryptCreateClaim` API/binding availability does not establish
+Passport support, verified TPM claims or a trust policy. A supported, verified
+same-key attestation route is **NOT ESTABLISHED / NOT IMPLEMENTED**; see
+[the investigation](windows/SOURCES_AND_REVIEW.md#same-key-attestation-investigation-2026-10-07).
+No claim is made that the owner's TPM or reader is absent/defective. Fresh-process,
+cancellation, account/machine-copy proof and real credential envelope/enrollment
+remain outstanding. No production gate is weakened or unsupported error relabeled.
+
+This change records evidence and corrects the active procedure only. Application,
+tests, dependencies, workflows, installer and Cloudflare ZIP are unchanged.
+Existing 946514c build/CI evidence below remains applicable to that installer;
+it is not a newly executed hardware test. Local report/source consistency,
+13 distinct stages, all three original export results, false flags/four gates,
+74 relative-document links/anchors and whitespace validation: **PASS**.
+
 ## Target silent refusals and repeated decrypt passed; export format diagnostics (2026-10-07)
 
 The [owner report from published source 9fdbc05](../deploy/windows-desktop/hello-target-9fdbc05.json)

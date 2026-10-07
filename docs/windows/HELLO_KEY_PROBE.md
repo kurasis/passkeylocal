@@ -6,6 +6,32 @@ enrollment/unlock. It is a real CNG experiment in the existing app, not a
 UserConsentVerifier boolean followed by a credential read. All reports keep
 `eligible`, `enrolled` and `unlocked` false.
 
+## All three target export formats are unavailable (2026-10-07)
+
+The [946514c owner report](../../deploy/windows-desktop/hello-target-946514c.json)
+matches the published installer source and measures all three fixed private
+export formats. RSA private, RSA full-private and PKCS#8 each return
+`NTE_BAD_TYPE` (`0x8009000A`) / `unsupported-format`. The aggregate export stage
+correctly remains FAILED, retaining the first original code/operation. Both
+synthetic PKCS#1 decrypt/secret comparisons, three strict silent refusals,
+policy readback and cleanup PASS. This report adds no new prompt observation;
+the earlier owner statement about fingerprint confirmation belongs to 9fdbc05.
+Neither report is independently executed hardware attestation.
+
+The per-format retest is complete. Do not request an unchanged rerun or use
+these unsupported-format errors as proof of non-exportability. There is no
+new installer for this evidence-only update. The next engineering prerequisite
+is a supported, verified attestation path for the **same decrypt-only Passport
+key**, including its TPM-bound/non-migratable properties. The source review and
+verification requirements are recorded in
+[SOURCES_AND_REVIEW.md](SOURCES_AND_REVIEW.md#same-key-attestation-investigation-2026-10-07).
+Such a path has not been established or implemented. This is a limitation of
+the present integration/evidence, not a finding that the owner's TPM or reader
+is absent or defective. All four physical gates remain open and real Hello
+enrollment/unlock stays unavailable. Fresh-process, cancellation and
+account/machine-copy tests and the real protected envelope still require work;
+PKCS#1 success does not approve production legacy wrapping.
+
 ## Target repeated decrypt and export result (2026-10-07)
 
 The [9fdbc05 owner report](../../deploy/windows-desktop/hello-target-9fdbc05.json)
@@ -17,8 +43,9 @@ RSA private export returns `NTE_BAD_TYPE` (`0x8009000A`); the original build
 stopped before RSA full-private/PKCS#8. Microsoft documents this as the key not
 being exportable into the requested blob type, not an explicit permission denial.
 
-In the next build, run **Test PKCS#1 key behavior** once to collect `exportChecks`
-for all three fixed formats. Unsuccessful attempts continue to the next format;
+The subsequently published 946514c build collected `exportChecks` for all
+three fixed formats, with the completed target result recorded above.
+Unsuccessful attempts continue to the next format;
 actual success, cancellation or native-session change stops later attempts.
 Only `NTE_PERM` for every format passes the existing aggregate gate. Unavailable
 formats remain unresolved; subsequent results cannot erase that failure.
@@ -35,8 +62,9 @@ target padding-path difference from the earlier OAEP failures, not an exact
 explanation of the rejected OAEP parameter or approval of legacy padding.
 Silent/second-decrypt/export checks were NOT RUN. All physical gates remain open.
 
-Select **Test PKCS#1 key behavior** (Russian: **Проверить поведение ключа PKCS#1**)
-in the next published build. This separate fixed native mode uses legacy padding
+The subsequently published **Test PKCS#1 key behavior** action (Russian:
+**Проверить поведение ключа PKCS#1**) produced the 9fdbc05 and 946514c reports above.
+This separate fixed native mode uses legacy padding
 only for synthetic measurements and runs the complete sequence below on a new
 app test key. It requires three silent refusals, two successful decrypts and
 explicit refusal of each private export format. Any failure stops later steps;
