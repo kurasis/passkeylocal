@@ -82,7 +82,7 @@ fn cng_modulus(blob: &[u8]) -> Result<&[u8], Error> {
     Ok(modulus)
 }
 
-fn subject_name(area: &[u8], expected_public: &[u8]) -> Result<[u8; 34], Error> {
+pub(crate) fn subject_name(area: &[u8], expected_public: &[u8]) -> Result<[u8; 34], Error> {
     // Name hashes exactly TPMT_PUBLIC, never a TPM2B or provider size prefix.
     let mut r = Reader::new(area);
     if r.u16()? != RSA || r.u16()? != SHA256 {

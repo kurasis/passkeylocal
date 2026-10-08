@@ -33,6 +33,7 @@
     "allow-hello-webauthn-attestation",
     "allow-hello-tpm-capability",
     "allow-hello-tpm-proof",
+    "allow-hello-tpm-local-binding",
     "allow-hello-settings",
     "allow-hello-unlock",
     "allow-hello-revoke",

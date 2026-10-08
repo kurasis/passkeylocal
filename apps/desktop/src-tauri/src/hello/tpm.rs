@@ -5,6 +5,9 @@ use super::{
 };
 use serde::Serialize;
 
+#[cfg(any(windows, test))]
+mod read_public;
+
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
@@ -14,6 +17,7 @@ pub use windows::run;
 pub enum Experiment {
     Capability,
     Synthetic,
+    LocalBinding,
 }
 
 const STEPS: [&str; 10] = [
@@ -27,6 +31,20 @@ const STEPS: [&str; 10] = [
     "tpm-reopen-unwrap",
     "tpm-negative-controls",
     "private-export",
+];
+
+const LOCAL_STEPS: [&str; 11] = [
+    "tpm-provider-open",
+    "tpm-provider-properties",
+    "tpm-key-create",
+    "tpm-key-policy",
+    "tpm-key-readback",
+    "tpm-read-public",
+    "tpm-public-wrap",
+    "tpm-unwrap-first",
+    "tpm-reopen-unwrap",
+    "tpm-reopen-read-public",
+    "tpm-negative-controls",
 ];
 
 #[derive(Clone, Default, Serialize)]
@@ -52,6 +70,8 @@ pub struct Metadata {
     pub pcp_usage_kind: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pcp_usage_flags: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub object_attributes: Option<u32>,
 }
 
 // Pinned Microsoft SDK and PCP sample: usage is the low word; the SDK
@@ -120,10 +140,10 @@ fn exercise(
     let mut report = Report {
         version: 1,
         source_commit: option_env!("PASSKEY_SOURCE_COMMIT"),
-        purpose: if experiment == Experiment::Capability {
-            "tpm-inner-capability"
-        } else {
-            "synthetic-tpm-inner"
+        purpose: match experiment {
+            Experiment::Capability => "tpm-inner-capability",
+            Experiment::Synthetic => "synthetic-tpm-inner",
+            Experiment::LocalBinding => "synthetic-tpm-local-binding",
         },
         algorithm: "platform-rsa-oaep-sha256",
         eligible: false,
@@ -143,10 +163,10 @@ fn exercise(
             "account-machine-copy-proof",
         ],
     };
-    let steps = if experiment == Experiment::Capability {
-        &STEPS[..2]
-    } else {
-        &STEPS[..]
+    let steps = match experiment {
+        Experiment::Capability => &STEPS[..2],
+        Experiment::Synthetic => &STEPS[..],
+        Experiment::LocalBinding => &LOCAL_STEPS[..],
     };
     let mut running = true;
     for step in steps {
@@ -180,7 +200,7 @@ fn exercise(
         }
         report.checks.push(value);
     }
-    if experiment == Experiment::Synthetic {
+    if experiment != Experiment::Capability {
         let cleanup = check("test-key-delete", provider.cleanup());
         if cleanup.status != Outcome::Passed {
             running = false;
@@ -195,10 +215,13 @@ fn exercise(
         report.outcome = "interrupted";
     }
     if running {
-        report.outcome = if experiment == Experiment::Capability {
-            "tpm-capability-observed"
-        } else {
-            "tpm-inner-roundtrip-passed"
+        report.outcome = match experiment {
+            Experiment::Capability => "tpm-capability-observed",
+            Experiment::Synthetic => "tpm-inner-roundtrip-passed",
+            Experiment::LocalBinding => {
+                report.per_key_tpm_evidence = "local-read-public-observed";
+                "tpm-local-binding-observed"
+            }
         };
     }
     report
@@ -350,5 +373,50 @@ mod tests {
         assert_eq!(value["perKeyTpmEvidence"], "not-verified");
         assert_eq!(value["authorization"], "no-hello-authorization");
         assert_eq!(value["processScope"], "same-process");
+    }
+    #[test]
+    fn local_binding_has_its_own_contract_without_reclassifying_private_export() {
+        let mut p = fake(None);
+        let r = exercise(&mut p, || true, Experiment::LocalBinding);
+        assert_eq!(r.purpose, "synthetic-tpm-local-binding");
+        assert_eq!(r.outcome, "tpm-local-binding-observed");
+        assert_eq!(r.per_key_tpm_evidence, "local-read-public-observed");
+        assert_eq!(&p.calls[..LOCAL_STEPS.len()], &LOCAL_STEPS);
+        assert!(!p.calls.contains(&"private-export"));
+        assert!(!r.eligible && !r.enrolled && !r.unlocked);
+        assert_eq!(r.remaining.len(), 4);
+        assert!(r.export_checks.is_empty());
+        for failed in LOCAL_STEPS.into_iter().chain(["test-key-delete"]) {
+            let mut p = fake(Some(failed));
+            let r = exercise(&mut p, || true, Experiment::LocalBinding);
+            assert_eq!(r.outcome, "blocked");
+            assert_eq!(r.per_key_tpm_evidence, "not-verified");
+            assert_eq!(p.calls.last(), Some(&"test-key-delete"));
+            let i = r.checks.iter().position(|c| c.test == failed).unwrap();
+            if i < r.checks.len() - 1 {
+                assert!(r.checks[i + 1..r.checks.len() - 1]
+                    .iter()
+                    .all(|c| c.status == Outcome::NotRun));
+            }
+        }
+    }
+    #[test]
+    fn local_binding_invalidation_including_cleanup_never_publishes_evidence() {
+        for invalid_at in 0..=LOCAL_STEPS.len() * 2 {
+            let calls = std::cell::Cell::new(0);
+            let mut p = fake(None);
+            let r = exercise(
+                &mut p,
+                || {
+                    let n = calls.get();
+                    calls.set(n + 1);
+                    n < invalid_at
+                },
+                Experiment::LocalBinding,
+            );
+            assert_eq!(r.outcome, "interrupted");
+            assert_eq!(r.per_key_tpm_evidence, "not-verified");
+            assert_eq!(p.calls.last(), Some(&"test-key-delete"));
+        }
     }
 }

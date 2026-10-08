@@ -1,5 +1,31 @@
 # Release evidence and gate status
 
+## Local per-key TPM route after absent direct attestation (2026-10-08)
+
+Added the [documented provider/TBS ReadPublic measurement](windows/HELLO_LOCAL_TPM_BINDING.md)
+and an argument-free native command plus English/Russian Settings action. The
+complete public area/attributes/Name are bound to the exact CNG/PCP app key before
+and after reopening, with real OAEP roundtrips, tamper controls and unconditional
+cleanup. No AIK provisioning, settings changes, certificate-trust inference,
+private-export reclassification, raw command IPC or vault material is involved.
+The old raw-export and direct-attestation reports retain their original meaning.
+
+Local validation: native Rust 89 PASS / 1 resource test intentionally ignored in
+routine Linux execution; 14 targeted TPM tests PASS. Linux and Windows GNU
+all-target clippy with warnings denied PASS, formatting PASS. Separate PWA and
+desktop production builds and target-isolation checks PASS. TypeScript 161 tests
+and workspace typechecks PASS. UI: 27 initial cases PASS, the new report-reading
+test was corrected and both new local-binding cases then PASS (28 distinct cases
+validated overall). Windows MSVC tests,
+packaged command ACL/smoke, full CI and target hardware remain pending at this
+code revision; subsequent publication records exact tested source and results.
+The initial UI test read a newly collapsed report with innerText; the test now
+opens the report before reading it. No application failure was hidden or ignored.
+
+Success means local-read-public-observed only; all eligibility/enrollment/unlock
+flags remain false and all four physical acceptance gates remain open. No device
+result is inferred from software fixtures or from Microsoft's documentation.
+
 ## Completed direct-attestation target measurement (2026-10-08)
 
 The [owner JSON](../deploy/windows-desktop/hello-target-bdb2a03-direct-attestation.json)

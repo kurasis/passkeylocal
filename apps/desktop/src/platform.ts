@@ -82,3 +82,5 @@ export function configureNativeClose(canClose: () => Promise<boolean>): () => vo
   return () => { live = false; void stop.then((dispose) => dispose()); };
 }
 export { fileSafe } from './file-safe.ts';
+
+export async function testNativeTpmLocalBinding(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_tpm_local_binding'); }

@@ -25,6 +25,7 @@ let prf = 0;
 let directAttestations = 0;
 let tpmCapabilities = 0;
 let tpmProofs = 0;
+let tpmLocalBindings = 0;
 let attestationResult: 'returned-unverified' | 'unavailable' = 'returned-unverified';
 let behaviorFailure: 'silent-before' | 'private-export' | 'test-key-delete' | null = null;
 export async function nativeHelloStatus(): Promise<HelloStatus> {
@@ -150,5 +151,17 @@ Object.assign(window, { helloTest: {
   behaviorFailure(value: typeof behaviorFailure) { behaviorFailure = value; },
   attestationResult(value: typeof attestationResult) { attestationResult = value; },
   release() { release?.(); },
-  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations, webauthn, prf, directAttestations, tpmCapabilities, tpmProofs }; },
+  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations, webauthn, prf, directAttestations, tpmCapabilities, tpmProofs, tpmLocalBindings }; },
 } });
+
+export async function testNativeTpmLocalBinding(): Promise<HelloKeyProof> {
+  tpmLocalBindings++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  const capability = await nativeTpmCapability(); tpmCapabilities--;
+  return { ...capability, purpose: 'synthetic-tpm-local-binding',
+    outcome: proofCleanupFailed ? 'blocked' : 'tpm-local-binding-observed',
+    perKeyTpmEvidence: proofCleanupFailed ? 'not-verified' : 'local-read-public-observed', exportChecks: [],
+    tpm: { ...capability.tpm, keyNameBytes: 34, exportPolicy: 0, keyUsage: 1, objectAttributes: 0x20072 },
+    checks: [...capability.checks, ...(['tpm-key-create', 'tpm-key-policy', 'tpm-key-readback', 'tpm-read-public', 'tpm-public-wrap', 'tpm-unwrap-first', 'tpm-reopen-unwrap', 'tpm-reopen-read-public', 'tpm-negative-controls'] as const).map((test) => ({ test, status: 'passed' as const })),
+      { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
+}

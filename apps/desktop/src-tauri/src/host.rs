@@ -333,6 +333,10 @@ async fn hello_tpm_capability(window: WebviewWindow, app: tauri::AppHandle) -> R
 async fn hello_tpm_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
     hello_tpm_experiment(window, app, hello::tpm::Experiment::Synthetic).await
 }
+#[tauri::command]
+async fn hello_tpm_local_binding(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_tpm_experiment(window, app, hello::tpm::Experiment::LocalBinding).await
+}
 async fn hello_tpm_experiment(
     window: WebviewWindow,
     app: tauri::AppHandle,
@@ -623,6 +627,7 @@ pub fn run() {
             hello_webauthn_attestation,
             hello_tpm_capability,
             hello_tpm_proof,
+            hello_tpm_local_binding,
             hello_settings,
             hello_unlock,
             hello_revoke,

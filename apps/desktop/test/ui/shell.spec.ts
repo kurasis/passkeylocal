@@ -414,3 +414,40 @@ test('pending TPM work shares single flight and discards a late result after Loc
   await expect(page.locator('.hello-proof-report')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts().tpmProofs)).toBe(1);
 });
+
+test('local TPM binding is a separate report, keeps unlock disabled and surfaces cleanup failure', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const probe = hello.getByRole('button', { name: 'Проверить привязку ключа к TPM', exact: true });
+  await probe.click();
+  await expect(hello.getByText('Тестовый ключ совпал с ответом TPM', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.purpose).toBe('synthetic-tpm-local-binding');
+  expect(report.checks).toHaveLength(12);
+  expect(report.perKeyTpmEvidence).toBe('local-read-public-observed');
+  expect(report.exportChecks).toEqual([]);
+  expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false, false, false]);
+  expect(report.remaining).toHaveLength(4);
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ tpmLocalBindings: 1, tpmProofs: 0, directAttestations: 0 });
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await probe.click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  expect(JSON.parse(await hello.locator('pre').innerText()).perKeyTpmEvidence).toBe('not-verified');
+});
+
+test('local binding shares single flight and late results cannot survive Lock All', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  const probe = page.getByRole('button', { name: 'Проверить привязку ключа к TPM', exact: true });
+  await probe.click();
+  await expect(probe).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Проверить Windows Hello PRF', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.locator('.hello-proof-report')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts().tpmLocalBindings)).toBe(1);
+});
