@@ -68,6 +68,13 @@ unsafe extern "system" {
         pwebauthncredentialattestation: *const WEBAUTHN_CREDENTIAL_ATTESTATION,
     );
 }
+pub type WebAuthNFreePlatformCredentialList =
+    unsafe extern "system" fn(pcredentialdetailslist: *const WEBAUTHN_CREDENTIAL_DETAILS_LIST);
+unsafe extern "system" {
+    pub fn WebAuthNFreePlatformCredentialList(
+        pcredentialdetailslist: *const WEBAUTHN_CREDENTIAL_DETAILS_LIST,
+    );
+}
 pub type WebAuthNGetApiVersionNumber = unsafe extern "system" fn() -> u32;
 unsafe extern "system" {
     pub fn WebAuthNGetApiVersionNumber() -> u32;
@@ -86,6 +93,16 @@ pub type WebAuthNGetCancellationId =
     unsafe extern "system" fn(pcancellationid: *mut GUID) -> HRESULT;
 unsafe extern "system" {
     pub fn WebAuthNGetCancellationId(pcancellationid: *mut GUID) -> HRESULT;
+}
+pub type WebAuthNGetPlatformCredentialList = unsafe extern "system" fn(
+    pgetcredentialsoptions: *const WEBAUTHN_GET_CREDENTIALS_OPTIONS,
+    ppcredentialdetailslist: *mut PWEBAUTHN_CREDENTIAL_DETAILS_LIST,
+) -> HRESULT;
+unsafe extern "system" {
+    pub fn WebAuthNGetPlatformCredentialList(
+        pgetcredentialsoptions: *const WEBAUTHN_GET_CREDENTIALS_OPTIONS,
+        ppcredentialdetailslist: *mut PWEBAUTHN_CREDENTIAL_DETAILS_LIST,
+    ) -> HRESULT;
 }
 pub type WebAuthNIsUserVerifyingPlatformAuthenticatorAvailable =
     unsafe extern "system" fn(
@@ -131,12 +148,16 @@ pub type PWEBAUTHN_AUTHENTICATOR_DETAILS_LIST = *mut WEBAUTHN_AUTHENTICATOR_DETA
 pub type PWEBAUTHN_COSE_CREDENTIAL_PARAMETER = *mut WEBAUTHN_COSE_CREDENTIAL_PARAMETER;
 pub type PWEBAUTHN_CREDENTIAL = *mut WEBAUTHN_CREDENTIAL;
 pub type PWEBAUTHN_CREDENTIAL_ATTESTATION = *mut WEBAUTHN_CREDENTIAL_ATTESTATION;
+pub type PWEBAUTHN_CREDENTIAL_DETAILS = *mut WEBAUTHN_CREDENTIAL_DETAILS;
+pub type PWEBAUTHN_CREDENTIAL_DETAILS_LIST = *mut WEBAUTHN_CREDENTIAL_DETAILS_LIST;
 pub type PWEBAUTHN_CREDENTIAL_EX = *mut WEBAUTHN_CREDENTIAL_EX;
 pub type PWEBAUTHN_CREDENTIAL_LIST = *mut WEBAUTHN_CREDENTIAL_LIST;
 pub type PWEBAUTHN_CRED_WITH_HMAC_SECRET_SALT = *mut WEBAUTHN_CRED_WITH_HMAC_SECRET_SALT;
 pub type PWEBAUTHN_EXTENSION = *mut WEBAUTHN_EXTENSION;
 pub type PWEBAUTHN_HMAC_SECRET_SALT = *mut WEBAUTHN_HMAC_SECRET_SALT;
 pub type PWEBAUTHN_HMAC_SECRET_SALT_VALUES = *mut WEBAUTHN_HMAC_SECRET_SALT_VALUES;
+pub type PWEBAUTHN_RP_ENTITY_INFORMATION = *mut WEBAUTHN_RP_ENTITY_INFORMATION;
+pub type PWEBAUTHN_USER_ENTITY_INFORMATION = *mut WEBAUTHN_USER_ENTITY_INFORMATION;
 pub type PWEBAUTHN_X5C = *mut WEBAUTHN_X5C;
 pub const WEBAUTHN_API_VERSION_9: i32 = 9;
 #[repr(C)]
@@ -338,6 +359,28 @@ pub struct WEBAUTHN_CREDENTIAL_ATTESTATION {
 }
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct WEBAUTHN_CREDENTIAL_DETAILS {
+    pub dwVersion: u32,
+    pub cbCredentialID: u32,
+    pub pbCredentialID: PBYTE,
+    pub pRpInformation: PWEBAUTHN_RP_ENTITY_INFORMATION,
+    pub pUserInformation: PWEBAUTHN_USER_ENTITY_INFORMATION,
+    pub bRemovable: BOOL,
+    pub bBackedUp: BOOL,
+    pub pwszAuthenticatorName: PCWSTR,
+    pub cbAuthenticatorLogo: u32,
+    pub pbAuthenticatorLogo: PBYTE,
+    pub bThirdPartyPayment: BOOL,
+    pub dwTransports: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct WEBAUTHN_CREDENTIAL_DETAILS_LIST {
+    pub cCredentialDetails: u32,
+    pub ppCredentialDetails: *mut PWEBAUTHN_CREDENTIAL_DETAILS,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct WEBAUTHN_CREDENTIAL_EX {
     pub dwVersion: u32,
     pub cbId: u32,
@@ -371,6 +414,13 @@ pub struct WEBAUTHN_EXTENSION {
 pub struct WEBAUTHN_EXTENSIONS {
     pub cExtensions: u32,
     pub pExtensions: PWEBAUTHN_EXTENSION,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct WEBAUTHN_GET_CREDENTIALS_OPTIONS {
+    pub dwVersion: u32,
+    pub pwszRpId: PCWSTR,
+    pub bBrowserInPrivateMode: BOOL,
 }
 #[repr(C)]
 #[derive(Clone, Copy, Default)]

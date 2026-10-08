@@ -337,6 +337,58 @@ async fn hello_tpm_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result
 async fn hello_tpm_local_binding(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
     hello_tpm_experiment(window, app, hello::tpm::Experiment::LocalBinding).await
 }
+#[tauri::command]
+async fn hello_combined_status(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_combined_experiment(window, app, hello::combined::Action::Status).await
+}
+#[tauri::command]
+async fn hello_combined_prepare(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_combined_experiment(window, app, hello::combined::Action::Prepare).await
+}
+#[tauri::command]
+async fn hello_combined_resume(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_combined_experiment(window, app, hello::combined::Action::Resume).await
+}
+#[tauri::command]
+async fn hello_combined_cleanup(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_combined_experiment(window, app, hello::combined::Action::Cleanup).await
+}
+async fn hello_combined_experiment(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    action: hello::combined::Action,
+) -> Result<Value> {
+    focused(&window)?;
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    let root = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|_| Error::new("UNAVAILABLE"))?;
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    let session = app
+        .state::<NativeState>()
+        .active
+        .lock()
+        .map_err(|_| Error::new("UNAVAILABLE"))?
+        .clone();
+    let report = tauri::async_runtime::spawn_blocking(move || {
+        hello::combined::run(
+            &root,
+            hwnd,
+            || {
+                let state = app.state::<NativeState>();
+                state.serial.load(Ordering::SeqCst) == serial
+                    && state.active.lock().is_ok_and(|active| *active == session)
+            },
+            action,
+        )
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))??;
+    trusted(&window)?;
+    serde_json::to_value(report).map_err(|_| Error::new("UNAVAILABLE"))
+}
+
 async fn hello_tpm_experiment(
     window: WebviewWindow,
     app: tauri::AppHandle,
@@ -628,6 +680,10 @@ pub fn run() {
             hello_tpm_capability,
             hello_tpm_proof,
             hello_tpm_local_binding,
+            hello_combined_status,
+            hello_combined_prepare,
+            hello_combined_resume,
+            hello_combined_cleanup,
             hello_settings,
             hello_unlock,
             hello_revoke,

@@ -119,6 +119,20 @@ try {
   assert.equal(helloTpmCapability.perKeyTpmEvidence, 'not-verified');
   assert.equal(helloTpmCapability.processScope, 'same-process');
   for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloTpmCapability[key], false);
+  // Exact packaged IPC/ACL, read-only status and no-record resume/cleanup.
+  // Do not manufacture target hardware evidence on the hosted runner.
+  const helloCombinedStatus = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_combined_status'));
+  assert.equal(helloCombinedStatus.sourceCommit, process.env.GITHUB_SHA);
+  assert.equal(helloCombinedStatus.purpose, 'synthetic-combined-restart');
+  assert.equal(helloCombinedStatus.combinedState, 'no-test');
+  for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloCombinedStatus[key], false);
+  for (const command of ['hello_combined_resume', 'hello_combined_cleanup']) {
+    const report = await page.evaluate((name) => window.__TAURI_INTERNALS__.invoke(name), command);
+    assert.equal(report.outcome, 'no-test');
+    assert.deepEqual(report.checks, []);
+  }
+  await expect(helloSection.getByRole('button', { name: '2. Continue after restart', exact: true })).toBeDisabled();
+  await expect(helloSection.getByRole('button', { name: 'Remove test and temporary keys', exact: true })).toBeDisabled();
   let helloTpmLocalBinding = null;
   if (helloTpmCapability.outcome === 'blocked') {
     helloTpmLocalBinding = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_tpm_local_binding'));
@@ -312,7 +326,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

@@ -25,6 +25,7 @@ use windows_sys::Win32::{
 };
 use zeroize::Zeroizing;
 
+pub(crate) mod combined;
 mod read_public;
 
 // Keep the portable decoder tied to the maintained Microsoft SDK constants.
@@ -332,10 +333,11 @@ impl Provider for Probe<'_> {
                 }
             }
             "tpm-key-create" => {
-                if PENDING_DELETE
-                    .lock()
-                    .map_err(|_| invalid("tpm-cleanup-lock"))?
-                    .is_some()
+                if self.synthetic
+                    && PENDING_DELETE
+                        .lock()
+                        .map_err(|_| invalid("tpm-cleanup-lock"))?
+                        .is_some()
                 {
                     return Err(invalid("tpm-pending-key-delete-required"));
                 }
@@ -354,9 +356,11 @@ impl Provider for Probe<'_> {
                 }
                 .map_err(|e| failed(e, "tpm-create-app-test-key"))?;
                 self.key = Handle(key.0);
-                *PENDING_DELETE
-                    .lock()
-                    .map_err(|_| invalid("tpm-cleanup-lock"))? = Some(self.name.clone());
+                if self.synthetic {
+                    *PENDING_DELETE
+                        .lock()
+                        .map_err(|_| invalid("tpm-cleanup-lock"))? = Some(self.name.clone());
+                }
             }
             "tpm-key-policy" => {
                 set(

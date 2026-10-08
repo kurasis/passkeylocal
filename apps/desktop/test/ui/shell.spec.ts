@@ -451,3 +451,58 @@ test('local binding shares single flight and late results cannot survive Lock Al
   await expect(page.locator('.hello-proof-report')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.counts().tpmLocalBindings)).toBe(1);
 });
+
+test('combined preparation requires a full restart, blocks duplicate work and exposes cleanup', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const prepare = hello.getByRole('button', { name: '1. Создать тест Hello + TPM', exact: true });
+  const resume = hello.getByRole('button', { name: '2. Продолжить после перезапуска', exact: true });
+  const cleanup = hello.getByRole('button', { name: 'Удалить тест и временные ключи', exact: true });
+  await expect(prepare).toBeEnabled(); await expect(resume).toBeDisabled(); await expect(cleanup).toBeDisabled();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  await prepare.click();
+  await expect(prepare).toBeDisabled(); await expect(hello.getByRole('button', { name: 'Проверить Windows Hello PRF', exact: true })).toBeDisabled();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(hello.getByText('Тест сохранён. Полностью закройте', { exact: false })).toBeVisible();
+  await expect(resume).toBeDisabled(); await expect(cleanup).toBeEnabled();
+  await cleanup.click();
+  await expect(hello.getByText('Тестовый контейнер и временные ключи удалены.', { exact: true })).toBeVisible();
+  await expect(prepare).toBeEnabled();
+  expect(await page.evaluate(() => (window as any).helloTest.combinedCounts())).toEqual({ combinedPrepares: 1, combinedResumes: 0, combinedCleanups: 1 });
+});
+
+test('saved combined test resumes, cancellation preserves retry, success never enables vault unlock', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.evaluate(() => (window as any).helloTest.combinedState('ready-to-resume'));
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const resume = hello.getByRole('button', { name: '2. Продолжить после перезапуска', exact: true });
+  await expect(resume).toBeEnabled();
+  await page.evaluate(() => (window as any).helloTest.proofOutcome('cancelled'));
+  await resume.click();
+  await expect(resume).toBeEnabled();
+  await page.evaluate(() => (window as any).helloTest.proofOutcome('roundtrip-passed'));
+  await resume.click();
+  await expect(hello.getByText('Обе новые проверки Hello и расшифровки TPM после перезапуска пройдены.', { exact: false })).toBeVisible();
+  await expect(resume).toBeDisabled();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false, false, false]);
+  expect(report.processScope).toBe('fresh-process');
+  expect(report.combinedState).toBe('no-test');
+});
+
+test('unfinished combined cleanup stays available when Hello is disabled', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.evaluate(() => { (window as any).helloTest.combinedState('cleanup-required'); (window as any).helloTest.configure('disabled-by-policy'); });
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const cleanup = hello.getByRole('button', { name: 'Удалить тест и временные ключи', exact: true });
+  await expect(cleanup).toBeEnabled();
+  await expect(hello.getByRole('button', { name: '1. Создать тест Hello + TPM', exact: true })).toBeDisabled();
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await cleanup.click();
+  await expect(cleanup).toBeEnabled();
+  await expect(hello.getByText('Незавершённый тест требует очистки.', { exact: false })).toBeVisible();
+});

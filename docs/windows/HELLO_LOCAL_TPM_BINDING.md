@@ -109,6 +109,11 @@ Windows will now supply a direct attestation is made.
 
 ## Next implementation boundary
 
+The [combined restart experiment](HELLO_COMBINED_RESTART.md) now implements the
+next synthetic step; its physical target measurement remains pending. The
+following boundary describes why the bbead07 component report alone is not
+production enrollment evidence.
+
 The next increment is a **synthetic combined PRF + TPM envelope**, not another
 standalone capability/export/attestation probe and not real-vault enrollment.
 The existing PRF and TPM results establish the component baseline; they do not

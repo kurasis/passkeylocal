@@ -84,3 +84,8 @@ export function configureNativeClose(canClose: () => Promise<boolean>): () => vo
 export { fileSafe } from './file-safe.ts';
 
 export async function testNativeTpmLocalBinding(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_tpm_local_binding'); }
+
+export async function nativeCombinedHelloStatus(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_status'); }
+export async function prepareNativeCombinedHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_prepare'); }
+export async function resumeNativeCombinedHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_resume'); }
+export async function cleanupNativeCombinedHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_cleanup'); }
