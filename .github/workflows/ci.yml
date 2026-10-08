@@ -55,7 +55,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python: ["3.12", "3.13"]
         include:
-          - os: macos-latest
+          # GitHub's macos-latest (ARM64) failed to acquire a runner after
+          # 15 minutes; retain the same recovery tests on supported Intel macOS.
+          - os: macos-15-intel
             python: "3.12"
     defaults:
       run:

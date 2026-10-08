@@ -25,6 +25,8 @@ use windows_sys::Win32::{
 };
 use zeroize::Zeroizing;
 
+mod read_public;
+
 // Keep the portable decoder tied to the maintained Microsoft SDK constants.
 const _: () = assert!(PCP_ENCRYPTION_KIND == NCRYPT_PCP_ENCRYPTION_KEY);
 const _: () = assert!(PCP_TPM12_PROVIDER_FLAG == NCRYPT_TPM12_PROVIDER);
@@ -186,6 +188,8 @@ struct Probe<'a> {
     exports: Vec<ExportCheck>,
     current: &'a dyn Fn() -> bool,
     synthetic: bool,
+    local_public: Vec<u8>,
+    local_name: Vec<u8>,
 }
 impl Probe<'_> {
     fn policy(&self, key: usize) -> std::result::Result<(), Failure> {
@@ -404,6 +408,22 @@ impl Provider for Probe<'_> {
                 // Only a length observation, never a trusted attestation or parsed claim.
                 self.metadata.key_name_bytes = Some(actual);
             }
+            "tpm-read-public" => {
+                let (public, name, attributes) = read_public::measure(self.provider.0, self.key.0)?;
+                self.local_public = public;
+                self.local_name = name;
+                self.metadata.object_attributes = Some(attributes);
+            }
+            "tpm-reopen-read-public" => {
+                self.readback()?;
+                let (public, name, attributes) = read_public::measure(self.provider.0, self.key.0)?;
+                if public != self.local_public
+                    || name != self.local_name
+                    || Some(attributes) != self.metadata.object_attributes
+                {
+                    return Err(invalid("tpm-reopened-key-binding-mismatch"));
+                }
+            }
             "tpm-public-wrap" => {
                 self.ciphertext =
                     proof::windows::wrap_oaep_public(NCRYPT_KEY_HANDLE(self.key.0), &self.secret)?;
@@ -507,7 +527,9 @@ pub fn run(current: impl Fn() -> bool, experiment: Experiment) -> Result<Report>
         ciphertext: vec![],
         exports: vec![],
         current: &current,
-        synthetic: experiment == Experiment::Synthetic,
+        synthetic: experiment != Experiment::Capability,
+        local_public: vec![],
+        local_name: vec![],
     };
     Ok(exercise(&mut probe, &current, experiment))
 }
@@ -558,6 +580,8 @@ mod tests {
             exports: vec![],
             current: &|| true,
             synthetic: true,
+            local_public: vec![],
+            local_name: vec![],
         }
     }
     fn prepare_software_control(p: &mut Probe<'_>) -> std::result::Result<(), Failure> {
@@ -679,5 +703,17 @@ mod tests {
         let cleanup = p.cleanup();
         cleanup.unwrap();
         result.unwrap();
+    }
+    #[test]
+    fn software_key_cannot_supply_the_provider_owned_tbs_context() {
+        let _guard = SOFTWARE_CONTROLS.lock().unwrap();
+        let mut p = software_probe();
+        prepare_software_control(&mut p).unwrap();
+        let result = read_public::measure(p.provider.0, p.key.0);
+        p.cleanup().unwrap();
+        assert_eq!(
+            result.unwrap_err().operation,
+            Some("tpm-read-public-provider-context")
+        );
     }
 }

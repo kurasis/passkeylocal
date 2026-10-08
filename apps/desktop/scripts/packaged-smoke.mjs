@@ -119,6 +119,19 @@ try {
   assert.equal(helloTpmCapability.perKeyTpmEvidence, 'not-verified');
   assert.equal(helloTpmCapability.processScope, 'same-process');
   for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloTpmCapability[key], false);
+  let helloTpmLocalBinding = null;
+  if (helloTpmCapability.outcome === 'blocked') {
+    helloTpmLocalBinding = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_tpm_local_binding'));
+    assert.equal(helloTpmLocalBinding.sourceCommit, process.env.GITHUB_SHA);
+    assert.equal(helloTpmLocalBinding.purpose, 'synthetic-tpm-local-binding');
+    assert.equal(helloTpmLocalBinding.outcome, 'blocked');
+    assert.equal(helloTpmLocalBinding.checks.length, 12);
+    assert(helloTpmLocalBinding.checks.slice(2, -1).every((check) => check.status === 'not-run'));
+    assert.deepEqual(helloTpmLocalBinding.checks.at(-1), { test: 'test-key-delete', status: 'passed' });
+    assert.equal(helloTpmLocalBinding.perKeyTpmEvidence, 'not-verified');
+    assert.deepEqual(helloTpmLocalBinding.exportChecks, []);
+    for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloTpmLocalBinding[key], false);
+  }
   let helloTpmProof = null;
   if (helloTpmCapability.outcome === 'blocked') {
     // Exercise permitted IPC only when preflight prevents key creation.
@@ -299,7 +312,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

@@ -35,6 +35,7 @@ fn main() {
             "hello_webauthn_attestation",
             "hello_tpm_capability",
             "hello_tpm_proof",
+            "hello_tpm_local_binding",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

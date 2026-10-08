@@ -1,5 +1,46 @@
 # Release evidence and gate status
 
+## Recovery CI runner capacity correction (2026-10-08)
+
+The initial source `ddfed6f6cbfdff8fbc8c2e0b654800e8519a3e6c` passed Windows CI
+(including 117 native tests and packaged installation), plus nine general jobs.
+The macOS job in run 37753407079 executed no steps: GitHub cancelled it after
+15 minutes with "The job was not acquired by Runner of type hosted" and an
+explicit macOS ARM64 capacity notice. A failed-jobs-only retry also stayed queued.
+
+Route the same Python 3.12 recovery suite and hash-locked dependencies to the
+supported `macos-15-intel` image documented by [GitHub runner-images](https://github.com/actions/runner-images#available-images).
+No test, assertion or dependency is removed. This measures Intel macOS 15 rather
+than ARM64 macOS 26; do not claim new ARM64 execution. Application bytes are
+unchanged by this CI correction. The updated workflow/source must pass before
+merging; the initial installer is retained as historical evidence only.
+
+## Local per-key TPM route after absent direct attestation (2026-10-08)
+
+Added the [documented provider/TBS ReadPublic measurement](windows/HELLO_LOCAL_TPM_BINDING.md)
+and an argument-free native command plus English/Russian Settings action. The
+complete public area/attributes/Name are bound to the exact CNG/PCP app key before
+and after reopening, with real OAEP roundtrips, tamper controls and unconditional
+cleanup. No AIK provisioning, settings changes, certificate-trust inference,
+private-export reclassification, raw command IPC or vault material is involved.
+The old raw-export and direct-attestation reports retain their original meaning.
+
+Local validation: native Rust 89 PASS / 1 resource test intentionally ignored in
+routine Linux execution; 14 targeted TPM tests PASS. Linux and Windows GNU
+all-target clippy with warnings denied PASS, formatting PASS. Separate PWA and
+desktop production builds and target-isolation checks PASS. TypeScript 161 tests
+and workspace typechecks PASS. UI: 27 initial cases PASS, the new report-reading
+test was corrected and both new local-binding cases then PASS (28 distinct cases
+validated overall). Windows MSVC tests,
+packaged command ACL/smoke, full CI and target hardware remain pending at this
+code revision; subsequent publication records exact tested source and results.
+The initial UI test read a newly collapsed report with innerText; the test now
+opens the report before reading it. No application failure was hidden or ignored.
+
+Success means local-read-public-observed only; all eligibility/enrollment/unlock
+flags remain false and all four physical acceptance gates remain open. No device
+result is inferred from software fixtures or from Microsoft's documentation.
+
 ## Completed direct-attestation target measurement (2026-10-08)
 
 The [owner JSON](../deploy/windows-desktop/hello-target-bdb2a03-direct-attestation.json)

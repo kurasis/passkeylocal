@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation, nativeWebauthnCapability, proveNativeHelloPrf, testNativeHelloDirectAttestation, nativeTpmCapability, proveNativeTpmInner } from '@platform';
+import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation, nativeWebauthnCapability, proveNativeHelloPrf, testNativeHelloDirectAttestation, nativeTpmCapability, proveNativeTpmInner, testNativeTpmLocalBinding } from '@platform';
 import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
@@ -56,7 +56,7 @@ export function DesktopHelloSettings() {
     return () => { epoch.current++; window.removeEventListener('focus', focus); };
   }, []);
   if (!desktop) return null;
-  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation' | 'webauthn' | 'prf' | 'direct-attestation' | 'tpm-capability' | 'tpm') => {
+  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation' | 'webauthn' | 'prf' | 'direct-attestation' | 'tpm-capability' | 'tpm' | 'tpm-local') => {
     if (inFlight.current) return;
     inFlight.current = true;
     const attempt = ++epoch.current;
@@ -68,7 +68,7 @@ export function DesktopHelloSettings() {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
       } else if (kind !== 'settings') {
-        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation, webauthn: nativeWebauthnCapability, prf: proveNativeHelloPrf, 'direct-attestation': testNativeHelloDirectAttestation, 'tpm-capability': nativeTpmCapability, tpm: proveNativeTpmInner }[kind]());
+        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation, webauthn: nativeWebauthnCapability, prf: proveNativeHelloPrf, 'direct-attestation': testNativeHelloDirectAttestation, 'tpm-capability': nativeTpmCapability, tpm: proveNativeTpmInner, 'tpm-local': testNativeTpmLocalBinding }[kind]());
         if (epoch.current === attempt) setProof(response);
       } else await openNativeHelloSettings();
       completed = true;
@@ -96,6 +96,8 @@ export function DesktopHelloSettings() {
     </div>
     <p>{t('desktopHelloDirectExplain')}</p>
     <button type="button" disabled={busy || (configuration !== 'available' && !cleanupFailed)} onClick={() => void action('direct-attestation')}>{t('desktopHelloDirect')}</button>
+    <p>{t('desktopHelloTpmLocalExplain')}</p>
+    <button type="button" disabled={busy} onClick={() => void action('tpm-local')}>{t('desktopHelloTpmLocal')}</button>
     <p>{t('desktopHelloTpmExplain')}</p>
     <div className="input-row">
       <button type="button" className="secondary" disabled={busy} onClick={() => void action('tpm-capability')}>{t('desktopHelloTpmCapability')}</button>
@@ -115,7 +117,7 @@ export function DesktopHelloSettings() {
     {result && <Banner kind={result === 'verified' ? 'info' : 'warn'}>{t(`desktopHello_result_${result}`)}</Banner>}
     {failed && <Banner kind="error">{t('desktopHelloError')}</Banner>}
     {proof && <div className="stack">
-      <p>{t(proof.purpose === 'synthetic-webauthn-direct-attestation' ? 'desktopHelloDirect' : proof.purpose === 'synthetic-tpm-inner' ? 'desktopHelloTpm' : proof.purpose === 'tpm-inner-capability' ? 'desktopHelloTpmCapability' : proof.purpose === 'synthetic-webauthn-prf' ? 'desktopHelloPrf' : proof.purpose === 'webauthn-prf-capability' ? 'desktopHelloWebauthn' : proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
+      <p>{t(proof.purpose === 'synthetic-tpm-local-binding' ? 'desktopHelloTpmLocal' : proof.purpose === 'synthetic-webauthn-direct-attestation' ? 'desktopHelloDirect' : proof.purpose === 'synthetic-tpm-inner' ? 'desktopHelloTpm' : proof.purpose === 'tpm-inner-capability' ? 'desktopHelloTpmCapability' : proof.purpose === 'synthetic-webauthn-prf' ? 'desktopHelloPrf' : proof.purpose === 'webauthn-prf-capability' ? 'desktopHelloWebauthn' : proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
       <Banner kind={proof.outcome === 'roundtrip-passed' || proof.outcome === 'capability-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
       <ul className="hello-proof-checks">{proof.checks.filter((check) => check.status !== 'not-run').map((check) => <li key={check.test}>
         <span>{t(check.test === 'public-wrap' && proof.algorithm === 'rsa-pkcs1-v1_5' ? proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloPkcs1Wrap' : 'desktopHelloCompatibilityWrap' : `desktopHello_proof_${check.test}`)}</span>

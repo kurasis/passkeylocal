@@ -25,3 +25,5 @@ export async function setNativeRetention(_retention: number): Promise<void> { /*
 export function configureNativeClose(_canClose: () => Promise<boolean>): () => void { return () => {}; }
 export function nativeActivity(): void { /* Browser auto-lock already observes activity. */ }
 export const fileSafe: import('./file-safe-protocol.ts').FileSafeApi | null = null;
+
+export async function testNativeTpmLocalBinding(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native TPM is not available in browsers'); }

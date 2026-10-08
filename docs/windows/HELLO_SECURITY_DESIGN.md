@@ -1,5 +1,17 @@
 # Windows Hello eligibility decision
 
+The [local TPM binding implementation](HELLO_LOCAL_TPM_BINDING.md) adds a documented
+provider/TBS ReadPublic route for the exact app-owned inner key, avoiding reliance
+on Windows supplying a remote attestation certificate. It compares the actual
+TPM public area, duplication restrictions and SHA-256 Name with CNG/PCP, repeats
+after reopening, and performs OAEP/tamper controls with unconditional cleanup.
+This corrects the investigation's overly narrow acquisition dependency, not the
+original security requirements. Local trusted-OS observations are distinct from
+signed AIK attestation and do not prove PRF-secret storage or Hello authorization.
+Target hardware execution is pending; all gates and enrollment/unlock remain off.
+The older sections below are historical paths and results, not a requirement to
+retry the completed direct-attestation experiment.
+
 The [direct WebAuthn attestation action](HELLO_DIRECT_ATTESTATION.md) now requests
 one separate temporary Hello credential with the documented direct preference.
 It reports only bounded native format/size/count observations and always deletes
