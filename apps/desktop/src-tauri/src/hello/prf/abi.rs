@@ -39,6 +39,24 @@ fn generated_layout_matches_the_pinned_microsoft_c_header() {
         ]
     );
     layout!(GUID, [data1, data2, data3, data4]);
+    layout!(WEBAUTHN_X5C, [cbData, pbData]);
+    layout!(
+        WEBAUTHN_COMMON_ATTESTATION,
+        [
+            dwVersion,
+            pwszAlg,
+            lAlg,
+            cbSignature,
+            pbSignature,
+            cX5c,
+            pX5c,
+            pwszVer,
+            cbCertInfo,
+            pbCertInfo,
+            cbPubArea,
+            pbPubArea
+        ]
+    );
     layout!(
         WEBAUTHN_ASSERTION,
         [

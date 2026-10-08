@@ -22,6 +22,7 @@ let behaviors = 0;
 let attestations = 0;
 let webauthn = 0;
 let prf = 0;
+let directAttestations = 0;
 let tpmCapabilities = 0;
 let tpmProofs = 0;
 let attestationResult: 'returned-unverified' | 'unavailable' = 'returned-unverified';
@@ -111,6 +112,17 @@ export async function proveNativeHelloPrf(): Promise<HelloKeyProof> {
     checks: [...capability.checks, ...(['prf-create', 'prf-first', 'prf-repeat', 'prf-changed', 'prf-roundtrip'] as const).map((test) => ({ test, status: 'passed' as const })),
       { test: 'test-passkey-delete', status: proofCleanupFailed ? 'failed' : 'passed', ...(proofCleanupFailed ? { nativeCode: '0x80090029', operation: 'delete-prf-test-passkey' } : {}) }] };
 }
+export async function testNativeHelloDirectAttestation(): Promise<HelloKeyProof> {
+  directAttestations++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  const capability = await nativeWebauthnCapability(); webauthn--;
+  return { ...capability, purpose: 'synthetic-webauthn-direct-attestation', algorithm: 'webauthn-es256-direct-attestation',
+    outcome: proofCleanupFailed ? 'blocked' : 'direct-attestation-not-provided',
+    directAttestation: { requested: 'direct', format: 'none', decodeType: 0, statementBytes: 0, objectBytes: 128,
+      verification: 'not-performed', subject: 'synthetic-webauthn-prf-credential', prfSecretProtection: 'not-verified', innerRsaKey: 'not-attested' },
+    checks: [...capability.checks, { test: 'webauthn-direct-create', status: 'passed' },
+      { test: 'test-passkey-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
+}
 export async function nativeTpmCapability(): Promise<HelloKeyProof> {
   tpmCapabilities++;
   return { version: 1, purpose: 'tpm-inner-capability', algorithm: 'platform-rsa-oaep-sha256', eligible: false, enrolled: false, unlocked: false,
@@ -138,5 +150,5 @@ Object.assign(window, { helloTest: {
   behaviorFailure(value: typeof behaviorFailure) { behaviorFailure = value; },
   attestationResult(value: typeof attestationResult) { attestationResult = value; },
   release() { release?.(); },
-  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations, webauthn, prf, tpmCapabilities, tpmProofs }; },
+  counts() { return { settingsOpened, checks, verifies, proofs, capabilities, compatibilities, behaviors, attestations, webauthn, prf, directAttestations, tpmCapabilities, tpmProofs }; },
 } });

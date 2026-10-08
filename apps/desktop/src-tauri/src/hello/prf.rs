@@ -17,6 +17,8 @@ mod abi;
 )]
 mod bindings;
 #[cfg(windows)]
+mod direct;
+#[cfg(windows)]
 mod windows;
 #[cfg(windows)]
 pub use windows::run;
@@ -25,6 +27,7 @@ pub use windows::run;
 pub enum Experiment {
     Capability,
     Synthetic,
+    DirectAttestation,
 }
 
 const CAPABILITY: [&str; 4] = [
@@ -44,6 +47,41 @@ const SYNTHETIC: [&str; 9] = [
     "prf-changed",
     "prf-roundtrip",
 ];
+const DIRECT: [&str; 5] = [
+    "webauthn-load",
+    "webauthn-api",
+    "hello-platform",
+    "hello-route",
+    "webauthn-direct-create",
+];
+
+/// Bounded native API observations only. No raw claim, certificate, identity,
+/// credential ID, challenge or PRF output is serializable through this type.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AttestationObservation {
+    pub requested: &'static str,
+    pub format: &'static str,
+    pub decode_type: u32,
+    pub statement_bytes: u32,
+    pub object_bytes: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signature_bytes: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cose_algorithm: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub certificate_count: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub certificate_bytes: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub certify_info_bytes: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_area_bytes: Option<u32>,
+    pub verification: &'static str,
+    pub subject: &'static str,
+    pub prf_secret_protection: &'static str,
+    pub inner_rsa_key: &'static str,
+}
 
 #[derive(Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -87,6 +125,8 @@ pub struct Report {
     pub outcome: &'static str,
     pub checks: Vec<PrfCheck>,
     pub webauthn: Capability,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub direct_attestation: Option<AttestationObservation>,
     pub remaining: [&'static str; 4],
 }
 
@@ -94,6 +134,9 @@ pub(super) trait Provider {
     fn step(&mut self, step: &'static str) -> Result<(), Failure>;
     fn cleanup(&mut self) -> Result<(), Failure>;
     fn capability(&self) -> Capability;
+    fn attestation(&self) -> Option<AttestationObservation> {
+        None
+    }
 }
 
 pub(super) fn check(test: &'static str, result: Result<(), Failure>) -> PrfCheck {
@@ -121,18 +164,23 @@ pub(super) fn exercise(
     let mut report = Report {
         version: 1,
         source_commit: option_env!("PASSKEY_SOURCE_COMMIT"),
-        purpose: if experiment == Experiment::Capability {
-            "webauthn-prf-capability"
-        } else {
-            "synthetic-webauthn-prf"
+        purpose: match experiment {
+            Experiment::Capability => "webauthn-prf-capability",
+            Experiment::Synthetic => "synthetic-webauthn-prf",
+            Experiment::DirectAttestation => "synthetic-webauthn-direct-attestation",
         },
-        algorithm: "webauthn-prf-aes256gcm",
+        algorithm: if experiment == Experiment::DirectAttestation {
+            "webauthn-es256-direct-attestation"
+        } else {
+            "webauthn-prf-aes256gcm"
+        },
         eligible: false,
         enrolled: false,
         unlocked: false,
         outcome: "blocked",
         checks: Vec::new(),
         webauthn: Capability::default(),
+        direct_attestation: None,
         remaining: [
             "per-key-tpm-proof",
             "fresh-authorization-proof",
@@ -140,10 +188,10 @@ pub(super) fn exercise(
             "account-machine-copy-proof",
         ],
     };
-    let steps = if experiment == Experiment::Capability {
-        &CAPABILITY[..]
-    } else {
-        &SYNTHETIC[..]
+    let steps = match experiment {
+        Experiment::Capability => &CAPABILITY[..],
+        Experiment::Synthetic => &SYNTHETIC[..],
+        Experiment::DirectAttestation => &DIRECT[..],
     };
     let mut running = true;
     for step in steps {
@@ -177,7 +225,7 @@ pub(super) fn exercise(
         }
         report.checks.push(value);
     }
-    if experiment == Experiment::Synthetic {
+    if experiment != Experiment::Capability {
         let cleanup = check("test-passkey-delete", provider.cleanup());
         if cleanup.status != Outcome::Passed {
             running = false;
@@ -186,11 +234,20 @@ pub(super) fn exercise(
         report.checks.push(cleanup);
     }
     report.webauthn = provider.capability();
+    report.direct_attestation = provider.attestation();
+    if running && !current() {
+        running = false;
+        report.outcome = "interrupted";
+    }
     if running {
-        report.outcome = if experiment == Experiment::Capability {
-            "webauthn-capability-observed"
-        } else {
-            "prf-roundtrip-passed"
+        report.outcome = match experiment {
+            Experiment::Capability => "webauthn-capability-observed",
+            Experiment::Synthetic => "prf-roundtrip-passed",
+            Experiment::DirectAttestation => match report.direct_attestation.as_ref() {
+                Some(value) if value.format == "none" => "direct-attestation-not-provided",
+                Some(_) => "direct-attestation-returned-unverified",
+                None => "blocked",
+            },
         };
     }
     report
@@ -277,6 +334,7 @@ mod tests {
         calls: Vec<&'static str>,
         failure: Option<&'static str>,
         delete_failure: bool,
+        attestation: Option<AttestationObservation>,
     }
     impl Provider for Fake {
         fn step(&mut self, s: &'static str) -> Result<(), Failure> {
@@ -303,12 +361,117 @@ mod tests {
                 ..Default::default()
             }
         }
+        fn attestation(&self) -> Option<AttestationObservation> {
+            self.attestation.clone()
+        }
     }
     fn fake() -> Fake {
         Fake {
             calls: Vec::new(),
             failure: None,
             delete_failure: false,
+            attestation: None,
+        }
+    }
+    fn direct_observation(format: &'static str) -> AttestationObservation {
+        AttestationObservation {
+            requested: "direct",
+            format,
+            decode_type: 0,
+            statement_bytes: 1,
+            object_bytes: 64,
+            signature_bytes: None,
+            cose_algorithm: None,
+            certificate_count: None,
+            certificate_bytes: None,
+            certify_info_bytes: None,
+            public_area_bytes: None,
+            verification: "not-performed",
+            subject: "synthetic-webauthn-prf-credential",
+            prf_secret_protection: "not-verified",
+            inner_rsa_key: "not-attested",
+        }
+    }
+    #[test]
+    fn direct_mode_has_only_creation_and_exact_cleanup_never_prf_assertions() {
+        let mut p = fake();
+        let r = exercise(&mut p, || true, Experiment::DirectAttestation);
+        assert_eq!(
+            p.calls,
+            DIRECT.into_iter().chain(["delete"]).collect::<Vec<_>>()
+        );
+        assert_eq!(r.checks.len(), 6);
+        assert_eq!(r.purpose, "synthetic-webauthn-direct-attestation");
+        assert_eq!(r.algorithm, "webauthn-es256-direct-attestation");
+        assert_eq!(
+            r.outcome, "blocked",
+            "Missing observation cannot be success"
+        );
+    }
+    #[test]
+    fn direct_none_or_tpm_observations_never_claim_hardware_or_prf_trust() {
+        for format in ["none", "tpm", "packed", "fido-u2f"] {
+            let mut p = fake();
+            p.attestation = Some(direct_observation(format));
+            let r = exercise(&mut p, || true, Experiment::DirectAttestation);
+            assert_eq!(
+                r.outcome,
+                if format == "none" {
+                    "direct-attestation-not-provided"
+                } else {
+                    "direct-attestation-returned-unverified"
+                }
+            );
+            assert!(!r.eligible && !r.enrolled && !r.unlocked);
+            assert_eq!(r.remaining.len(), 4);
+            let json = serde_json::to_value(r).unwrap();
+            assert_eq!(json["directAttestation"]["verification"], "not-performed");
+            assert_eq!(
+                json["directAttestation"]["prfSecretProtection"],
+                "not-verified"
+            );
+            assert_eq!(json["directAttestation"]["innerRsaKey"], "not-attested");
+            assert_eq!(json["webauthn"]["tpmBinding"], "not-verified");
+        }
+    }
+    #[test]
+    fn direct_every_failure_and_deletion_failure_are_visible_and_stop_later_work() {
+        for (i, stage) in DIRECT.iter().enumerate() {
+            let mut p = fake();
+            p.failure = Some(stage);
+            let r = exercise(&mut p, || true, Experiment::DirectAttestation);
+            assert_eq!(&p.calls[..i + 1], &DIRECT[..i + 1]);
+            assert_eq!(p.calls.last(), Some(&"delete"));
+            assert!(r.checks[i + 1..5]
+                .iter()
+                .all(|c| c.status == Outcome::NotRun));
+            assert_eq!(r.outcome, "blocked");
+        }
+        let mut p = fake();
+        p.attestation = Some(direct_observation("none"));
+        p.delete_failure = true;
+        let r = exercise(&mut p, || true, Experiment::DirectAttestation);
+        assert_eq!(r.outcome, "blocked");
+        assert_eq!(r.checks.last().unwrap().status, Outcome::Failed);
+    }
+    #[test]
+    fn direct_invalidation_before_after_every_stage_and_during_cleanup_discards_success() {
+        for limit in 0..=DIRECT.len() * 2 {
+            let calls = std::cell::Cell::new(0);
+            let mut p = fake();
+            p.attestation = Some(direct_observation("none"));
+            let r = exercise(
+                &mut p,
+                || {
+                    let n = calls.get();
+                    calls.set(n + 1);
+                    n < limit
+                },
+                Experiment::DirectAttestation,
+            );
+            assert_eq!(r.outcome, "interrupted");
+            assert_eq!(p.calls.last(), Some(&"delete"));
+            assert!(!r.eligible && !r.enrolled && !r.unlocked);
         }
     }
     #[test]

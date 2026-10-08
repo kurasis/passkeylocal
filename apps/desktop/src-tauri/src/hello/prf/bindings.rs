@@ -137,6 +137,7 @@ pub type PWEBAUTHN_CRED_WITH_HMAC_SECRET_SALT = *mut WEBAUTHN_CRED_WITH_HMAC_SEC
 pub type PWEBAUTHN_EXTENSION = *mut WEBAUTHN_EXTENSION;
 pub type PWEBAUTHN_HMAC_SECRET_SALT = *mut WEBAUTHN_HMAC_SECRET_SALT;
 pub type PWEBAUTHN_HMAC_SECRET_SALT_VALUES = *mut WEBAUTHN_HMAC_SECRET_SALT_VALUES;
+pub type PWEBAUTHN_X5C = *mut WEBAUTHN_X5C;
 pub const WEBAUTHN_API_VERSION_9: i32 = 9;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -162,7 +163,9 @@ pub struct WEBAUTHN_ASSERTION {
     pub cbAuthenticationResponseJSON: u32,
     pub pbAuthenticationResponseJSON: PBYTE,
 }
+pub const WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT: i32 = 3;
 pub const WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_NONE: i32 = 1;
+pub const WEBAUTHN_ATTESTATION_DECODE_COMMON: i32 = 1;
 pub const WEBAUTHN_AUTHENTICATOR_ATTACHMENT_PLATFORM: i32 = 1;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -258,6 +261,22 @@ pub struct WEBAUTHN_CLIENT_DATA {
     pub cbClientDataJSON: u32,
     pub pbClientDataJSON: PBYTE,
     pub pwszHashAlgId: PCWSTR,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct WEBAUTHN_COMMON_ATTESTATION {
+    pub dwVersion: u32,
+    pub pwszAlg: PCWSTR,
+    pub lAlg: i32,
+    pub cbSignature: u32,
+    pub pbSignature: PBYTE,
+    pub cX5c: u32,
+    pub pX5c: PWEBAUTHN_X5C,
+    pub pwszVer: PCWSTR,
+    pub cbCertInfo: u32,
+    pub pbCertInfo: PBYTE,
+    pub cbPubArea: u32,
+    pub pbPubArea: PBYTE,
 }
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -387,3 +406,9 @@ pub struct WEBAUTHN_USER_ENTITY_INFORMATION {
     pub pwszDisplayName: PCWSTR,
 }
 pub const WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED: i32 = 1;
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct WEBAUTHN_X5C {
+    pub cbData: u32,
+    pub pbData: PBYTE,
+}

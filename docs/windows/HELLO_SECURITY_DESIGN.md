@@ -1,5 +1,14 @@
 # Windows Hello eligibility decision
 
+The [direct WebAuthn attestation action](HELLO_DIRECT_ATTESTATION.md) now requests
+one separate temporary Hello credential with the documented direct preference.
+It reports only bounded native format/size/count observations and always deletes
+the exact test credential. No returned signature, AIK certificate, PRF storage
+guarantee or inner RSA-key binding is considered verified. A `none` result is
+reported honestly; no fallback/enterprise policy is requested. This creates a
+new acquisition measurement without repeating completed PRF/TPM export tests.
+All four gates remain open and real Hello vault unlock stays unavailable.
+
 The [Platform KSP inner-envelope experiment](HELLO_TPM_INNER.md) now measures
 the next, separate wrapping layer through two fixed native commands. Read-only
 provider properties precede an app-owned synthetic OAEP/SHA-256 key experiment,

@@ -1,5 +1,32 @@
 # Release evidence and gate status
 
+## Direct WebAuthn attestation discovery (2026-10-08)
+
+Added the fixed argument-free `hello_webauthn_attestation` command and localized
+Windows Settings action. It creates one unique temporary platform/UV-required,
+resident ES256/PRF-enabled passkey with direct attestation, reuses native HWND/
+single-flight/cancellation/session guards and unconditionally deletes only the
+exact created ID. No old PRF/TPM export rerun, enterprise policy, raw TPM codec,
+OS AIK/EK read, dependency or real-vault enrollment/secret is introduced.
+
+The native inspector records known format and bounded numeric sizes/counts only;
+it neither reads raw certificate/payload bytes nor parses/verifies the claim.
+New common-attestation/X5C bindings are generated from pinned metadata with an
+independent official-header ABI reference. Unknown formats/versions, missing
+pointers, oversized certificates and total budgets fail. A software-shaped
+impostor and even valid native observations stay explicitly unverified. `none`
+is reported as no attestation provided. PRF-secret protection and the separate
+inner RSA key remain unverified/unattested; all four gates and false eligibility/
+enrollment/unlock remain. Native state is now also checked after PRF/direct
+cleanup to reject a late successful observation. [Contract and next owner procedure](windows/HELLO_DIRECT_ATTESTATION.md).
+
+Local native 81 tests PASS (one explicit resource ignored), focused PRF tests,
+Windows GNU production/all-target Clippy, typecheck, all 26 isolated UI scenarios,
+both production builds and target-isolation check PASS. Pinned binding regeneration
+is byte-identical. New Windows pointer-shape/ABI execution, complete hosted CI,
+installation and target hardware measurement remain pending. The new target action must use the next
+source-correlated installer after CI; do not repeat existing diagnostics.
+
 ## PCP certification framing and completed target measurement (2026-10-08)
 
 The [owner JSON from installed source c83ce3facce7abdae040b27133e5aec258d4ec23](../deploy/windows-desktop/hello-target-c83ce3f-tpm-inner.json)
