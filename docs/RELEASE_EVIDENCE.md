@@ -1,5 +1,36 @@
 # Release evidence and gate status
 
+## Local TPM binding publication (2026-10-08)
+
+[PR #25](https://github.com/kurasis/passkeylocal/pull/25) merged as `c5e3481a118fd9c50cb2adcb3cc741cacba1ea2a`;
+application tree equals tested source `bbead0731ae5fc1bbb4171e861306c70b5257369` (head `2f51e3d4e60eea9a34e0066d85a2a39dc9d29f89`).
+[General CI 37755898901](https://github.com/kurasis/passkeylocal/actions/runs/37755898901) and
+[Windows CI 37755898908](https://github.com/kurasis/passkeylocal/actions/runs/37755898908)
+passed all 11 exact-head checks. The first macOS job acquired no runner and was
+cancelled for GitHub ARM64 capacity; a queued retry did not execute. The same
+recovery tests now pass on supported macOS 15 Intel; no new ARM64 execution is
+claimed. Logs verify 117 Windows native tests, separately
+executed ABI/resource tests, six ReadPublic parser cases and actual Software KSP
+context rejection; 161 TypeScript tests, 28 UI/eight PWA scenarios, recovery
+matrix/offline kit/native parity/fresh encrypted-file recovery all PASS.
+10,000-file restore: 87.543 s; 5 GiB process: 42.634 s,
+sampled peak working set 10,596,352 bytes.
+
+The downloaded original artifact ZIP matches GitHub's digest `sha256:69203071873dbd9446accde61dd12f87996e3b7d460a32ff89f375b4491e143d`.
+Installer checksum matches metadata/sidecar: `0a152600b527188e729618d5f1ec1eec24b06e2c4cc965d6135bd8d1a4cc8868`,
+217,915,248 bytes. Actual NSIS install, installed/built binary equality,
+packaged UI/storage/lock and eleven source-matched native reports PASS. Hosted
+TPM/Hello preflight blocks creation; no target hardware evidence is inferred.
+[Download evidence](../deploy/windows-desktop/) preserves original artifacts.
+All four physical gates and real enrollment/unlock remain blocked pending target
+and combined-mechanism proof; see [the exact local trust boundary](windows/HELLO_LOCAL_TPM_BINDING.md).
+
+Shared translations also change web assets. [Cloudflare downloads](../deploy/cloudflare-pages/)
+now contain `passkeylocal-cloudflare-pages-c5e3481.zip`, 210,513 bytes, SHA-256 `a5a7d447186f855d9770efa40af6bdc53a6d0e315a0320d90875f7b9847f9a5b`.
+All ten files equal freshly rebuilt production output; native IPC is absent.
+No server deployment occurred. Publication changes only docs and deploy artifacts;
+tested application, test, dependency and workflow bytes remain identical.
+
 ## Recovery CI runner capacity correction (2026-10-08)
 
 The initial source `ddfed6f6cbfdff8fbc8c2e0b654800e8519a3e6c` passed Windows CI
@@ -12,8 +43,8 @@ Route the same Python 3.12 recovery suite and hash-locked dependencies to the
 supported `macos-15-intel` image documented by [GitHub runner-images](https://github.com/actions/runner-images#available-images).
 No test, assertion or dependency is removed. This measures Intel macOS 15 rather
 than ARM64 macOS 26; do not claim new ARM64 execution. Application bytes are
-unchanged by this CI correction. The updated workflow/source must pass before
-merging; the initial installer is retained as historical evidence only.
+unchanged by this CI correction. The updated workflow/source passed the checks
+recorded above; the published installer uses that new source.
 
 ## Local per-key TPM route after absent direct attestation (2026-10-08)
 
@@ -31,9 +62,8 @@ all-target clippy with warnings denied PASS, formatting PASS. Separate PWA and
 desktop production builds and target-isolation checks PASS. TypeScript 161 tests
 and workspace typechecks PASS. UI: 27 initial cases PASS, the new report-reading
 test was corrected and both new local-binding cases then PASS (28 distinct cases
-validated overall). Windows MSVC tests,
-packaged command ACL/smoke, full CI and target hardware remain pending at this
-code revision; subsequent publication records exact tested source and results.
+validated overall). Windows MSVC, packaged command ACL/smoke and full CI results are recorded in
+the publication above. Target hardware execution remains pending.
 The initial UI test read a newly collapsed report with innerText; the test now
 opens the report before reading it. No application failure was hidden or ignored.
 
