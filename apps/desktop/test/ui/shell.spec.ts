@@ -320,6 +320,46 @@ test('PRF capability stays read-only while synthetic encryption cannot enable va
   await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
 });
 
+test('direct attestation reports none honestly, retains recovery and exposes cleanup failures', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const probe = hello.getByRole('button', { name: 'Получить удостоверение Windows Hello', exact: true });
+  await page.evaluate(() => (window as any).helloTest.configure('not-configured'));
+  await hello.getByRole('button', { name: 'Проверить Windows Hello', exact: true }).click();
+  await expect(probe).toBeDisabled();
+  await page.evaluate(() => (window as any).helloTest.configure('available'));
+  await hello.getByRole('button', { name: 'Проверить Windows Hello', exact: true }).click();
+  await probe.click();
+  await expect(hello.getByText('Windows создала тестовый passkey без удостоверения.', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.directAttestation.format).toBe('none');
+  expect(report.directAttestation.innerRsaKey).toBe('not-attested');
+  expect(report.directAttestation.prfSecretProtection).toBe('not-verified');
+  expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false, false, false]);
+  expect(report.remaining).toHaveLength(4);
+  await expect(page.getByRole('button', { name: 'Войти через Hello', exact: true })).toHaveCount(0);
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await probe.click();
+  await expect(hello.getByText('Windows не удалила тестовый ключ приложения.', { exact: false })).toBeVisible();
+});
+
+test('pending direct attestation shares single flight and discards late metadata after Lock All', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  const probe = page.getByRole('button', { name: 'Получить удостоверение Windows Hello', exact: true });
+  await probe.click();
+  await expect(probe).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Проверить Windows Hello PRF', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.locator('.hello-proof-report')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.counts())).toMatchObject({ directAttestations: 1, prf: 0, tpmProofs: 0 });
+});
+
 test('pending native PRF cannot be duplicated or publish results after Lock All', async ({ page }) => {
   await page.goto('/shell.html');
   await page.getByRole('button', { name: 'Настройки', exact: true }).click();

@@ -15,6 +15,7 @@ export async function testNativeHelloPkcs1Behavior(): Promise<import('./hello-pr
 export async function testNativeHelloAttestation(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello attestation is not available in browsers'); }
 export async function nativeWebauthnCapability(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native WebAuthn is not available in browsers'); }
 export async function proveNativeHelloPrf(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native WebAuthn PRF is not available in browsers'); }
+export async function testNativeHelloDirectAttestation(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello attestation is not available in browsers'); }
 export async function nativeTpmCapability(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native TPM is not available in browsers'); }
 export async function proveNativeTpmInner(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native TPM is not available in browsers'); }
 export async function openNativeHelloSettings(): Promise<void> { /* Not applicable to browsers. */ }

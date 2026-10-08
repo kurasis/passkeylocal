@@ -32,6 +32,7 @@ fn main() {
             "hello_attestation_capability",
             "hello_webauthn_capability",
             "hello_prf_proof",
+            "hello_webauthn_attestation",
             "hello_tpm_capability",
             "hello_tpm_proof",
             "hello_settings",

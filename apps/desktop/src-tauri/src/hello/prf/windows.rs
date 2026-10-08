@@ -331,6 +331,7 @@ struct Probe<'a> {
     first: Option<Zeroizing<[u8; 32]>>,
     hwnd: usize,
     current: &'a (dyn Fn() -> bool + Sync),
+    attestation: Option<super::AttestationObservation>,
 }
 impl Probe<'_> {
     fn client(&self, kind: &str) -> Vec<u8> {
@@ -338,13 +339,17 @@ impl Probe<'_> {
         libsodium_rs::random::fill_bytes(challenge.as_mut_slice());
         serde_json::to_vec(&serde_json::json!({"type":kind,"challenge":URL_SAFE_NO_PAD.encode(challenge.as_slice()),"origin":ORIGIN,"crossOrigin":false})).unwrap()
     }
-    fn create(&mut self) -> std::result::Result<(), Failure> {
+    fn create(&mut self, direct: bool) -> std::result::Result<(), Failure> {
         let api = self
             .api
             .as_ref()
             .ok_or_else(|| invalid("webauthn-not-loaded"))?;
         let rp_id = wide(RP);
-        let rp_name = wide("PassKey Local PRF test");
+        let rp_name = wide(if direct {
+            "PassKey Local attestation test"
+        } else {
+            "PassKey Local PRF test"
+        });
         let name = wide(&format!("PassKey Local test {}", uuid::Uuid::new_v4()));
         let kind = wide("public-key");
         let hash = wide("SHA-256");
@@ -391,7 +396,11 @@ impl Probe<'_> {
             dwAuthenticatorAttachment: 1,
             bRequireResidentKey: 1,
             dwUserVerificationRequirement: 1,
-            dwAttestationConveyancePreference: 1,
+            dwAttestationConveyancePreference: if direct {
+                WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_DIRECT as u32
+            } else {
+                WEBAUTHN_ATTESTATION_CONVEYANCE_PREFERENCE_NONE as u32
+            },
             bEnablePrf: 1,
             pPRFGlobalEval: &mut salt,
             cbAuthenticatorId: self.route.len() as u32,
@@ -451,7 +460,13 @@ impl Probe<'_> {
             unsafe { bytes(o.pbAuthenticatorData, o.cbAuthenticatorData, MAX_DATA) }?,
             Some(id),
         )?;
-        self.created = Some(unsafe { prf_secret(o.pHmacSecret) }?);
+        if direct {
+            // These are borrowed OS output buffers, valid only until Created frees
+            // them. Record bounded sizes/known formats, never identity/cert bytes.
+            unsafe { super::direct::observe_attestation(o, &mut self.attestation) }?;
+        } else {
+            self.created = Some(unsafe { prf_secret(o.pHmacSecret) }?);
+        }
         Ok(())
     }
     fn assert(&mut self, changed: bool) -> std::result::Result<Zeroizing<[u8; 32]>, Failure> {
@@ -609,7 +624,7 @@ impl Provider for Probe<'_> {
                 self.route = selected?;
                 Ok(())
             }
-            "prf-create" => {
+            "prf-create" | "webauthn-direct-create" => {
                 // Retry only an exact app-created pending credential before another creation.
                 let mut pending = PENDING_DELETE
                     .lock()
@@ -624,7 +639,7 @@ impl Provider for Probe<'_> {
                     *pending = None;
                 }
                 drop(pending);
-                self.create()
+                self.create(step == "webauthn-direct-create")
             }
             "prf-first" => {
                 let key = self.assert(false)?;
@@ -695,6 +710,9 @@ impl Provider for Probe<'_> {
     fn capability(&self) -> Capability {
         self.cap.clone()
     }
+    fn attestation(&self) -> Option<super::AttestationObservation> {
+        self.attestation.clone()
+    }
 }
 impl Drop for Probe<'_> {
     fn drop(&mut self) {
@@ -731,6 +749,7 @@ pub fn run(
         first: None,
         hwnd,
         current: &current,
+        attestation: None,
     };
     Ok(exercise(&mut p, &current, experiment))
 }

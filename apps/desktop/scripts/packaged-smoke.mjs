@@ -100,6 +100,7 @@ try {
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test PKCS#1 key behavior', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
   await expect.poll(async () => helloSection.getByRole('button', { name: 'Test key attestation capability', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
   await expect(helloSection.getByRole('button', { name: 'Check PRF support', exact: true })).toBeEnabled();
+  await expect.poll(async () => helloSection.getByRole('button', { name: 'Get Windows Hello attestation', exact: true }).isEnabled()).toBe(helloReport.helloConfiguration === 'available');
   const helloWebauthnCapability = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_webauthn_capability'));
   assert.equal(helloWebauthnCapability.sourceCommit, process.env.GITHUB_SHA);
   assert.equal(helloWebauthnCapability.purpose, 'webauthn-prf-capability');
@@ -131,6 +132,7 @@ try {
     for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloTpmProof[key], false);
   }
   let helloPrfProof = null;
+  let helloDirectAttestation = null;
   if (helloWebauthnCapability.outcome === 'blocked') {
     // A blocked read-only preflight stops before make/get, even if this runner
     // ever gains Hello. Never automate biometric prompts on a hosted machine.
@@ -142,6 +144,16 @@ try {
     for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloPrfProof[key], false);
     assert(helloPrfProof.checks.slice(4, 9).every((check) => check.status === 'not-run'));
     assert.deepEqual(helloPrfProof.checks.at(-1), { test: 'test-passkey-delete', status: 'passed' });
+    helloDirectAttestation = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_webauthn_attestation'));
+    assert.equal(helloDirectAttestation.sourceCommit, process.env.GITHUB_SHA);
+    assert.equal(helloDirectAttestation.purpose, 'synthetic-webauthn-direct-attestation');
+    assert.equal(helloDirectAttestation.algorithm, 'webauthn-es256-direct-attestation');
+    assert.equal(helloDirectAttestation.outcome, 'blocked');
+    assert.equal(helloDirectAttestation.checks.length, 6);
+    assert.equal(helloDirectAttestation.checks[4].status, 'not-run');
+    assert.equal(helloDirectAttestation.directAttestation, undefined);
+    assert.deepEqual(helloDirectAttestation.checks.at(-1), { test: 'test-passkey-delete', status: 'passed' });
+    for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloDirectAttestation[key], false);
   }
   let helloKeyProof = null;
   let helloOaepCapability = null;
@@ -287,7 +299,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloTpmCapability, helloTpmProof, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

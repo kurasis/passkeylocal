@@ -322,6 +322,10 @@ async fn hello_prf_proof(window: WebviewWindow, app: tauri::AppHandle) -> Result
     hello_prf_experiment(window, app, hello::prf::Experiment::Synthetic).await
 }
 #[tauri::command]
+async fn hello_webauthn_attestation(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_prf_experiment(window, app, hello::prf::Experiment::DirectAttestation).await
+}
+#[tauri::command]
 async fn hello_tpm_capability(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
     hello_tpm_experiment(window, app, hello::tpm::Experiment::Capability).await
 }
@@ -616,6 +620,7 @@ pub fn run() {
             hello_attestation_capability,
             hello_webauthn_capability,
             hello_prf_proof,
+            hello_webauthn_attestation,
             hello_tpm_capability,
             hello_tpm_proof,
             hello_settings,
