@@ -1,5 +1,33 @@
 # Release evidence and gate status
 
+## PCP usage kind and provider-marker correction (2026-10-08)
+
+The [owner report](../deploy/windows-desktop/hello-target-e3f3f0a-tpm-inner.json)
+from source `e3f3f0a2ac849ecc813621852c86008d4e406c17` confirms successful
+exact-key deletion and common policy readback (export zero, decrypt-only one,
+2048 bits). The synthetic test remained BLOCKED because raw PCP usage was
+65538 (`0x00010002`), not the adapter's whole-DWORD comparison against two.
+All later crypto/export stages were NOT RUN. The low word is encryption kind
+two; the pinned Microsoft SDK calls the high `0x00010000` bit
+`NCRYPT_TPM12_PROVIDER`. Microsoft's pinned PCP sample masks the low word
+when classifying usage. The old full-DWORD equality was incorrect for
+classifying the kind. The marker's hardware meaning is not inferred away.
+
+The bounded decoder now requires low-word kind exactly two and accepts only
+zero high flags or that explicitly named SDK marker; unknown flags and any
+signing/generic/storage/identity/HMAC/broader usage still fail. Raw usage,
+decoded kind and all high flags are preserved in metadata. Windows compile-time
+assertions tie the portable constants to maintained SDK bindings. Added
+regression controls cover the owner value, broader low bits, every unknown
+high bit and unchanged false eligibility/enrollment/unlock/security gates.
+Common no-export/decrypt-only/length restrictions, silent crypto, exact-key
+cleanup and no-software/no-interactive fallbacks remain unchanged. No new
+dependency or crypto algorithm is introduced. A recognized marker is not
+accepted per-key TPM 2 attestation; the four acceptance gates remain open.
+Local typecheck, formatting, Windows GNU production/all-target Clippy and
+71 Linux native tests PASS (one resource gate ignored). Hosted Windows checks,
+installer publication and corrected target result remain pending.
+
 ## Platform KSP corrected installer evidence (2026-10-08)
 
 [PR #21](https://github.com/kurasis/passkeylocal/pull/21), code head `af6ebb4cc3e57519238408697c2897ace943f951`,

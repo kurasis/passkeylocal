@@ -1,0 +1,76 @@
+{
+  "algorithm": "platform-rsa-oaep-sha256",
+  "authorization": "no-hello-authorization",
+  "eligible": false,
+  "enrolled": false,
+  "exportChecks": [],
+  "perKeyTpmEvidence": "not-verified",
+  "processScope": "same-process",
+  "remaining": [
+    "per-key-tpm-proof",
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "e3f3f0a2ac849ecc813621852c86008d4e406c17",
+  "tpm": {
+    "implementationFlags": 1,
+    "interfaceType": 3,
+    "tpmVersion": 2,
+    "exportPolicy": 0,
+    "keyLengthBits": 2048,
+    "keyUsage": 1,
+    "pcpKeyUsage": 65538
+  },
+  "unlocked": false,
+  "version": 1,
+  "purpose": "synthetic-tpm-inner",
+  "outcome": "blocked",
+  "checks": [
+    {
+      "test": "tpm-provider-open",
+      "status": "passed"
+    },
+    {
+      "test": "tpm-provider-properties",
+      "status": "passed"
+    },
+    {
+      "test": "tpm-key-create",
+      "status": "passed"
+    },
+    {
+      "test": "tpm-key-policy",
+      "status": "passed"
+    },
+    {
+      "test": "tpm-key-readback",
+      "status": "failed",
+      "operation": "tpm-pcp-key-usage-mismatch"
+    },
+    {
+      "test": "tpm-public-wrap",
+      "status": "not-run"
+    },
+    {
+      "test": "tpm-unwrap-first",
+      "status": "not-run"
+    },
+    {
+      "test": "tpm-reopen-unwrap",
+      "status": "not-run"
+    },
+    {
+      "test": "tpm-negative-controls",
+      "status": "not-run"
+    },
+    {
+      "test": "private-export",
+      "status": "not-run"
+    },
+    {
+      "test": "test-key-delete",
+      "status": "passed"
+    }
+  ]
+}

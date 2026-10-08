@@ -1,5 +1,8 @@
 //! App-owned Platform KSP key only. No Passport/AIK/EK/owner-auth access.
-use super::{exercise, policy_matches, Experiment, Metadata, Provider, Report};
+use super::{
+    exercise, pcp_policy_matches, policy_matches, Experiment, Metadata, Provider, Report,
+    PCP_ENCRYPTION_KIND, PCP_TPM12_PROVIDER_FLAG, PCP_USAGE_KIND_MASK,
+};
 use crate::{
     hello::{
         prf::{interrupted, invalid},
@@ -21,6 +24,10 @@ use windows_sys::Win32::{
     },
 };
 use zeroize::Zeroizing;
+
+// Keep the portable decoder tied to the maintained Microsoft SDK constants.
+const _: () = assert!(PCP_ENCRYPTION_KIND == NCRYPT_PCP_ENCRYPTION_KEY);
+const _: () = assert!(PCP_TPM12_PROVIDER_FLAG == NCRYPT_TPM12_PROVIDER);
 
 fn device_info() -> std::result::Result<TPM_DEVICE_INFO, Failure> {
     struct Module(*mut std::ffi::c_void);
@@ -204,19 +211,20 @@ impl Probe<'_> {
             NCRYPT_LENGTH_PROPERTY,
             "tpm-read-key-length",
         )?);
-        self.metadata.pcp_key_usage = Some(number(
+        let pcp_usage = number(
             self.key.0,
             NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY,
             "tpm-read-pcp-key-usage",
-        )?);
+        )?;
+        self.metadata.pcp_key_usage = Some(pcp_usage);
+        self.metadata.pcp_usage_kind = Some(pcp_usage & PCP_USAGE_KIND_MASK);
+        self.metadata.pcp_usage_flags = Some(pcp_usage & !PCP_USAGE_KIND_MASK);
         policy_matches(
             self.metadata.export_policy.unwrap(),
             self.metadata.key_usage.unwrap(),
             self.metadata.key_length_bits.unwrap(),
         )?;
-        if self.metadata.pcp_key_usage != Some(NCRYPT_PCP_ENCRYPTION_KEY) {
-            return Err(invalid("tpm-pcp-key-usage-mismatch"));
-        }
+        pcp_policy_matches(pcp_usage)?;
         Ok(())
     }
     fn decrypt(

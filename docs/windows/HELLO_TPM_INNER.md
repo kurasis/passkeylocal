@@ -26,7 +26,15 @@ and [NCryptDeleteKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt
 The pinned Microsoft PCP sample sets `NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY`
 and deletes its key with flags zero. `NCRYPT_PCP_ENCRYPTION_KEY` is **2**,
 while common CNG `NCRYPT_ALLOW_DECRYPT_FLAG` is **1**; these namespaces must not
-be confused. Both values are requested and independently read back.
+be confused. Both values are requested and independently read back. PCP usage kind occupies
+the low word (`0x0000ffff`), as the sample decodes it; the high word contains
+provider flags. The [pinned Microsoft SDK header](https://github.com/microsoft/win32metadata/blob/1bfb76db1c360653bdcb56512af0fdf987aceab8/generation/WinSDK/RecompiledIdlHeaders/um/ncrypt.h)
+defines `NCRYPT_TPM12_PROVIDER` as `0x00010000` in this policy namespace.
+The decoder permits only that known marker or no high flags; it requires
+kind exactly two and rejects unknown high bits. The marker remains a raw
+observation, not a TPM 2 per-key claim or a change to TBS physical device
+information. Its presence can be measured by this synthetic experiment, but
+cannot satisfy the unresolved real-key hardware gate.
 PCP/TBS identifiers and the device-info structure come from pinned SDK bindings.
 The [TBS device-info contract](https://learn.microsoft.com/en-us/windows/win32/api/tbs/nf-tbs-tbsi_getdeviceinfo)
 provides the numeric TPM version. Microsoft’s
@@ -78,9 +86,12 @@ name, opaque object-name length or successful roundtrip does not establish
 trusted per-key TPM attestation. No key name, blob, ciphertext, secret or PIN is
 returned to UI or logs. Only nonsensitive metadata and native errors are reported.
 Policy diagnostics include actual `exportPolicy`, common `keyUsage`,
-`keyLengthBits` and `pcpKeyUsage`, retained even when policy validation fails.
+`keyLengthBits`, raw `pcpKeyUsage`, decoded `pcpUsageKind` and `pcpUsageFlags`,
+retained even when policy validation fails.
 Export policy must still be zero, common usage exactly one, PCP usage exactly
-two and length exactly 2048. A mismatch has a property-specific operation;
+two in the low word and length exactly 2048. Only the SDK-defined
+`NCRYPT_TPM12_PROVIDER` high flag is recognized; other high flags fail.
+A mismatch has a property-specific operation;
 broader/signing usage, export permission and unsupported readback remain failures.
 
 ## Lifecycle and limits
