@@ -1,5 +1,35 @@
 # Release evidence and gate status
 
+## PCP provider-marker corrected installer evidence (2026-10-08)
+
+[PR #22](https://github.com/kurasis/passkeylocal/pull/22), code head `d813e0d4f87a2cd44286603fdf7841a1281e4553`,
+installed/tested source `c83ce3facce7abdae040b27133e5aec258d4ec23`: all 11 checks PASS. [General CI 37735902016](https://github.com/kurasis/passkeylocal/actions/runs/37735902016)
+and [Windows CI 37735901888](https://github.com/kurasis/passkeylocal/actions/runs/37735901888)
+completed successfully. Automatic merge `4f6fd31ea6d045e5e23478fb74aa0db34747024a` equals the tested PR tree.
+Local typecheck/formatting, Windows GNU all-target production Clippy, 71 Linux
+native tests (one resource ignored) and PWA build PASS.
+Hosted 161 TypeScript tests, 24 UI/eight PWA scenarios, Python OS/version matrix/offline kit/fresh
+interop/recovery, pinned binding regeneration and independent public fixtures PASS.
+Windows 90 routine native tests PASS (ABI/resource separately excluded), explicit
+MSVC/header ABI and 5 GiB native resource checks PASS, native KDBX/Python parity,
+fresh bidirectional encrypted-file recovery and 10,000-file restore PASS.
+Restore: 70.892 s; hosted 5 GiB primitive process:
+44.509 s, sampled peak working set 10,596,352 bytes.
+
+Actual NSIS install, installed/built binary equality, packaged UI/real IPC/worker,
+native storage/lock and nine source-matched diagnostics PASS. Hosted Hello and
+Platform KSP are unavailable, so private PRF/TPM operations do not execute there.
+Software controls verify actual crypto/policy observation/zero-flag cleanup,
+not physical hardware. Downloaded installer checksum matches original metadata
+and sidecar: `f6073ba6d4079e71f36c259ea52d01e33667500f9d0d7bd36dcbf5a8376e8284`, 217,896,990 bytes. Original small
+artifact metadata/screenshots and download link are retained in [Windows downloads](../deploy/windows-desktop/).
+All four security gates remain open and actual Hello unlock is unavailable;
+corrected target-device measurement is pending. No successful hardware crypto or per-key TPM 2 acceptance is inferred from
+the recognized PCP marker or software/hosted evidence. All four gates stay open.
+Cloudflare's existing ZIP matches all ten freshly rebuilt production files;
+no web repack or direct server deployment was performed. This publication changes docs and
+small evidence artifacts only; tested application/test/workflow bytes are retained.
+
 ## PCP usage kind and provider-marker correction (2026-10-08)
 
 The [owner report](../deploy/windows-desktop/hello-target-e3f3f0a-tpm-inner.json)
