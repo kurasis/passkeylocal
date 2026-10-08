@@ -38,6 +38,32 @@ fn generated_layout_matches_the_pinned_microsoft_c_header() {
             wEncodedTunnelServerDomain
         ]
     );
+    layout!(
+        WEBAUTHN_GET_CREDENTIALS_OPTIONS,
+        [dwVersion, pwszRpId, bBrowserInPrivateMode]
+    );
+    layout!(
+        WEBAUTHN_CREDENTIAL_DETAILS_LIST,
+        [cCredentialDetails, ppCredentialDetails]
+    );
+    layout!(
+        WEBAUTHN_CREDENTIAL_DETAILS,
+        [
+            dwVersion,
+            cbCredentialID,
+            pbCredentialID,
+            pRpInformation,
+            pUserInformation,
+            bRemovable,
+            bBackedUp,
+            pwszAuthenticatorName,
+            cbAuthenticatorLogo,
+            pbAuthenticatorLogo,
+            bThirdPartyPayment,
+            dwTransports
+        ]
+    );
+
     layout!(GUID, [data1, data2, data3, data4]);
     layout!(WEBAUTHN_X5C, [cbData, pbData]);
     layout!(

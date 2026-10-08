@@ -14,6 +14,8 @@ fn main() {
         "WebAuthNAuthenticatorMakeCredential",
         "WebAuthNCancelCurrentOperation",
         "WebAuthNDeletePlatformCredential",
+        "WebAuthNGetPlatformCredentialList",
+        "WebAuthNFreePlatformCredentialList",
         "WebAuthNFreeAssertion",
         "WebAuthNFreeAuthenticatorList",
         "WebAuthNFreeCredentialAttestation",

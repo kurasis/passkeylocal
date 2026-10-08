@@ -1,7 +1,7 @@
 //! System32-only WebAuthn calls on a uniquely created app test credential.
 use super::{
-    auth_context, bindings::*, exercise, interrupted, invalid, Capability, Experiment, Provider,
-    Report, RP,
+    auth_context_for, bindings::*, exercise, interrupted, invalid, Capability, Experiment,
+    Provider, Report, RP,
 };
 use crate::{
     hello::proof::{Failure, Outcome},
@@ -23,7 +23,7 @@ use windows_sys::Win32::{
 };
 use zeroize::{Zeroize, Zeroizing};
 
-const ORIGIN: &str = "https://passkey-local.desktop.invalid";
+pub(crate) mod combined;
 const MAX_ID: usize = 4096;
 const MAX_DATA: usize = 65_536;
 const TIMEOUT_MS: u32 = 60_000;
@@ -320,6 +320,8 @@ fn dispatch(
 }
 
 struct Probe<'a> {
+    rp: &'static str,
+    user: Option<[u8; 32]>,
     api: Option<Api>,
     cap: Capability,
     route: Vec<u8>,
@@ -337,14 +339,14 @@ impl Probe<'_> {
     fn client(&self, kind: &str) -> Vec<u8> {
         let mut challenge = Zeroizing::new([0u8; 32]);
         libsodium_rs::random::fill_bytes(challenge.as_mut_slice());
-        serde_json::to_vec(&serde_json::json!({"type":kind,"challenge":URL_SAFE_NO_PAD.encode(challenge.as_slice()),"origin":ORIGIN,"crossOrigin":false})).unwrap()
+        serde_json::to_vec(&serde_json::json!({"type":kind,"challenge":URL_SAFE_NO_PAD.encode(challenge.as_slice()),"origin":format!("https://{}", self.rp),"crossOrigin":false})).unwrap()
     }
     fn create(&mut self, direct: bool) -> std::result::Result<(), Failure> {
         let api = self
             .api
             .as_ref()
             .ok_or_else(|| invalid("webauthn-not-loaded"))?;
-        let rp_id = wide(RP);
+        let rp_id = wide(self.rp);
         let rp_name = wide(if direct {
             "PassKey Local attestation test"
         } else {
@@ -355,6 +357,9 @@ impl Probe<'_> {
         let hash = wide("SHA-256");
         let mut user_id = [0u8; 32];
         libsodium_rs::random::fill_bytes(&mut user_id);
+        if let Some(id) = self.user {
+            user_id = id;
+        }
         let rp = WEBAUTHN_RP_ENTITY_INFORMATION {
             dwVersion: 1,
             pwszId: rp_id.as_ptr(),
@@ -456,7 +461,8 @@ impl Probe<'_> {
             .credential
             .as_ref()
             .ok_or_else(|| invalid("prf-credential-id-missing"))?;
-        auth_context(
+        auth_context_for(
+            self.rp,
             unsafe { bytes(o.pbAuthenticatorData, o.cbAuthenticatorData, MAX_DATA) }?,
             Some(id),
         )?;
@@ -479,7 +485,7 @@ impl Probe<'_> {
             .as_ref()
             .ok_or_else(|| invalid("prf-credential-id-missing"))?
             .clone();
-        let rp = wide(RP);
+        let rp = wide(self.rp);
         let kind = wide("public-key");
         let hash = wide("SHA-256");
         let mut credential = WEBAUTHN_CREDENTIAL_EX {
@@ -564,7 +570,8 @@ impl Probe<'_> {
         {
             return Err(invalid("prf-assertion-version-transport-or-credential"));
         }
-        auth_context(
+        auth_context_for(
+            self.rp,
             unsafe { bytes(o.pbAuthenticatorData, o.cbAuthenticatorData, MAX_DATA) }?,
             None,
         )?;
@@ -734,6 +741,8 @@ pub fn run(
     libsodium_rs::random::fill_bytes(salt.as_mut_slice());
     libsodium_rs::random::fill_bytes(changed.as_mut_slice());
     let mut p = Probe {
+        rp: RP,
+        user: None,
         api: None,
         cap: Capability {
             routing: "display-name-candidate",

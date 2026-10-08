@@ -6,6 +6,9 @@ use serde_json::{json, Value};
 pub mod attestation;
 
 #[cfg(any(windows, test))]
+pub mod combined;
+
+#[cfg(any(windows, test))]
 pub mod tpm;
 
 #[cfg(any(windows, test))]

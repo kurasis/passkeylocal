@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation, nativeWebauthnCapability, proveNativeHelloPrf, testNativeHelloDirectAttestation, nativeTpmCapability, proveNativeTpmInner, testNativeTpmLocalBinding } from '@platform';
+import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation, nativeWebauthnCapability, proveNativeHelloPrf, testNativeHelloDirectAttestation, nativeTpmCapability, proveNativeTpmInner, testNativeTpmLocalBinding, nativeCombinedHelloStatus, prepareNativeCombinedHello, resumeNativeCombinedHello, cleanupNativeCombinedHello } from '@platform';
 import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
@@ -37,6 +37,7 @@ export function DesktopHelloSettings() {
   const [result, setResult] = useState<HelloVerificationResult | null>(null);
   const [failed, setFailed] = useState(false);
   const [proof, setProof] = useState<HelloKeyProof | null>(null);
+  const [combinedState, setCombinedState] = useState<HelloKeyProof['combinedState']>();
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const epoch = useRef(0);
@@ -45,7 +46,8 @@ export function DesktopHelloSettings() {
     const attempt = ++epoch.current;
     try {
       const report = await nativeHelloStatus();
-      if (epoch.current === attempt) { setStatus(report); setFailed(false); }
+      const combined = await nativeCombinedHelloStatus();
+      if (epoch.current === attempt) { setStatus(report); setCombinedState(combined.combinedState); setFailed(false); }
     } catch { if (epoch.current === attempt) { setStatus(null); setFailed(true); } }
   };
   useEffect(() => {
@@ -56,7 +58,7 @@ export function DesktopHelloSettings() {
     return () => { epoch.current++; window.removeEventListener('focus', focus); };
   }, []);
   if (!desktop) return null;
-  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation' | 'webauthn' | 'prf' | 'direct-attestation' | 'tpm-capability' | 'tpm' | 'tpm-local') => {
+  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation' | 'webauthn' | 'prf' | 'direct-attestation' | 'tpm-capability' | 'tpm' | 'tpm-local' | 'combined-prepare' | 'combined-resume' | 'combined-cleanup') => {
     if (inFlight.current) return;
     inFlight.current = true;
     const attempt = ++epoch.current;
@@ -68,8 +70,8 @@ export function DesktopHelloSettings() {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
       } else if (kind !== 'settings') {
-        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation, webauthn: nativeWebauthnCapability, prf: proveNativeHelloPrf, 'direct-attestation': testNativeHelloDirectAttestation, 'tpm-capability': nativeTpmCapability, tpm: proveNativeTpmInner, 'tpm-local': testNativeTpmLocalBinding }[kind]());
-        if (epoch.current === attempt) setProof(response);
+        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation, webauthn: nativeWebauthnCapability, prf: proveNativeHelloPrf, 'direct-attestation': testNativeHelloDirectAttestation, 'tpm-capability': nativeTpmCapability, tpm: proveNativeTpmInner, 'tpm-local': testNativeTpmLocalBinding, 'combined-prepare': prepareNativeCombinedHello, 'combined-resume': resumeNativeCombinedHello, 'combined-cleanup': cleanupNativeCombinedHello }[kind]());
+        if (epoch.current === attempt) { setProof(response); if (response.combinedState) setCombinedState(response.combinedState); }
       } else await openNativeHelloSettings();
       completed = true;
     } catch { if (epoch.current === attempt) setFailed(true); }
@@ -88,6 +90,13 @@ export function DesktopHelloSettings() {
       <button type="button" disabled={busy} onClick={() => void refresh()}>{t('desktopHelloCheck')}</button>
       <button type="button" className="secondary" disabled={busy || configuration !== 'available'} onClick={() => void action('verify')}>{t('desktopHelloTest')}</button>
       <button type="button" className="secondary" disabled={busy} onClick={() => void action('settings')}>{t('desktopHelloSettings')}</button>
+    </div>
+    <p>{t('desktopHelloCombinedExplain')}</p>
+    {combinedState && <p role="status">{t(`desktopHello_combinedState_${combinedState}`)}</p>}
+    <div className="input-row">
+      <button type="button" disabled={busy || combinedState !== 'no-test' || configuration !== 'available'} onClick={() => void action('combined-prepare')}>{t('desktopHelloCombinedPrepare')}</button>
+      <button type="button" disabled={busy || combinedState !== 'ready-to-resume' || configuration !== 'available'} onClick={() => void action('combined-resume')}>{t('desktopHelloCombinedResume')}</button>
+      <button type="button" className="secondary" disabled={busy || !combinedState || combinedState === 'no-test'} onClick={() => void action('combined-cleanup')}>{t('desktopHelloCombinedCleanup')}</button>
     </div>
     <p>{t('desktopHelloPrfExplain')}</p>
     <div className="input-row">
@@ -117,7 +126,7 @@ export function DesktopHelloSettings() {
     {result && <Banner kind={result === 'verified' ? 'info' : 'warn'}>{t(`desktopHello_result_${result}`)}</Banner>}
     {failed && <Banner kind="error">{t('desktopHelloError')}</Banner>}
     {proof && <div className="stack">
-      <p>{t(proof.purpose === 'synthetic-tpm-local-binding' ? 'desktopHelloTpmLocal' : proof.purpose === 'synthetic-webauthn-direct-attestation' ? 'desktopHelloDirect' : proof.purpose === 'synthetic-tpm-inner' ? 'desktopHelloTpm' : proof.purpose === 'tpm-inner-capability' ? 'desktopHelloTpmCapability' : proof.purpose === 'synthetic-webauthn-prf' ? 'desktopHelloPrf' : proof.purpose === 'webauthn-prf-capability' ? 'desktopHelloWebauthn' : proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
+      <p>{t(proof.purpose === 'synthetic-combined-restart' ? 'desktopHelloCombinedPrepare' : proof.purpose === 'synthetic-tpm-local-binding' ? 'desktopHelloTpmLocal' : proof.purpose === 'synthetic-webauthn-direct-attestation' ? 'desktopHelloDirect' : proof.purpose === 'synthetic-tpm-inner' ? 'desktopHelloTpm' : proof.purpose === 'tpm-inner-capability' ? 'desktopHelloTpmCapability' : proof.purpose === 'synthetic-webauthn-prf' ? 'desktopHelloPrf' : proof.purpose === 'webauthn-prf-capability' ? 'desktopHelloWebauthn' : proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
       <Banner kind={proof.outcome === 'roundtrip-passed' || proof.outcome === 'capability-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
       <ul className="hello-proof-checks">{proof.checks.filter((check) => check.status !== 'not-run').map((check) => <li key={check.test}>
         <span>{t(check.test === 'public-wrap' && proof.algorithm === 'rsa-pkcs1-v1_5' ? proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloPkcs1Wrap' : 'desktopHelloCompatibilityWrap' : `desktopHello_proof_${check.test}`)}</span>

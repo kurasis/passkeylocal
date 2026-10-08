@@ -165,3 +165,33 @@ export async function testNativeTpmLocalBinding(): Promise<HelloKeyProof> {
     checks: [...capability.checks, ...(['tpm-key-create', 'tpm-key-policy', 'tpm-key-readback', 'tpm-read-public', 'tpm-public-wrap', 'tpm-unwrap-first', 'tpm-reopen-unwrap', 'tpm-reopen-read-public', 'tpm-negative-controls'] as const).map((test) => ({ test, status: 'passed' as const })),
       { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
 }
+
+let combinedState: NonNullable<HelloKeyProof['combinedState']> = 'no-test';
+let combinedPrepares = 0;
+let combinedResumes = 0;
+let combinedCleanups = 0;
+function combinedReport(outcome: HelloKeyProof['outcome'] = combinedState): HelloKeyProof {
+  return { version: 1, purpose: 'synthetic-combined-restart', algorithm: 'webauthn-prf-aes256gcm-tpm-oaep-sha256', eligible: false, enrolled: false, unlocked: false, outcome, combinedState, checks: [], remaining: ['fresh-authorization-proof', 'fresh-process-proof', 'account-machine-copy-proof'] };
+}
+export async function nativeCombinedHelloStatus(): Promise<HelloKeyProof> { return combinedReport(); }
+export async function prepareNativeCombinedHello(): Promise<HelloKeyProof> {
+  combinedPrepares++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  combinedState = 'restart-required'; return combinedReport();
+}
+export async function resumeNativeCombinedHello(): Promise<HelloKeyProof> {
+  combinedResumes++;
+  if (proofOutcome === 'cancelled') return combinedReport('cancelled');
+  combinedState = proofCleanupFailed ? 'cleanup-required' : 'no-test';
+  return { ...combinedReport(proofCleanupFailed ? 'blocked' : 'combined-restart-passed'), processScope: 'fresh-process',
+    checks: [{ test: 'combined-unwrap-first', status: 'passed' }, { test: 'combined-unwrap-second', status: 'passed' }, { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
+}
+export async function cleanupNativeCombinedHello(): Promise<HelloKeyProof> {
+  combinedCleanups++;
+  combinedState = proofCleanupFailed ? 'cleanup-required' : 'no-test';
+  return combinedReport(proofCleanupFailed ? 'blocked' : 'combined-cleaned');
+}
+Object.assign((window as any).helloTest, {
+  combinedState(value: typeof combinedState) { combinedState = value; },
+  combinedCounts() { return { combinedPrepares, combinedResumes, combinedCleanups }; },
+});

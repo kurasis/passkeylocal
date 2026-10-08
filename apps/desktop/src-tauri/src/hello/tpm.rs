@@ -9,7 +9,7 @@ use serde::Serialize;
 mod read_public;
 
 #[cfg(windows)]
-mod windows;
+pub(super) mod windows;
 #[cfg(windows)]
 pub use windows::run;
 

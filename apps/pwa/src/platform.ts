@@ -27,3 +27,8 @@ export function nativeActivity(): void { /* Browser auto-lock already observes a
 export const fileSafe: import('./file-safe-protocol.ts').FileSafeApi | null = null;
 
 export async function testNativeTpmLocalBinding(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native TPM is not available in browsers'); }
+
+export async function nativeCombinedHelloStatus(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native combined Hello proof is not available in browsers'); }
+export async function prepareNativeCombinedHello(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native combined Hello proof is not available in browsers'); }
+export async function resumeNativeCombinedHello(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native combined Hello proof is not available in browsers'); }
+export async function cleanupNativeCombinedHello(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native combined Hello proof is not available in browsers'); }

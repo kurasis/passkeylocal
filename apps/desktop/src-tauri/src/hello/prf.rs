@@ -19,7 +19,7 @@ mod bindings;
 #[cfg(windows)]
 mod direct;
 #[cfg(windows)]
-mod windows;
+pub(super) mod windows;
 #[cfg(windows)]
 pub use windows::run;
 
@@ -264,9 +264,17 @@ pub(super) fn invalid(operation: &'static str) -> Failure {
     Failure::failed().at(operation)
 }
 
+#[cfg(test)]
 fn auth_context(data: &[u8], credential: Option<&[u8]>) -> std::result::Result<(), Failure> {
+    auth_context_for(RP, data, credential)
+}
+fn auth_context_for(
+    rp: &str,
+    data: &[u8],
+    credential: Option<&[u8]>,
+) -> std::result::Result<(), Failure> {
     if data.len() < 37
-        || data[..32] != Sha256::digest(RP.as_bytes())[..]
+        || data[..32] != Sha256::digest(rp.as_bytes())[..]
         || data[32] & 5 != 5
         || data[32] & 0x18 != 0
     {
