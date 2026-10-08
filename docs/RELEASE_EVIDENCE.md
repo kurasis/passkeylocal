@@ -1,5 +1,20 @@
 # Release evidence and gate status
 
+## Recovery CI runner capacity correction (2026-10-08)
+
+The initial source `ddfed6f6cbfdff8fbc8c2e0b654800e8519a3e6c` passed Windows CI
+(including 117 native tests and packaged installation), plus nine general jobs.
+The macOS job in run 37753407079 executed no steps: GitHub cancelled it after
+15 minutes with "The job was not acquired by Runner of type hosted" and an
+explicit macOS ARM64 capacity notice. A failed-jobs-only retry also stayed queued.
+
+Route the same Python 3.12 recovery suite and hash-locked dependencies to the
+supported `macos-15-intel` image documented by [GitHub runner-images](https://github.com/actions/runner-images#available-images).
+No test, assertion or dependency is removed. This measures Intel macOS 15 rather
+than ARM64 macOS 26; do not claim new ARM64 execution. Application bytes are
+unchanged by this CI correction. The updated workflow/source must pass before
+merging; the initial installer is retained as historical evidence only.
+
 ## Local per-key TPM route after absent direct attestation (2026-10-08)
 
 Added the [documented provider/TBS ReadPublic measurement](windows/HELLO_LOCAL_TPM_BINDING.md)
