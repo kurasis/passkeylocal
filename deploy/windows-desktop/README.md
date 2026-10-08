@@ -6,17 +6,36 @@ Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-W
 
 Installer: 217,960,718 bytes; SHA-256 `5f280928cb26bab52f114be629dfd578b682de8615548af932c02cef616db547`, independently matched to original metadata and checksum sidecar. Original evidence: [build](build-a7f56d8.json), [installed-app smoke](smoke-a7f56d8.json), [5 GiB resource measurement](file-safe-resource-a7f56d8.json), [signed WebView2](webview2-download-a7f56d8.json), [Russian settings](windows-settings-a7f56d8.png), [locked window](windows-locked-a7f56d8.png). The unversioned sidecar matches this installer.
 
-## New target procedure
+## Completed target result and next check
 
-1. Fully quit the old app and install this build. Unlock with the master password; open Settings → Windows Hello → **1. Create Hello + TPM test** / **1. Создать тест Hello + TPM**. Confirm creation and the new verification. Copy the technical report; success is `restart-required`.
-2. Fully quit and reopen the app. A page reload does not count. Choose **2. Continue after restart** / **2. Продолжить после перезапуска**. Confirm both Windows requests; each must require a new fingerprint/face/PIN. Copy the report and note whether fresh verification was required each time.
-3. Expected success: `combined-restart-passed`, `processScope: fresh-process`, both temporary keys and journal removed. `sourceCommit` must be `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`. Vault enrollment/unlock remain false.
-4. To measure cancellation, create another test, restart, cancel the first Windows prompt, and copy the cancelled report. Retry remains available. **Remove test and temporary keys** / **Удалить тест и временные ключи** handles interrupted tests and retryable cleanup, even if Hello becomes unavailable.
+The owner supplied [preparation](hello-target-a7f56d8-combined-prepare.json) and
+[restart](hello-target-a7f56d8-combined-resume.json) reports for this installer:
+all nine preparation and seven restart stages passed, ending in
+`combined-restart-passed` / `fresh-process` / `no-test`. The owner confirmed **two
+fingerprint verifications for each button**, covering creation/first unwrap and
+the two unwraps after restart. Both temporary keys and the journal were deleted.
+The successful path is complete; no new download is needed for the next check.
+
+The next negative check uses this same installed build:
+
+1. Create a new Hello + TPM test, then fully quit and reopen the application.
+2. Choose **2. Continue after restart** / **2. Продолжить после перезапуска**, but
+   **cancel the first Windows verification**. Copy the JSON. Expected: `cancelled`,
+   no successful unwrap, and the saved test remains available for retry/cleanup.
+3. Choose **Remove test and temporary keys** / **Удалить тест и временные ключи**
+   and copy the cleanup JSON. Expected: `combined-cleaned`, `no-test`, both native
+   deletions and journal deletion passed.
+
+False eligibility/enrollment/unlock and the static `remaining` array are preserved
+in the original reports. The completed synthetic test does not enable real-vault
+Hello enrollment. Cancellation/silent-access negatives, account/machine copies,
+key-loss fallback and production lifecycle acceptance remain open.
 
 [Protocol, recovery and evidence limits](../../docs/windows/HELLO_COMBINED_RESTART.md) explain the bounded journal written before creation, dedicated RP/exact-user recovery after a crash, locally verified TPM key, authenticated metadata, new authorization for every decryption and native process boundary. Only random synthetic data is used. No real vault credentials or PRF output are persisted or returned by IPC. Do not repeat completed standalone probes, reset TPM/Hello or weaken security policy.
 
 ## Completed owner baseline
 
+- [Combined a7f56d8 preparation](hello-target-a7f56d8-combined-prepare.json) and [restart](hello-target-a7f56d8-combined-resume.json): all 16 stages passed across two reports; four fingerprint verifications confirmed by the owner, with cleanup complete.
 - [PRF 72a0df6](hello-target-72a0df6-prf.json): all ten stages passed on Win11 Pro 25H2/build26200, API9, Kensington VeriMark Desktop. The owner confirmed a new fingerprint at creation and each assertion.
 - [Local TPM binding bbead07](hello-target-bbead07-tpm-local-binding.json): all 12 stages passed, including exact public key/Name/duplication restrictions before and after reopening, OAEP negative controls and deletion. This is accepted local evidence under trusted Windows/KSP/TBS, not a remote signed attestation.
 - [TPM inner c83ce3f](hello-target-c83ce3f-tpm-inner.json): raw private exports returned NTE_BAD_TYPE (unsupported format), not explicit permission denial. [Direct attestation bdb2a03](hello-target-bdb2a03-direct-attestation.json) returned `none`. Neither result is relabeled or repeated.
@@ -29,4 +48,4 @@ TypeScript: 161 tests; desktop UI: 31 scenarios; production PWA: eight scenarios
 
 10,000-file restore: 108.248 seconds. Hosted 5 GiB primitive: 92.980 seconds; sampled peak working set 10,592,256 bytes. These are hosted observations, not target-device guarantees.
 
-Physical combined restart, actual fresh prompting/cancellation, account/machine copies, key-loss fallback and production lifecycle acceptance remain pending. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build. [Release evidence](../../docs/RELEASE_EVIDENCE.md) distinguishes completed software checks from owner hardware observations and real-vault enrollment.
+Physical combined restart and fresh prompting on its successful path are owner-confirmed above. Cancellation/silent-access negatives, account/machine copies, key-loss fallback and production lifecycle acceptance remain pending. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build. [Release evidence](../../docs/RELEASE_EVIDENCE.md) distinguishes completed software checks from owner hardware observations and real-vault enrollment.

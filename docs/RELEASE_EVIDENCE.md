@@ -1,5 +1,43 @@
 # Release evidence and gate status
 
+## Completed owner combined/restart measurement (2026-10-08)
+
+The owner supplied [preparation](../deploy/windows-desktop/hello-target-a7f56d8-combined-prepare.json)
+and [restart](../deploy/windows-desktop/hello-target-a7f56d8-combined-resume.json)
+reports for installed source `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`.
+All nine preparation stages and all seven restart stages PASS. The combined
+Hello PRF/AES-GCM + locally bound TPM envelope recovered its synthetic secret
+in a fresh process with two separate authorization/decryption operations.
+The passkey, TPM key and journal were deleted; final state is `no-test`.
+
+The owner's separate statement, translated from Russian, is **"Two fingerprint
+verifications for each button."** This confirms four fingerprint verifications:
+creation plus the first combined unwrap during preparation, then each of the two
+combined unwraps after restart. Fresh prompting on this successful path is now
+owner-observed; it is not inferred solely from the required-UV flag or HRESULT.
+Previously supplied Windows/Kensington context is unchanged; these reports do
+not contain a new OS build, device or driver observation.
+
+The successful combined, fresh-process and per-operation fingerprint measurement
+is complete. Do not ask for that successful run or the standalone component
+probes again. Cancellation/silent-access negatives, account/machine copies,
+key-loss/password fallback and production enrollment/lifecycle acceptance remain
+open. Keep both original three-item `remaining` arrays and false eligibility,
+enrollment and unlock flags intact: they are static release-state metadata,
+not three failed measurements. No real vault was enrolled or unlocked.
+
+Next target action uses the **same installed build**: create a new synthetic
+test, fully exit/relaunch, choose Continue after restart and cancel the first
+Windows verification. Collect the cancelled report, then remove the test and
+collect the cleanup report. Expected: cancellation before a successful unwrap,
+retryable saved state, then both exact native deletions and journal deletion.
+No new installer or successful-path repeat is needed to record these negatives.
+
+This update records owner evidence and updates current guidance only. Report
+source/stages/flags, relative links and documentation-only scope were checked.
+No application change, new software test execution, rebuild or deployment is
+claimed; the published installer and Pages archive remain unchanged.
+
 ## Combined Hello PRF + TPM restart publication (2026-10-08)
 
 [PR #26](https://github.com/kurasis/passkeylocal/pull/26) merged as `cedae01de4a19b8810c4bf6a3a0bbc9d3323f170`;
@@ -23,8 +61,9 @@ Hello/TPM preflight blocks target crypto creation; no physical combined success
 is inferred. [Original download evidence](../deploy/windows-desktop/) and the
 [new target procedure](windows/HELLO_COMBINED_RESTART.md) are published.
 
-Physical fresh authorization/cancellation/restart, account/machine-copy and real
-enrollment acceptance remain pending. Prior owner component reports remain valid.
+The subsequent owner measurement above completes the successful combined
+authorization/restart path. Cancellation/silent negatives, account/machine-copy
+and real enrollment acceptance remain pending. Prior component reports remain valid.
 Publication adds only download evidence and deployment archives; no app changes.
 
 [Cloudflare downloads](../deploy/cloudflare-pages/) contain `passkeylocal-cloudflare-pages-cedae01.zip`,
@@ -51,8 +90,8 @@ unreadable-journal cleanup test first reproduced a missing failure stage; the
 corrected ten-case combined suite passes. No native deletion occurs after that
 read failure. Windows
 MSVC ABI/native tests, packaged IPC and installer validation subsequently passed
-as recorded above. Physical combined/restart/cancellation measurements remain pending
-on the owner computer. Standalone target evidence below is preserved.
+as recorded above. The owner has now completed the successful combined/restart
+measurement; cancellation negatives remain pending. Standalone evidence is preserved.
 
 ## Completed local TPM binding target measurement (2026-10-08)
 

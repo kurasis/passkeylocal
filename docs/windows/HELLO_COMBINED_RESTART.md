@@ -5,7 +5,24 @@ Windows 11 Pro 25H2/Kensington computer. It uses a new synthetic secret and neve
 reads, enrolls, or unlocks either real vault. The successful standalone reports
 remain valid; they need not be repeated.
 
-## Target procedure
+## Owner result and next measurement
+
+[Preparation](../../deploy/windows-desktop/hello-target-a7f56d8-combined-prepare.json)
+passed all nine stages; [restart](../../deploy/windows-desktop/hello-target-a7f56d8-combined-resume.json)
+passed all seven for source `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`.
+The owner confirmed two fingerprint verifications for each button: creation and
+first unwrap, then both unwraps in the new process. Both native objects and the
+journal were removed. The successful combined/restart path is complete.
+
+The next measurement is cancellation using the same build: create another test,
+fully quit/relaunch, select Continue after restart and **cancel the first Windows
+verification**. Copy the cancellation report, then select Remove test and temporary
+keys and copy its cleanup report. Expect no successful unwrap after cancellation,
+a retained retryable test, then removal of both native objects and the journal.
+This is a negative-path measurement, not a request to repeat the completed success.
+The report's static `remaining` list does not negate the successful owner result.
+
+## Reference procedure (successful path already completed)
 
 1. Install the build linked from `deploy/windows-desktop/README.md`. In Windows
    Hello settings choose **1. Create Hello + TPM test**. Allow creation and the
@@ -99,8 +116,8 @@ per-request cancellation watcher are reused.
 Local unit tests exercise orchestration, persistence, tamper rejection, stale
 sessions, restart discrimination and retryable cleanup using synthetic backend
 controls. Windows CI additionally checks the generated ABI and native software
-controls. These are not physical Hello/TPM measurements; the new target procedure
-has not yet run on the owner's computer.
+controls. These software controls are distinct from the owner reports above,
+which now establish the successful combined/restart measurement on the target.
 
 Trust remains local Windows/WebAuthn/Platform KSP/TBS, not remote certificate
 attestation or protection from a compromised unlocked process. Assertions rely
@@ -109,8 +126,9 @@ this experiment does not add an independent ES256 signature verifier. It does
 not assert that the PRF secret itself has a remotely attested TPM binding.
 
 The exposed WebAuthn API has no implemented silent-PRF experiment here: required
-UV is requested on every assertion; actual fresh prompting and cancellation need
-the target observation above. No simulated silent failure is reported as proof.
+UV is requested on every assertion. Actual fresh prompting on the successful
+path is owner-confirmed; cancellation and silent-access negatives remain open.
+No simulated silent failure is reported as proof.
 Account/machine copying, native-object loss/password fallback, complete production
 lifecycle and independent review remain acceptance work. Reports always keep
 `eligible`, `enrolled`, and `unlocked` false. Their `remaining` list is release

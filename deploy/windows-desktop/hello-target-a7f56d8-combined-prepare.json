@@ -1,0 +1,56 @@
+{
+  "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+  "authorization": "os-required-user-verification",
+  "checks": [
+    {
+      "status": "passed",
+      "test": "combined-journal-create"
+    },
+    {
+      "status": "passed",
+      "test": "combined-preflight"
+    },
+    {
+      "status": "passed",
+      "test": "combined-tpm-create-binding"
+    },
+    {
+      "status": "passed",
+      "test": "combined-prf-create"
+    },
+    {
+      "status": "passed",
+      "test": "combined-tpm-wrap"
+    },
+    {
+      "status": "passed",
+      "test": "combined-seal"
+    },
+    {
+      "status": "passed",
+      "test": "combined-negative-controls"
+    },
+    {
+      "status": "passed",
+      "test": "combined-unwrap-first"
+    },
+    {
+      "status": "passed",
+      "test": "combined-journal-ready"
+    }
+  ],
+  "combinedState": "restart-required",
+  "eligible": false,
+  "enrolled": false,
+  "outcome": "restart-required",
+  "processScope": "same-process",
+  "purpose": "synthetic-combined-restart",
+  "remaining": [
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "a7f56d80d6029bcd4185ca6d3ad22d08f957561a",
+  "unlocked": false,
+  "version": 1
+}
