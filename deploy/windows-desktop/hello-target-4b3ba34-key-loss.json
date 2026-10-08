@@ -1,0 +1,103 @@
+{
+  "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+  "authorization": "os-required-user-verification",
+  "checks": [
+    {
+      "status": "passed",
+      "test": "combined-journal-create"
+    },
+    {
+      "status": "passed",
+      "test": "combined-preflight"
+    },
+    {
+      "status": "passed",
+      "test": "combined-tpm-create-binding"
+    },
+    {
+      "status": "passed",
+      "test": "combined-prf-create"
+    },
+    {
+      "status": "passed",
+      "test": "combined-tpm-wrap"
+    },
+    {
+      "status": "passed",
+      "test": "combined-seal"
+    },
+    {
+      "status": "passed",
+      "test": "combined-negative-controls"
+    },
+    {
+      "status": "passed",
+      "test": "combined-unwrap-first"
+    },
+    {
+      "status": "passed",
+      "test": "combined-journal-ready"
+    },
+    {
+      "status": "passed",
+      "test": "loss-journal-invalidate"
+    },
+    {
+      "status": "passed",
+      "test": "loss-passkey-delete"
+    },
+    {
+      "operation": "combined-credential-missing",
+      "status": "passed",
+      "test": "loss-passkey-reopen"
+    },
+    {
+      "status": "passed",
+      "test": "loss-tpm-positive-control"
+    },
+    {
+      "status": "passed",
+      "test": "loss-tpm-delete"
+    },
+    {
+      "nativeCode": "0x80090016",
+      "operation": "tpm-reopen-exact-test-key",
+      "status": "passed",
+      "test": "loss-tpm-reopen"
+    },
+    {
+      "status": "passed",
+      "test": "combined-journal-cleanup"
+    },
+    {
+      "status": "passed",
+      "test": "test-passkey-delete"
+    },
+    {
+      "status": "passed",
+      "test": "test-key-delete"
+    },
+    {
+      "status": "passed",
+      "test": "combined-journal-delete"
+    },
+    {
+      "status": "passed",
+      "test": "loss-session-final"
+    }
+  ],
+  "combinedState": "no-test",
+  "eligible": false,
+  "enrolled": false,
+  "outcome": "combined-key-loss-passed",
+  "processScope": "same-process",
+  "purpose": "synthetic-combined-key-loss",
+  "remaining": [
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "4b3ba340f684fc6adefc5b5e2a2e0295add18249",
+  "unlocked": false,
+  "version": 1
+}

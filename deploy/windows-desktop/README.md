@@ -6,14 +6,22 @@ Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-W
 
 Installer: 217,949,570 bytes; SHA-256 `06d06cdfdcc016de8dfb4f44ecf5e07b43281f528a92d6e538fe6d2bdf7f7a63`, matched to original metadata and checksum sidecar. Original evidence: [build](build-4b3ba34.json), [installed-app smoke](smoke-4b3ba34.json), [5 GiB resource measurement](file-safe-resource-4b3ba34.json), [signed WebView2](webview2-download-4b3ba34.json), [Russian settings](windows-settings-4b3ba34.png), [locked window](windows-locked-4b3ba34.png). The unversioned sidecar matches this installer.
 
-## New key-loss procedure
+## Completed key-loss measurement
 
-1. Fully quit the old app and install this build. Unlock with the master password and open Settings → Windows Hello → **Test temporary key loss / Проверить потерю временных ключей**.
-2. Allow both Windows verifications. This creates a **new temporary pair**, verifies decryption, then deletes each key and checks reopening. No restart or manual key deletion is needed.
-3. Copy the technical report. Expected: `combined-key-loss-passed`, `combinedState: no-test`, all 20 stages passed, source `4b3ba340f684fc6adefc5b5e2a2e0295add18249`. The `loss-tpm-reopen` stage deliberately expects `0x80090016` (missing key). No vault is enrolled or unlocked.
-4. If any stage fails or is cancelled, send its report. Cleanup is attempted automatically; **Remove test and temporary keys** remains available if needed. Do not reset TPM/Hello or change Windows security policy.
+The [owner report](hello-target-4b3ba34-key-loss.json) for this installer passes
+all 20 stages: decryption before deletion, passkey absence on reopen, the
+still-existing TPM key's positive reopen control, then its absence after deletion.
+`0x80090016` at `loss-tpm-reopen` is the expected `NTE_BAD_KEYSET` observation.
+Cleanup of both native objects and the journal passed; final state is `no-test`,
+outcome `combined-key-loss-passed`.
 
-An existing saved test disables the new action and is never overwritten. Your last supplied cleanup ended in `no-test`, so no repeat of the older procedure is requested. [Protocol and limits](../../docs/windows/HELLO_KEY_LOSS.md): this is same-process object loss, not cross-account/machine or master-password fallback evidence. Physical key-loss measurement is pending your new report.
+**The requested test is complete.** No repeated test, restart, manual cleanup or
+new installer is needed. [Reference procedure and limits](../../docs/windows/HELLO_KEY_LOSS.md)
+remain available. This is a `same-process` synthetic object-loss observation;
+it does not enable real vault unlock or establish account/machine-copy resistance
+or password recovery after key loss. No prompt count or fingerprint modality is
+inferred from this JSON. Eligibility/enrollment/unlock stay false and the static
+`remaining` array is unchanged.
 
 ## Completed restart and cancellation baseline
 
@@ -37,8 +45,8 @@ four stages, including deletion of both native test objects and the journal.
 Outcome/state is `combined-cleaned` / `no-test`. The report correctly retains
 `processScope: same-process` for cleanup; it is not another unlock measurement.
 
-**That earlier target procedure is complete.** The new key-loss procedure above
-is separate. Account/machine-copy, password fallback after key loss, remaining
+**That earlier target procedure is complete.** The separate key-loss procedure
+above is now also complete. Account/machine-copy, password fallback after key loss, remaining
 authorization negatives and production integration still need acceptance work.
 
 False eligibility/enrollment/unlock and the static `remaining` array are preserved

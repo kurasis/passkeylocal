@@ -1,11 +1,32 @@
 # Temporary Hello/TPM key-loss experiment
 
-This next target measurement extends the completed combined/restart and
+This completed target measurement extends the completed combined/restart and
 cancellation/cleanup observations. It creates and destroys a **new synthetic
 pair** in one command. It never reads a vault, consumes a real password,
 changes Windows Hello enrollment, resets the TPM, or removes unrelated keys.
 
-## Owner procedure
+## Completed owner measurement
+
+The [owner report](../../deploy/windows-desktop/hello-target-4b3ba34-key-loss.json)
+for source `4b3ba340f684fc6adefc5b5e2a2e0295add18249` passes all 20 stages.
+The exact synthetic pair passed decryption before deletion. After passkey
+removal, its scoped lookup reported `combined-credential-missing`. The remaining
+TPM key still reopened and matched its binding, then after deletion its exact
+open returned `0x80090016` (`NTE_BAD_KEYSET`). These are expected absence controls.
+Both cleanup paths, journal deletion and the final session check passed, ending
+in `combined-key-loss-passed` / `no-test`.
+
+This completes the requested physical key-loss measurement in the reported
+`same-process` scope. No repeat, extra cleanup, restart or new installer is
+requested. The JSON does not independently record prompt counts or biometric
+modality; no new fingerprint observation is inferred. Existing owner prompting
+confirmations for earlier experiments retain their original scope.
+
+Eligibility, enrollment and unlock remain false; the original static `remaining`
+list is preserved. Account/machine-copy, password recovery after key loss,
+remaining authorization negatives and production lifecycle work remain open.
+
+## Reference procedure (completed; no repeat requested)
 
 Use the installer linked from [Windows downloads](../../deploy/windows-desktop/).
 In Settings → Windows Hello choose **Test temporary key loss / Проверить потерю
@@ -66,4 +87,5 @@ cleanup availability. Packaged Windows smoke invokes the new IPC only if the
 hosted capability preflight is blocked, checking refusal before native key
 creation and retention of the journal if absence cannot be verified (for example,
 when the hosted TPM provider cannot open). This does not manufacture target
-hardware evidence; the physical key-loss result is pending the owner's report.
+hardware evidence; the separate owner report above supplies the physical
+key-loss observation for the supported target.

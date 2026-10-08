@@ -1,5 +1,32 @@
 # Release evidence and gate status
 
+## Completed owner temporary key-loss measurement (2026-10-08)
+
+The [owner report](../deploy/windows-desktop/hello-target-4b3ba34-key-loss.json)
+for source `4b3ba340f684fc6adefc5b5e2a2e0295add18249` passes all 20 stages.
+It records successful combined decryption before deliberate deletion, an absent
+passkey on scoped reopen, a successful independent TPM reopen before deletion,
+and then `NTE_BAD_KEYSET` (`0x80090016`) from the exact deleted-key open operation.
+Both cleanup paths, journal deletion and the final session check passed.
+Outcome/state is `combined-key-loss-passed` / `no-test`.
+
+The requested synthetic object-loss procedure is complete on the owner's target;
+no repeat, manual deletion, restart or replacement installer is requested.
+Preserve `processScope: same-process` and false eligibility/enrollment/unlock.
+The static `remaining` array is not a list of failed stages. This report does not
+measure cross-account/machine copying, production password recovery after key
+loss, physical memory erasure or silent-PRF refusal. It contains no explicit
+prompt-count/modality observation, so no additional fingerprint confirmation is
+inferred. Earlier owner reports remain valid within their original scope.
+
+Next implementation/acceptance work is account/machine-copy resistance, password
+fallback and production enrollment/lifecycle coverage, plus remaining
+authorization negatives. Real-vault Hello unlock remains disabled.
+
+This evidence-only update validates report source, exact ordered stages, absence
+codes/operations, state/flags and links. It changes no application, installer or
+Pages archive and claims no new automated test run or build.
+
 ## Temporary key-loss publication (2026-10-08)
 
 [PR #27](https://github.com/kurasis/passkeylocal/pull/27) merged as `0eb2a195a15567bba124fc0cd2591a5028b5ac50`;
@@ -23,8 +50,8 @@ journal when the unavailable TPM provider prevents absence verification. This
 is a tested failure path, not a physical key-loss success.
 
 [Download evidence](../deploy/windows-desktop/) and the [new single-button target
-procedure](windows/HELLO_KEY_LOSS.md) are published. Physical key-loss observation
-is pending the owner's report. Prior restart/cancellation/cleanup observations
+procedure](windows/HELLO_KEY_LOSS.md) are published. The subsequently supplied
+owner report above completes the physical key-loss observation. Prior restart/cancellation/cleanup observations
 remain complete. Account/machine copy, password fallback, remaining authorization
 negatives and production enrollment/lifecycle acceptance remain open.
 
@@ -40,8 +67,9 @@ command and RU/EN button. It creates its own PRF/TPM pair, verifies decryption,
 then deliberately deletes and reopens each identity with strict absence checks.
 Nonresumability is journaled before deletion; failures retain cleanup recovery.
 It refuses to reuse an existing restart experiment. Real vault enrollment and
-unlock remain disabled. Physical key-loss, account/machine copy, password
-fallback and remaining authorization/production gates are not marked passed.
+unlock remain disabled. The physical key-loss observation subsequently passed
+as recorded above; account/machine copy, password fallback and remaining
+authorization/production gates remain open.
 
 Local validation: TypeScript typechecks and all 161 package tests PASS; 105
 routine native tests PASS (one resource test remains ignored in the routine

@@ -3,8 +3,8 @@
 Current status: the owner completed the combined restart, fresh prompting,
 first-assertion cancellation and cleanup observations documented in
 [the combined protocol](HELLO_COMBINED_RESTART.md). The new
-[temporary key-loss experiment](HELLO_KEY_LOSS.md) is implemented and packaged;
-its physical result is pending. Account/machine copy, password fallback and
+[temporary key-loss experiment](HELLO_KEY_LOSS.md) now has an owner report
+passing all 20 stages, including exact object absence and final cleanup. Account/machine copy, password fallback and
 production enrollment remain open. Older investigation notes below preserve
 their historical scope; they do not request unchanged repeat measurements.
 
