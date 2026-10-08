@@ -6,7 +6,25 @@ account. It does not enroll or unlock the owner's active vault, and no account
 switch, transport file, password entry or OS security-setting change is needed.
 Production enrollment/lifecycle acceptance remains separate.
 
-## Owner procedure
+## Completed owner result (2026-10-08)
+
+The [owner report](../../deploy/windows-desktop/hello-target-9200a4b-vault-recovery.json)
+for installed source `9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae` passes all 27
+stages. The native-unwrapped component opened the built-in KDBX, which was
+re-saved before temporary passkey/TPM deletion and exact absence checks. Fresh
+master-password credentials recovered both records and the historical version;
+the wrong password was refused and full logical integrity matched.
+`0x80090016` at `loss-tpm-reopen` is the expected missing-key observation.
+
+Outcome is `vault-recovery-passed`, scope `public-synthetic-kdbx`, process scope
+`same-process`, and final state `no-test`. Both temporary keys and the journal
+were removed. This procedure is complete: no repeat, restart, additional cleanup
+or replacement installer is requested. No new prompt count or fingerprint
+modality is inferred from the JSON. Production user-vault enrollment and its
+lifecycle remain pending; original false eligibility/enrollment/unlock flags
+and the static `remaining` array are preserved.
+
+## Reference procedure (completed; no repeat requested)
 
 Install the current build from [Windows downloads](../../deploy/windows-desktop/).
 Unlock normally, open Settings → Windows Hello and select **Test vault recovery
@@ -88,4 +106,4 @@ recovery JSON. No Hello envelope or key metadata is part of that portable file.
 Browser tests exercise the one-button flow and redaction; installed smoke checks
 no-record revoke and refusal to overwrite an existing recovery journal. Hosted
 Windows has no usable sensor/TPM, so those paths are not physical success evidence.
-The full physical sequence awaits the owner's report for the new build.
+The owner's physical report above completes this built-in synthetic sequence.

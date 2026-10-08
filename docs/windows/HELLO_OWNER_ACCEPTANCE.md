@@ -23,7 +23,7 @@ for the owner. Preserve original reports and their false eligibility flags.
 | Delete temporary passkey and TPM key | [Key-loss result](HELLO_KEY_LOSS.md) | COMPLETED, synthetic same-process scope | No repeat |
 | Copy the encrypted test file to a second PC, recheck on source, cleanup | [Correlated copy evidence](../../deploy/windows-desktop/hello-target-cdcc954-copy-evidence.json) | COMPLETED, synthetic envelope-only observation | No repeat; keys already removed |
 | Second account on the same PC | No physical measurement | EXCLUDED BY OWNER from manual acceptance; isolation unverified | No owner task; keep native account scoping and automated boundary checks |
-| Built-in KDBX recovery through actual temporary Hello/TPM keys | [One-button integration](HELLO_VAULT_RECOVERY.md) | IMPLEMENTED; physical result pending | Run only the new packaged sequence once after publication |
+| Built-in KDBX recovery through actual temporary Hello/TPM keys | [One-button integration](HELLO_VAULT_RECOVERY.md) | COMPLETED, 27 passed stages; public synthetic KDBX, same-process | No repeat; temporary keys and journal removed |
 | Master-password recovery after loss/revocation of real app-owned Hello enrollment | Production enrollment/fallback integration not yet available | PENDING IMPLEMENTATION | Implement and validate with an empty synthetic vault in the existing account before requesting one owner run |
 | Password change, vault replacement, expiry, revoke, stale responses and remaining authorization negatives | [Production requirements](WINDOWS_HELLO_KENSINGTON.md) | PENDING IMPLEMENTATION / NOT RUN as applicable | Automate state, tamper and binding tests; reserve actual OS prompts for packaged owner checks |
 
@@ -63,7 +63,10 @@ Do not delete real Hello credentials or TPM contents to simulate key loss.
 The new [built-in KDBX integration experiment](HELLO_VAULT_RECOVERY.md) implements
 the credential-component and temporary-key recovery sequence in an isolated worker.
 It is a step toward production integration, not arbitrary user-vault enrollment;
-no physical success is claimed before an owner report.
+the [owner report](../../deploy/windows-desktop/hello-target-9200a4b-vault-recovery.json)
+now completes all 27 stages with two entries, one historical version and final
+state `no-test`. No new prompt count or modality is inferred. Production
+enrollment and its lifecycle remain separate pending work.
 
 Continue automated checks for tampered context/vault/key binding, stale sessions,
 foreign decryption rejection and missing-key/error classification. Existing

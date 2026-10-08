@@ -1,5 +1,29 @@
 # Release evidence and gate status
 
+## Completed owner KDBX recovery integration (2026-10-08)
+
+The [original owner report](../deploy/windows-desktop/hello-target-9200a4b-vault-recovery.json)
+identifies installed source `9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae` and passes
+all 27 stages. The actual native-unwrapped component opened and re-saved the
+built-in public KDBX. Temporary passkey absence, a live TPM positive control,
+TPM deletion/exact absence (`0x80090016`) and journal cleanup passed. A wrong
+password was refused; fresh ordinary password credentials recovered two entries
+and one historical version with full logical integrity after key removal.
+
+Outcome/state is `vault-recovery-passed` / `no-test`; scope is
+`public-synthetic-kdbx` / `same-process`. This completes the
+[one-button physical sequence](windows/HELLO_VAULT_RECOVERY.md), without a new
+prompt-count/modality or fresh-process claim. No repeat, additional cleanup or
+new installer is requested. Production enrollment/lifecycle and remaining
+authorization negatives remain pending. Other-account manual testing stays
+excluded and unverified. Original false flags and static `remaining` are intact.
+This result supersedes the physical-result-pending notes in the earlier entries.
+
+Evidence-only validation checked report structure, ordered stages, source and
+fixture correlation, local documentation links, whitespace and unchanged
+application/test/dependency/workflow/artifact bytes. No new test suite, build,
+installer or deployment is claimed for this documentation update.
+
 ## KDBX recovery integration publication (2026-10-08)
 
 [PR #30](https://github.com/kurasis/passkeylocal/pull/30) merged as `8d2d95b4d074cb37fd6f7c0f78cfa9468a9e9a47`;

@@ -8,12 +8,14 @@ passing all 20 stages, including exact object absence and final cleanup. The
 [copy-file experiment](HELLO_COPY_TEST.md) now has matching second-PC/source
 reports, a checked file digest and successful cleanup. The owner excluded
 second-account manual testing: follow the [one-account acceptance plan](HELLO_OWNER_ACCEPTANCE.md).
-Account isolation remains unverified; it is not a new owner task. Password
-fallback and production enrollment remain pending. The new
-[one-account KDBX integration experiment](HELLO_VAULT_RECOVERY.md) is implemented,
-CI-validated and packaged; its physical result is pending. It opens a built-in
-public test vault with the native-unwrapped component, revokes its temporary keys
-and verifies independent password recovery; it does not enroll a user vault. Older investigation notes below preserve
+Account isolation remains unverified; it is not a new owner task. Production
+password fallback and enrollment remain pending. The
+[one-account KDBX integration experiment](HELLO_VAULT_RECOVERY.md) now has an owner
+report passing all 27 stages in the same process. It opens a built-in public
+test vault with the native-unwrapped component, revokes its temporary keys and
+verifies independent password recovery of two records and one historical version.
+Cleanup ends in `no-test`; no repeat is requested. This does not enroll a user
+vault or change the original false release flags. Older investigation notes below preserve
 their historical scope; they do not request unchanged repeat measurements.
 
 The [local TPM binding implementation](HELLO_LOCAL_TPM_BINDING.md) adds a documented
