@@ -48,6 +48,26 @@ pub struct Metadata {
     pub key_length_bits: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pcp_key_usage: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pcp_usage_kind: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pcp_usage_flags: Option<u32>,
+}
+
+// Pinned Microsoft SDK and PCP sample: usage is the low word; the SDK
+// separately defines NCRYPT_TPM12_PROVIDER. Neither is per-key attestation.
+const PCP_USAGE_KIND_MASK: u32 = 0x0000ffff;
+const PCP_ENCRYPTION_KIND: u32 = 2;
+const PCP_TPM12_PROVIDER_FLAG: u32 = 0x00010000;
+
+fn pcp_policy_matches(raw: u32) -> Result<(), Failure> {
+    if raw & PCP_USAGE_KIND_MASK != PCP_ENCRYPTION_KIND {
+        return Err(super::prf::invalid("tpm-pcp-key-usage-mismatch"));
+    }
+    if raw & !(PCP_USAGE_KIND_MASK | PCP_TPM12_PROVIDER_FLAG) != 0 {
+        return Err(super::prf::invalid("tpm-pcp-key-usage-flags-unsupported"));
+    }
+    Ok(())
 }
 
 fn policy_matches(export: u32, usage: u32, length: u32) -> Result<(), Failure> {
@@ -187,6 +207,39 @@ fn exercise(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pcp_readback_separates_usage_from_only_the_sdk_defined_provider_marker() {
+        for flags in [0, PCP_TPM12_PROVIDER_FLAG] {
+            assert!(pcp_policy_matches(flags | PCP_ENCRYPTION_KIND).is_ok());
+            for kind in [0, 1, 3, 4, 8, 16, 0xffff] {
+                assert_eq!(
+                    pcp_policy_matches(flags | kind).unwrap_err().operation,
+                    Some("tpm-pcp-key-usage-mismatch")
+                );
+            }
+            for bit in 0..16 {
+                if 1 << bit != PCP_ENCRYPTION_KIND {
+                    assert!(pcp_policy_matches(flags | PCP_ENCRYPTION_KIND | (1 << bit)).is_err());
+                }
+            }
+        }
+        // The owner's raw observation must pass kind validation without discarding
+        // the provider marker, treating it as TPM 2 evidence or enabling unlock.
+        assert!(pcp_policy_matches(65538).is_ok());
+        for bit in 17..32 {
+            assert_eq!(
+                pcp_policy_matches(PCP_ENCRYPTION_KIND | (1 << bit))
+                    .unwrap_err()
+                    .operation,
+                Some("tpm-pcp-key-usage-flags-unsupported")
+            );
+            assert!(pcp_policy_matches(65538 | (1 << bit)).is_err());
+        }
+        let r = exercise(&mut fake(None), || true, Experiment::Synthetic);
+        assert!(!r.eligible && !r.enrolled && !r.unlocked);
+        assert_eq!(r.per_key_tpm_evidence, "not-verified");
+        assert_eq!(r.remaining.len(), 4);
+    }
     #[test]
     fn policy_readback_rejects_every_broader_usage_export_and_wrong_length() {
         assert!(policy_matches(0, 1, 2048).is_ok());
