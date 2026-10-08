@@ -97,3 +97,5 @@ export async function prepareNativeHelloCopy(): Promise<import('../../pwa/src/he
 export async function exportNativeHelloCopy(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_copy_export'); }
 
 export async function checkNativeHelloCopy(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_copy_check'); }
+
+export { testNativeHelloRecovery } from './hello-recovery-client.ts';

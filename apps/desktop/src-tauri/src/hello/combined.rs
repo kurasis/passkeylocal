@@ -17,10 +17,11 @@ use std::{
 use zeroize::Zeroizing;
 
 pub mod copy;
+pub mod recovery;
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
-pub use windows::{run, run_copy};
+pub use windows::{run, run_copy, run_recovery};
 
 #[cfg(test)]
 const RP: &str = "combined.passkey-local.desktop.invalid";
@@ -43,6 +44,8 @@ struct Header {
     expected: [u8; 32],
     #[serde(default, skip_serializing_if = "Option::is_none")]
     copy_context: Option<copy::Context>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    recovery_fixture: Option<String>,
 }
 impl Header {
     fn key_name(&self) -> String {
@@ -82,6 +85,7 @@ impl Record {
                 name: vec![],
                 expected: [0; 32],
                 copy_context: None,
+                recovery_fixture: None,
             },
             ready: false,
             nonce: [0; 12],
@@ -94,6 +98,9 @@ impl Record {
             || h.version != 1
             || !canonical_uuid(&h.id)
             || !canonical_uuid(&h.creator)
+            || h.recovery_fixture
+                .as_ref()
+                .is_some_and(|id| id != recovery::FIXTURE_ID || h.copy_context.is_some())
             || h.source.len() > 64
             || h.credential.len() > 4096
             || h.public.len() > 2048
@@ -337,6 +344,13 @@ fn active(current: &dyn Fn() -> bool) -> ProofResult<()> {
     }
 }
 fn verify(r: &Record, b: &mut impl Reader, current: &dyn Fn() -> bool) -> ProofResult<()> {
+    recover(r, b, current).map(drop)
+}
+fn recover(
+    r: &Record,
+    b: &mut impl Reader,
+    current: &dyn Fn() -> bool,
+) -> ProofResult<Zeroizing<Vec<u8>>> {
     active(current)?;
     let prf = b.authorize()?;
     active(current)?;
@@ -350,7 +364,7 @@ fn verify(r: &Record, b: &mut impl Reader, current: &dyn Fn() -> bool) -> ProofR
     {
         return Err(invalid("combined-secret-digest-mismatch"));
     }
-    Ok(())
+    Ok(secret)
 }
 fn cleanup(j: &Journal, b: &mut impl Backend, report: &mut Report) -> ProofResult<()> {
     report.combined_state = "cleanup-required";
@@ -441,6 +455,18 @@ fn prepare(
     current: &dyn Fn() -> bool,
     report: &mut Report,
 ) -> ProofResult<()> {
+    let mut secret = Zeroizing::new([0; 32]);
+    libsodium_rs::random::fill_bytes(secret.as_mut_slice());
+    prepare_secret(j, r, b, current, report, &secret).map(drop)
+}
+fn prepare_secret(
+    j: &Journal,
+    r: &mut Record,
+    b: &mut impl Backend,
+    current: &dyn Fn() -> bool,
+    report: &mut Report,
+    secret: &[u8; 32],
+) -> ProofResult<Zeroizing<Vec<u8>>> {
     report.stage("combined-journal-create", j.save(r))?; // BEFORE either persisted native object
     report.combined_state = "cleanup-required";
     report.stage("combined-preflight", b.initialize())?;
@@ -451,23 +477,20 @@ fn prepare(
     active(current)?;
     let (id, prf) = report.stage("combined-prf-create", b.create_prf())?;
     r.header.credential = id;
-    let mut secret = Zeroizing::new([0; 32]);
-    libsodium_rs::random::fill_bytes(secret.as_mut_slice());
     r.header.expected = Sha256::digest(secret.as_slice()).into();
-    let inner = report.stage("combined-tpm-wrap", b.wrap(&secret))?;
-    drop(secret);
+    let inner = report.stage("combined-tpm-wrap", b.wrap(secret))?;
     report.stage("combined-seal", r.seal(&inner, &prf))?;
     // Independent authenticated-envelope negatives before disposing of the creation output.
     report.stage("combined-negative-controls", negative_controls(r, &prf))?;
     drop(prf);
-    report.stage("combined-unwrap-first", verify(r, b, current))?;
+    let recovered = report.stage("combined-unwrap-first", recover(r, b, current))?;
     active(current)?;
     r.ready = true;
     report.stage("combined-journal-ready", j.save(r))?;
     active(current)?;
     report.combined_state = "restart-required";
     report.outcome = "restart-required";
-    Ok(())
+    Ok(recovered)
 }
 fn negative_controls(r: &Record, prf: &[u8; 32]) -> ProofResult<()> {
     let good = r.open(prf)?;
@@ -490,6 +513,7 @@ fn state(r: Option<&Record>, process: &str) -> &'static str {
         None => "no-test",
         Some(r) if !r.ready => "cleanup-required",
         Some(r) if r.header.copy_context.is_some() => "copy-ready",
+        Some(r) if r.header.recovery_fixture.is_some() => "recovery-ready",
         Some(r) if r.header.creator == process => "restart-required",
         Some(_) => "ready-to-resume",
     }
@@ -563,7 +587,11 @@ fn execute(
             }
         }
         Action::Resume => {
-            if !r.ready || r.header.copy_context.is_some() || r.header.creator == process {
+            if !r.ready
+                || r.header.copy_context.is_some()
+                || r.header.recovery_fixture.is_some()
+                || r.header.creator == process
+            {
                 return report;
             }
             report.process_scope = "fresh-process";

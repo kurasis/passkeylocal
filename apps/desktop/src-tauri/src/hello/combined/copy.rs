@@ -85,7 +85,7 @@ pub(super) fn report() -> Report {
 }
 fn validate(r: &Record) -> ProofResult<()> {
     r.validate().map_err(|_| invalid("copy-record-invalid"))?;
-    if !r.ready || r.header.copy_context.is_none() {
+    if !r.ready || r.header.copy_context.is_none() || r.header.recovery_fixture.is_some() {
         return Err(invalid("copy-record-not-ready"));
     }
     Ok(())

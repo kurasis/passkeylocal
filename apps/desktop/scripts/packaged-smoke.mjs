@@ -143,6 +143,13 @@ try {
   assert.deepEqual(helloCopyExport.checks, []);
   for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloCopyExport[key], false);
   await expect(helloSection.getByRole('button', { name: 'Check a copy-test file', exact: true })).toBeEnabled();
+  // Revoke with no recovery journal is a safe no-op; no provider/UI access.
+  const helloRecoveryRevoke = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_recovery_revoke', {ticket: '00000000-0000-4000-8000-000000000001'}));
+  assert.equal(helloRecoveryRevoke.report.sourceCommit, process.env.GITHUB_SHA);
+  assert.equal(helloRecoveryRevoke.report.purpose, 'synthetic-kdbx-recovery');
+  assert.equal(helloRecoveryRevoke.report.outcome, 'no-test');
+  assert(!('passwordHash' in helloRecoveryRevoke) && !('ticket' in helloRecoveryRevoke));
+  await expect(helloSection.getByRole('button', {name: 'Test vault recovery after Hello key removal', exact:true})).toBeDisabled();
   let helloKeyLoss = null;
   if (helloWebauthnCapability.outcome === 'blocked') {
     helloKeyLoss = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_combined_key_loss'));
@@ -156,6 +163,16 @@ try {
     for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloKeyLoss[key], false);
     assert(helloKeyLoss.checks.some((c) => c.test === 'combined-preflight' && c.status === 'failed'));
     assert(!helloKeyLoss.checks.some((c) => c.test === 'combined-tpm-create-binding'));
+  }
+  let helloRecoveryPrepare = null;
+  if (helloKeyLoss?.combinedState === 'cleanup-required') {
+    // An existing (even interrupted) experiment must not be overwritten/adopted.
+    helloRecoveryPrepare = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_recovery_prepare'));
+    assert.equal(helloRecoveryPrepare.report.sourceCommit, process.env.GITHUB_SHA);
+    assert.equal(helloRecoveryPrepare.report.purpose, 'synthetic-kdbx-recovery');
+    assert.equal(helloRecoveryPrepare.report.outcome, 'cleanup-required');
+    assert.deepEqual(helloRecoveryPrepare.report.checks, []);
+    assert(!('passwordHash' in helloRecoveryPrepare) && !('ticket' in helloRecoveryPrepare));
   }
   let helloTpmLocalBinding = null;
   if (helloTpmCapability.outcome === 'blocked') {
@@ -350,7 +367,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

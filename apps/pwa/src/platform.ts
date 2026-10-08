@@ -40,3 +40,5 @@ export async function prepareNativeHelloCopy(): Promise<import('./hello-protocol
 export async function exportNativeHelloCopy(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello copy tests are unavailable in browsers'); }
 
 export async function checkNativeHelloCopy(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello copy tests are unavailable in browsers'); }
+
+export async function testNativeHelloRecovery(_signal?: AbortSignal): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('UNAVAILABLE'); }

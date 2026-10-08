@@ -74,6 +74,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:RECOVERY_PYTHON = "python"
           node apps/desktop/test/interop.ts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node apps/desktop/test/hello-recovery-interop.ts
       - name: Bidirectional fresh encrypted-file fixtures
         shell: pwsh
         run: |

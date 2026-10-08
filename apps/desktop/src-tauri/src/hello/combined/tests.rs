@@ -8,7 +8,7 @@ pub(super) struct Fake<'a> {
     decryptions: usize,
     prf_deletes: usize,
     tpm_deletes: usize,
-    fail: Option<&'static str>,
+    pub(super) fail: Option<&'static str>,
     prf_missing: bool,
     tpm_missing: bool,
     stale_after_auth: Option<&'a Cell<bool>>,

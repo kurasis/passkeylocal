@@ -79,3 +79,19 @@ pub fn run(
     };
     Ok(execute(&j, &mut r, &mut backend, action, process, &current))
 }
+
+// Fixed public KDBX fixture only; no renderer-selected secret, cipher or key path.
+pub fn run_recovery(
+    root: &Path,
+    hwnd: usize,
+    current: impl Fn() -> bool + Sync,
+    action: recovery::Action,
+) -> Result<recovery::Reply> {
+    let _attempt = crate::hello::Attempt::begin()?;
+    libsodium_rs::ensure_init().map_err(|_| Error::new("UNAVAILABLE"))?;
+    let j = Journal::open(root)?;
+    recovery::run(&j, process_id(), &current, action, |r| Native {
+        credential: Credential::new(hwnd, &current, r.header.salt, r.header.user()),
+        key: Key::new(&r.header.key_name(), &current),
+    })
+}

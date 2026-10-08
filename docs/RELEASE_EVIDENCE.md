@@ -1,5 +1,24 @@
 # Release evidence and gate status
 
+## Current-account KDBX recovery integration (2026-10-08)
+
+The [one-button recovery experiment](windows/HELLO_VAULT_RECOVERY.md) connects a
+native-unwrapped public fixture password component to the actual KDBX engine,
+re-saves with fresh salts, deletes its scoped native keys, then independently
+checks wrong-password refusal and full password recovery with entries/history.
+The adapter uses kdbxweb's public passwordHash component interface; portable KDBX
+and Python recovery stay unchanged. A dedicated worker never accesses the active
+vault. Native tickets, session redaction and durable cleanup prevent stale work
+from adopting/deleting another test. No production user vault is enrolled.
+
+Local validation passed: 122 routine native tests (33 combined/copy/recovery),
+168 TypeScript tests, 41 desktop/browser-worker scenarios, independent Python
+recovery of component-opened/re-saved KDBX, Linux and Windows GNU Clippy, both
+frontend builds and target isolation. Windows/MSVC, installed smoke and publication
+are pending CI for this increment. Physical KDBX/Hello acceptance awaits the owner. Prior
+restart/copy/key-loss evidence remains complete, and other-account manual testing
+remains excluded and unverified. Real-vault enrollment/lifecycle is still pending.
+
 ## One-account manual acceptance and completed copy observation (2026-10-08)
 
 At the owner's explicit request, the [current manual plan](windows/HELLO_OWNER_ACCEPTANCE.md)

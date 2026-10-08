@@ -599,3 +599,51 @@ test('copy import is single-flight and ignores late replies after Lock All', asy
   await expect(page.locator('.hello-proof-report')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.copyChecks())).toBe(1);
 });
+
+test('one-account recovery produces one report and requires no manual password or account entry', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', {name:'Настройки',exact:true}).click();
+  const hello=page.getByRole('region',{name:'Windows Hello',exact:true});
+  await hello.getByRole('button',{name:'Проверить восстановление после удаления ключей Hello',exact:true}).click();
+  await expect(hello.getByText('Тестовое хранилище восстановлено мастер-паролем после удаления ключей.',{exact:false})).toBeVisible();
+  await hello.getByText('Технический отчёт',{exact:true}).click();
+  const report=JSON.parse(await hello.locator('pre').innerText());
+  expect(report.outcome).toBe('vault-recovery-passed');
+  expect([report.eligible,report.enrolled,report.unlocked]).toEqual([false,false,false]);
+  expect(report.recovery.accountTest).toBe('excluded-by-owner');
+  await expect(hello.locator('input')).toHaveCount(0);
+});
+test('recovery respects saved tests and late results are redacted on Lock All', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.evaluate(()=>(window as any).helloTest.combinedState('recovery-ready'));
+  await page.getByRole('button',{name:'Настройки',exact:true}).click();
+  const button=page.getByRole('button',{name:'Проверить восстановление после удаления ключей Hello',exact:true});
+  await expect(button).toBeDisabled();
+  await page.getByRole('button',{name:'Удалить тест и временные ключи',exact:true}).click();
+  await page.evaluate(()=>(window as any).helloTest.defer());
+  await button.click(); await expect(button).toBeDisabled();
+  await page.getByRole('button',{name:'Заблокировать всё',exact:true}).click();
+  await page.evaluate(()=>(window as any).helloTest.release());
+  await expect(page.locator('.hello-proof-report')).toHaveCount(0);
+});
+
+test('actual isolated browser worker performs KDBX recovery through a synthetic IPC bridge', async ({ page }) => {
+  const errors:string[]=[]; page.on('pageerror', e=>errors.push(e.message));
+  await page.goto('/recovery.html');
+  await page.evaluate(()=>(window as any).recoveryTest.run());
+  const result=await page.evaluate(()=>(window as any).result);
+  expect(result.outcome).toBe('vault-recovery-passed');
+  expect(result.recovery).toMatchObject({entries:2,history:1});
+  expect(await page.evaluate(()=>(window as any).recoveryTest.calls)).toEqual(['hello_recovery_prepare','hello_recovery_revoke']);
+  expect(JSON.stringify(result)).not.toContain('passwordHash');
+  expect(errors).toEqual([]);
+});
+test('late native prepare after lock is disposed without returning a worker report', async ({ page }) => {
+  await page.goto('/recovery.html');
+  await page.evaluate(()=>{(window as any).recoveryTest.block();void (window as any).recoveryTest.run();});
+  await expect.poll(()=>page.evaluate(()=>(window as any).recoveryTest.calls.length)).toBe(1);
+  await page.evaluate(()=>{(window as any).recoveryTest.lock();(window as any).recoveryTest.release();});
+  await expect.poll(()=>page.evaluate(()=>(window as any).recoveryTest.calls.length)).toBe(2);
+  expect(await page.evaluate(()=>(window as any).result)).toBeUndefined();
+  expect(await page.evaluate(()=>(window as any).error)).toBe('interrupted');
+});

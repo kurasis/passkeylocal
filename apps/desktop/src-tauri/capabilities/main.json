@@ -42,6 +42,8 @@
     "allow-hello-copy-prepare",
     "allow-hello-copy-export",
     "allow-hello-copy-check",
+    "allow-hello-recovery-prepare",
+    "allow-hello-recovery-revoke",
     "allow-hello-settings",
     "allow-hello-unlock",
     "allow-hello-revoke",
