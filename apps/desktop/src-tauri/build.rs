@@ -44,6 +44,8 @@ fn main() {
             "hello_copy_prepare",
             "hello_copy_export",
             "hello_copy_check",
+            "hello_recovery_prepare",
+            "hello_recovery_revoke",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

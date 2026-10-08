@@ -457,6 +457,76 @@ async fn hello_copy_experiment(
     serde_json::to_value(report).map_err(|_| Error::new("UNAVAILABLE"))
 }
 
+#[tauri::command]
+async fn hello_recovery_prepare(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    focused(&window)?;
+    hello_recovery_experiment(window, app, hello::combined::recovery::Action::Prepare).await
+}
+#[tauri::command]
+async fn hello_recovery_revoke(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    ticket: String,
+) -> Result<Value> {
+    // Automatic disposal must still work after focus/session loss. Only the exact
+    // current-process synthetic journal ticket can be revoked by this command.
+    trusted(&window)?;
+    if ticket.len() != 36 {
+        return Err(Error::new("INVALID_STATE"));
+    }
+    hello_recovery_experiment(
+        window,
+        app,
+        hello::combined::recovery::Action::Revoke(ticket),
+    )
+    .await
+}
+async fn hello_recovery_experiment(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    action: hello::combined::recovery::Action,
+) -> Result<Value> {
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    let root = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|_| Error::new("UNAVAILABLE"))?;
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    let session = app
+        .state::<NativeState>()
+        .active
+        .lock()
+        .map_err(|_| Error::new("UNAVAILABLE"))?
+        .clone();
+    let owner = app.clone();
+    let current_session = session.clone();
+    let mut reply = tauri::async_runtime::spawn_blocking(move || {
+        hello::combined::run_recovery(
+            &root,
+            hwnd,
+            || {
+                let state = owner.state::<NativeState>();
+                state.serial.load(Ordering::SeqCst) == serial
+                    && state
+                        .active
+                        .lock()
+                        .is_ok_and(|active| *active == current_session)
+            },
+            action,
+        )
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))??;
+    trusted(&window)?;
+    let state = app.state::<NativeState>();
+    if state.serial.load(Ordering::SeqCst) != serial
+        || !state.active.lock().is_ok_and(|active| *active == session)
+    {
+        reply.redact();
+    }
+    serde_json::to_value(&reply).map_err(|_| Error::new("UNAVAILABLE"))
+}
+
 async fn hello_tpm_experiment(
     window: WebviewWindow,
     app: tauri::AppHandle,
@@ -756,6 +826,8 @@ pub fn run() {
             hello_copy_prepare,
             hello_copy_export,
             hello_copy_check,
+            hello_recovery_prepare,
+            hello_recovery_revoke,
             hello_settings,
             hello_unlock,
             hello_revoke,

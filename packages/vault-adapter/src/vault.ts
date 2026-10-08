@@ -225,6 +225,25 @@ export async function openVault(bytes: Uint8Array | ArrayBuffer, password: strin
 }
 
 /**
+ * Consume a password-only SHA-256 credential component, not a final KDF key.
+ * kdbxweb's public passwordHash field is before composite hashing and Argon2;
+ * using setPassword here would hash twice. No key-file/challenge credential is
+ * accepted. The caller transfers ownership; input bytes are cleared on all paths.
+ */
+export async function openVaultWithPasswordHash(bytes: Uint8Array | ArrayBuffer, hash: Uint8Array): Promise<OpenedVault> {
+  try {
+    if (!(hash instanceof Uint8Array) || hash.byteLength !== 32) throw new VaultError('INVALID_INPUT', 'credential-length');
+    const K = kdbx();
+    const credentials = new K.Credentials(null);
+    await credentials.ready;
+    credentials.passwordHash = K.ProtectedValue.fromBinary(hash.slice().buffer);
+    return await openWithCredentials(bytes, credentials, []);
+  } finally {
+    if (hash instanceof Uint8Array) hash.fill(0);
+  }
+}
+
+/**
  * Re-open bytes with the credentials of an already unlocked database (for
  * example to discard unsaved changes or authenticate a stored snapshot) without
  * keeping the master password as a string. Same checks as `openVault`.
