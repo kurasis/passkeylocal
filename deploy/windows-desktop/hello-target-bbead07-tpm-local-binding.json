@@ -1,0 +1,83 @@
+{
+  "algorithm": "platform-rsa-oaep-sha256",
+  "authorization": "no-hello-authorization",
+  "checks": [
+    {
+      "status": "passed",
+      "test": "tpm-provider-open"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-provider-properties"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-key-create"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-key-policy"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-key-readback"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-read-public"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-public-wrap"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-unwrap-first"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-reopen-unwrap"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-reopen-read-public"
+    },
+    {
+      "status": "passed",
+      "test": "tpm-negative-controls"
+    },
+    {
+      "status": "passed",
+      "test": "test-key-delete"
+    }
+  ],
+  "eligible": false,
+  "enrolled": false,
+  "exportChecks": [],
+  "outcome": "tpm-local-binding-observed",
+  "perKeyTpmEvidence": "local-read-public-observed",
+  "processScope": "same-process",
+  "purpose": "synthetic-tpm-local-binding",
+  "remaining": [
+    "per-key-tpm-proof",
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "bbead0731ae5fc1bbb4171e861306c70b5257369",
+  "tpm": {
+    "exportPolicy": 0,
+    "implementationFlags": 1,
+    "interfaceType": 3,
+    "keyLengthBits": 2048,
+    "keyNameBytes": 34,
+    "keyUsage": 1,
+    "objectAttributes": 132210,
+    "pcpKeyUsage": 65538,
+    "pcpUsageFlags": 65536,
+    "pcpUsageKind": 2,
+    "tpmVersion": 2
+  },
+  "unlocked": false,
+  "version": 1
+}

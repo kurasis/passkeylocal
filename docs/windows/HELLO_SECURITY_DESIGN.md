@@ -8,7 +8,14 @@ after reopening, and performs OAEP/tamper controls with unconditional cleanup.
 This corrects the investigation's overly narrow acquisition dependency, not the
 original security requirements. Local trusted-OS observations are distinct from
 signed AIK attestation and do not prove PRF-secret storage or Hello authorization.
-Target hardware execution is pending; all gates and enrollment/unlock remain off.
+The [bbead07 owner report](../../deploy/windows-desktop/hello-target-bbead07-tpm-local-binding.json) now passes all 12 stages,
+including ReadPublic before/after reopening, OAEP, tamper controls and cleanup.
+Local per-key binding of this exact synthetic key is observed under the trusted
+OS/KSP/TBS model; the standalone target measurement is complete. Actual combined
+PRF/TPM authorization, full-process restart/copy and real enrollment remain
+unproved; release gates and enrollment/unlock stay off. The report's static
+`remaining` list is not a list of failed stages. Do not request an unchanged rerun.
+See [the next synthetic composition boundary](HELLO_LOCAL_TPM_BINDING.md#next-implementation-boundary).
 The older sections below are historical paths and results, not a requirement to
 retry the completed direct-attestation experiment.
 
@@ -136,7 +143,7 @@ enroll, unlock or substitute for the primary security proof. See
 
 Status: **BLOCKED — no eligible protected-secret provider or physical proof**. This is a deliberate fail-closed implementation of the handoff's rule: "If the proof cannot satisfy the requirements, leave Hello unavailable with an actionable reason ... Continue safe work on the rest of the app."
 
-No Windows 11/TPM/Kensington device is attached to this environment. The owner has reported successful repeated synthetic PKCS#1 v1.5 Passport decrypts, three strict silent refusals and fingerprint confirmation for the earlier queried prompts. These are same-process observations; fresh-process authorization, complete cancellation behavior, non-exportability and per-key TPM binding have not been established on the target device. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.
+No Windows 11/TPM/Kensington device is attached to this environment. The owner has reported successful repeated synthetic PKCS#1 v1.5 Passport decrypts, three strict silent refusals and fingerprint confirmation for the earlier queried prompts. The later PRF and bbead07 ReadPublic results establish separate same-process component observations, including local binding and duplication restrictions for the exact synthetic TPM key. Fresh-process combined authorization, full cancellation/copy behavior and actual production-key verification/enrollment remain unproved. Raw private-export formats were unsupported; that is not an explicit export-denial result. A TPM-present flag or successful consent dialog would not establish those properties. The release binary therefore cannot enroll, unwrap or expose a stored credential-equivalent secret. `hello_enroll` and `hello_unlock` return sanitized UNAVAILABLE even when directly invoked; `hello_revoke` reports that no enrollment key was created. Settings show the specific blocker and the master-password fallback. No synthetic service double can be activated by environment, configuration, arguments or IPC. The real native synthetic-secret experiment described below is separate and cannot enroll a vault.
 
 Candidate investigation references were checked against Tauri 2.12.1 source/bindings and the official sources in [SOURCES_AND_REVIEW.md](SOURCES_AND_REVIEW.md): Microsoft Windows Hello app development, NCryptDecrypt, key storage properties and desktop UserConsentVerifier interop. They do not promise an arbitrary Passport-provider decryption algorithm or fresh authorization on every operation. No consent-plus-DPAPI, signature-derived AES key, software fallback, or generic decrypt IPC is implemented. No provider is claimed eligible merely because its name contains Passport.
 

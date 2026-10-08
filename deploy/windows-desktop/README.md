@@ -6,13 +6,25 @@ Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-W
 
 Installer: 217,915,248 bytes; SHA-256 `0a152600b527188e729618d5f1ec1eec24b06e2c4cc965d6135bd8d1a4cc8868`, independently matched to original metadata and checksum sidecar. Original evidence: [build](build-bbead07.json), [installed-app smoke](smoke-bbead07.json), [5 GiB resource measurement](file-safe-resource-bbead07.json), [signed WebView2](webview2-download-bbead07.json), [Russian settings](windows-settings-bbead07.png), [locked window](windows-locked-bbead07.png). The unversioned sidecar matches this installer.
 
-## One new target measurement
+## Completed target measurement
 
-Fully close the old app, install this build, unlock with the master password and open Settings → Windows Hello → **Check key binding to TPM** / **Проверить привязку ключа к TPM**. This test requires no fingerprint. Copy that technical JSON; `sourceCommit` must be `bbead0731ae5fc1bbb4171e861306c70b5257369`. Do not repeat the completed PRF, direct-attestation or private-export actions. Do not reset TPM, Hello or security policy.
+The [owner's bbead07 report](hello-target-bbead07-tpm-local-binding.json) matches
+this installed source and passes all 12 stages: policy, exact ReadPublic key/Name
+binding, OAEP roundtrip, reopening/rebinding, negative controls and exact cleanup.
+Attributes `132210` (`0x00020472`) include fixedTPM, fixedParent and
+sensitiveDataOrigin. This is local per-key evidence for the synthetic key under
+the trusted Windows/KSP/TBS model. The test key has been deleted.
+
+No unchanged rerun or replacement installer is needed. The report explicitly
+states same-process / no-Hello-authorization; its fixed `remaining` list does not
+mean the 12 stages failed. The [next development increment](../../docs/windows/HELLO_LOCAL_TPM_BINDING.md#next-implementation-boundary)
+is a synthetic combined PRF/TPM envelope with fresh authorization, full-process
+restart and durable cleanup, followed by account/machine-copy checks. This is
+not yet available in this installer. No further owner action is currently needed.
 
 The [new native route](../../docs/windows/HELLO_LOCAL_TPM_BINDING.md) follows Microsoft's provider/TBS handle documentation. It reads only the app-created key with fixed TPM2_ReadPublic, matches its public material, SHA-256 Name and duplication restrictions against CNG/PCP, repeats after reopening and exercises OAEP/tamper controls. It always deletes its synthetic key. The provider owns borrowed handles. No system keys, policy changes, arbitrary TPM-command IPC or real vault material are involved.
 
-`local-read-public-observed` means a local measurement under trusted Windows/Platform KSP/TBS assumptions; it is not a signed attestation, remote authority, PRF storage proof or completed Hello unlock. All four release gates remain open. The target run is pending; cloud tests cannot prove this owner's hardware. Master-password unlock and independent recovery remain available.
+`local-read-public-observed` means a local measurement under trusted Windows/Platform KSP/TBS assumptions; it is not a signed attestation, remote authority, PRF storage proof or completed Hello unlock. All four release gates remain open. The standalone target run is complete as owner-provided evidence; combined-mechanism and production enrollment acceptance remain pending. Master-password unlock and independent recovery remain available.
 
 ## Completed owner baseline
 

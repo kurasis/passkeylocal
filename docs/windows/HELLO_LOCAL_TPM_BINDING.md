@@ -1,5 +1,34 @@
 # Local per-key TPM binding after Windows returned no attestation
 
+## Completed owner measurement (2026-10-08)
+
+The [owner report](../../deploy/windows-desktop/hello-target-bbead07-tpm-local-binding.json) matches installed source
+`bbead0731ae5fc1bbb4171e861306c70b5257369`. All 12 stages PASS, including both
+ReadPublic comparisons, OAEP/SHA-256 wrap/decrypt, reopening, tamper controls
+and exact test-key deletion. Outcome is `tpm-local-binding-observed`.
+This completes this target measurement; no unchanged rerun is needed.
+
+`objectAttributes: 132210` is `0x00020472`: fixedTPM, fixedParent,
+sensitiveDataOrigin, userWithAuth, noDA and decrypt. The first three flags
+bind the generated sensitive part to the TPM/parent and prohibit TPM duplication;
+userWithAuth alone does not mean Hello authorization, and noDA is not evidence
+of fingerprint prompting. Policy zero, decrypt-only usage one, 2048-bit length,
+TPM version two and both matched Names/public keys support local per-key evidence
+for this exact synthetic key under the trusted Windows/KSP/TBS assumptions below.
+
+This is owner-executed target evidence, not a cloud hardware test. The JSON
+contains no new OS/sensor/driver or fingerprint observations. `authorization`
+is explicitly `no-hello-authorization`; the process scope is `same-process`.
+`exportChecks` is empty because this action did not request private export.
+It does not change the earlier unsupported-format results or supply an AIK
+certificate. The test key was deleted; no usable vault key/enrollment persists.
+
+The report's fixed four-item `remaining` list and false eligibility flags are
+preserved exactly. They are conservative release placeholders, not four failed
+stages in this successful probe. Local binding of the tested key is now observed;
+production per-key verification, combined authorization, process/account/machine
+acceptance and actual enrollment still need implementation and validation.
+
 ## Finding and scope (2026-10-08)
 
 The owner's bdb2a03 result successfully creates and deletes a Hello credential,
@@ -71,18 +100,40 @@ proof about the separate Hello PRF credential. Software-shaped fixtures alone
 cannot establish hardware binding. The existing hardware preflight must pass;
 there is no software-provider fallback.
 
-The first target run is still required. This experiment remains same-process;
-there is no persisted envelope and no process/account/machine-copy proof. The
-combined PRF + inner-envelope authorization, tamper/cancel/restart/copy cases,
-crash cleanup and actual enrollment lifecycle remain pending. All four release
-gates and the master-password fallback remain unchanged. No claim that Windows
-will now supply a direct attestation is made.
+The first target run is complete as recorded above. This experiment remains
+same-process: it closes/reopens key and provider handles, not the application.
+There is no persisted combined envelope or process/account/machine-copy proof.
+All four application release gates remain conservatively open; the completed
+local per-key measurement must not be described as still missing. No claim that
+Windows will now supply a direct attestation is made.
 
-On the new installed build, use Settings → Windows Hello → **Check key binding
-to TPM** (Russian: **Проверить привязку ключа к TPM**). It requires no fingerprint;
-copy that one report. Do not repeat the old direct/PRF/private-export probes.
-A failure includes the exact bounded operation and native error; no OS settings
-should be changed to force a passing result.
+## Next implementation boundary
+
+The next increment is a **synthetic combined PRF + TPM envelope**, not another
+standalone capability/export/attestation probe and not real-vault enrollment.
+The existing PRF and TPM results establish the component baseline; they do not
+prove that the combination enforces authorization.
+
+- Wrap a fresh synthetic secret through the verified app TPM key and protect
+  that ciphertext with authenticated encryption using the Hello PRF result.
+  Bind credential/key identity and envelope version in authenticated metadata;
+  verify each new protection key using the same accepted local readback route.
+- Use fresh OS-required user verification for every combined unwrap. Exercise
+  cancellation, silent access, changed metadata/ciphertext and late session
+  results; failures must return no usable synthetic secret.
+- Add a bounded, per-user, atomic synthetic-test record and durable cleanup
+  before introducing persisted temporary keys/credentials. Persist ciphertext
+  and a synthetic comparison digest only, never the secret or PRF output.
+  On a full app exit/relaunch, open the exact existing test objects and verify
+  both their binding and a newly authorized combined unwrap.
+- Subsequently validate copying to another account/machine and key-loss
+  fallback, using only the app-owned test objects and independent password
+  recovery. Keep real enrollment/unlock unavailable until the mechanism passes.
+
+These are implementation requirements, not features of the bbead07 installer or
+executed tests. No action is currently required from the owner. Do not repeat the
+completed local-binding, PRF, direct-attestation or raw-private-export probes.
+No TPM reset or OS security-policy change is required by this result.
 
 ## Sources checked
 

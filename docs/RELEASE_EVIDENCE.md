@@ -1,5 +1,33 @@
 # Release evidence and gate status
 
+## Completed local TPM binding target measurement (2026-10-08)
+
+The [owner report](../deploy/windows-desktop/hello-target-bbead07-tpm-local-binding.json)
+matches installed/tested source `bbead0731ae5fc1bbb4171e861306c70b5257369`.
+All 12 stages PASS, including exact CNG/PCP/TPM public-key and SHA-256 Name
+comparisons before/after reopening, actual OAEP/SHA-256 decrypt, negative controls
+and deletion. `objectAttributes: 132210` (`0x00020472`) includes fixedTPM,
+fixedParent, sensitiveDataOrigin, userWithAuth, noDA and decrypt. Local binding
+and duplication restrictions of this exact synthetic key are now observed under
+the trusted Windows/Platform KSP/TBS model. The target measurement is complete.
+
+The report explicitly remains same-process / no-Hello-authorization with empty
+export checks and false eligibility/enrollment/unlock. Preserve its four-item
+`remaining` list verbatim: it is static release-state metadata, not a failed-test
+list. No new fingerprint, driver, OS, signed-attestation or private-export-denial
+evidence is inferred. The key was deleted; no production enrollment exists.
+
+Next is [synthetic PRF/TPM composition](windows/HELLO_LOCAL_TPM_BINDING.md#next-implementation-boundary),
+fresh authorization/cancellation, durable cleanup and full app restart, followed
+by account/machine copies and production lifecycle acceptance. Component success
+does not satisfy those release gates. Do not rerun completed standalone probes.
+
+This update preserves owner evidence and corrects current documentation only.
+Source/stage/schema/attribute consistency and relative links were checked. No new
+software or hardware test was executed in the cloud; application, tests,
+dependencies, workflows, installer and Pages archive are unchanged. No rebuild,
+new deployment, policy change or feature activation is claimed.
+
 ## Local TPM binding publication (2026-10-08)
 
 [PR #25](https://github.com/kurasis/passkeylocal/pull/25) merged as `c5e3481a118fd9c50cb2adcb3cc741cacba1ea2a`;
