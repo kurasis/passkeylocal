@@ -18,7 +18,8 @@ exercised with synthetic IPC. Type checks, Linux and Windows GNU Clippy, both
 frontend builds, native/web separation and independent Python recovery passed. Full
 Windows/MSVC and installed smoke results are recorded on publication; GNU checking
 is not a physical Windows runtime pass. The new packaged IPC smoke checks only
-nonsensitive off/revoke, malformed input and stale-session behavior on the hosted
+nonsensitive off/revoke, malformed input and stale-session behavior, plus the
+real worker-populated connection form and its default lifetime on the hosted
 runner. Physical acceptance of this new opt-in lifecycle remains pending.
 
 The completed owner recovery/copy/restart reports retain their original flags

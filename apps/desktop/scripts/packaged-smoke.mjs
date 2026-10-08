@@ -105,6 +105,11 @@ try {
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await expect(page.getByText('Windows Hello is off for this vault.', { exact: true })).toBeVisible();
+  const enrollmentMode = page.getByLabel('Keep this connection', { exact: true });
+  await expect(enrollmentMode).toHaveValue('session');
+  await expect(enrollmentMode.locator('option')).toHaveCount(4);
+  await expect(page.getByRole('button', { name: 'Connect Windows Hello', exact: true })).toBeDisabled();
   const helloReport = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_status'));
   assert.equal(helloReport.available, false, 'OS configuration must not enable unproved vault unwrap');
   assert.equal(helloReport.enrolled, false);
@@ -325,6 +330,7 @@ try {
   }
   await mkdir('apps/desktop/artifacts', { recursive: true });
   await page.screenshot({ path: 'apps/desktop/artifacts/windows-settings-smoke.png' });
+  await page.locator('section.card').filter({ has: page.getByRole('heading', { name: 'Вход через Windows Hello', exact: true }) }).screenshot({ path: 'apps/desktop/artifacts/windows-hello-smoke.png' });
   await page.getByRole('combobox', { name: 'Язык', exact: true }).selectOption('en');
   await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
   const interval = page.getByRole('combobox', { name: 'Lock after inactivity', exact: true });
