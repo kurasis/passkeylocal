@@ -23,11 +23,25 @@ No claim acquisition, authority creation, raw TPM commands, OS keys, dependency,
 new IPC action or real-vault envelope is added. Trusted same-key certification,
 AIK chain/policy/revocation and all four acceptance gates remain open.
 
-Local 77 native tests PASS (one explicit resource gate ignored), including all
-15 certification tests. Windows GNU production/all-target Clippy, formatting and
-independent Python wrapped-signature verification PASS. Hosted Windows signature
-and complete CI validation are pending. No new installer is required to repeat this completed
-hardware diagnostic; the existing source-correlated download remains available.
+[PR #23](https://github.com/kurasis/passkeylocal/pull/23) merged automatically as
+`3295d9085591ef28e417b1b71d8d5028fb072f9b`; its tree equals tested PR source
+`606e3c955b20f84ce27829f4c1d97a436c07f179` (code head `d205760367ded46c8d664920ea1588cb1e147cab`).
+[General CI 37739092000](https://github.com/kurasis/passkeylocal/actions/runs/37739092000)
+and [Windows CI 37739092065](https://github.com/kurasis/passkeylocal/actions/runs/37739092065)
+PASS: all 11 exact-head checks completed successfully. Local 77 native tests
+PASS (one explicit resource gate ignored), including all 15 certification tests;
+Windows GNU production/all-target Clippy, formatting, independent committed and
+freshly generated Python fixtures PASS. Original hosted logs confirm 98 Windows
+routine tests (ABI/resource gates separately excluded) and all eight new PCP tests,
+including actual BCrypt verification and stale-session rejection. Explicit MSVC/
+header ABI and 5 GiB resource tests, bidirectional independent recovery, native
+KDBX/Python parity, both frontend builds/isolation, actual NSIS installation and
+packaged IPC/storage/lock smoke PASS. General CI also confirms 161 TypeScript
+tests, 24 UI/eight PWA scenarios, Python OS/version matrix and offline recovery.
+These software/hosted results do not establish physical TPM or Hello acceptance.
+No owner rerun is needed; the existing source-correlated c83ce3f download and
+completed target result remain the hardware experiment baseline. No application,
+test or workflow bytes change in this final documentation publication.
 
 ## PCP provider-marker corrected installer evidence (2026-10-08)
 
