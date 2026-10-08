@@ -1,5 +1,41 @@
 # Release evidence and gate status
 
+## Copy-file publication (2026-10-08)
+
+[PR #28](https://github.com/kurasis/passkeylocal/pull/28) merged as `241e2b515914089754a1815219eec74b4ad85a36`;
+application tree equals tested source `cdcc9542b891b808824c1ca7ce471a260ef176b5` (head `ae6143d520964f5a6e6b3a073fa1c3c705134ad6`).
+[General CI 37783742796](https://github.com/kurasis/passkeylocal/actions/runs/37783742796) and
+[Windows CI 37783742741](https://github.com/kurasis/passkeylocal/actions/runs/37783742741)
+passed all 11 exact-head checks. Logs verify 147 Windows routine native tests
+(25 portable combined/copy plus four Windows context/command cases), separately
+executed MSVC/header ABI and 5 GiB resource checks, 115 Linux native tests,
+161 TypeScript tests, 37 desktop UI and eight production PWA scenarios,
+recovery matrix/offline kit/fresh interop.
+10,000-file restore: 108.959 s; hosted 5 GiB process:
+44.633 s; sampled peak working set 10,604,544 bytes.
+
+Downloaded original ZIP matches GitHub digest `sha256:eb4d5a2fa700077131e483d2de7ffed6eecca0ac9bd1f1c06fd10ba0a9646b6f`.
+Installer matches original build metadata and sidecar: `b987738eed24eb11aab84d74d1636d44e8be0b78b1ea5edc6884e024c799405b`,
+217,970,294 bytes. Actual installation/binary equality and packaged
+UI/IPC smoke passed. Fourteen source-matched reports retain false enrollment,
+eligibility and unlock. No-record copy export returns without a dialog or keys;
+the read-only check control is available without Hello. The hosted machine has
+no usable Hello/TPM. Unit tests cover native-dialog orchestration, but actual
+cross-computer execution awaits the owner; automated checks do not replace it.
+
+[Download evidence](../deploy/windows-desktop/) and the [two-computer protocol](windows/HELLO_COPY_TEST.md)
+are published: export → foreign observation → matching source decryption → cleanup.
+Correlate all three complete-file digests; imported metadata alone is untrusted.
+Only the synthetic envelope is transferred, not native private-key containers.
+Prior restart/cancellation/key-loss observations remain complete. Other-account
+copy, password fallback, remaining authorization negatives and production
+integration remain open; real-vault Hello enrollment/unlock stays disabled.
+
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-241e2b5.zip): 214,600 bytes,
+SHA-256 `78374ea220b914d45a99b827417addf0a7679f177773d546f41e67d413549442`; all ten files equal freshly rebuilt production output, with
+native IPC absent. No server deployment occurred. Publication changes only docs
+and deploy artifacts; application/test/dependency/workflow bytes remain tested.
+
 ## Synthetic copy-file implementation (2026-10-08)
 
 The [copy-file experiment](windows/HELLO_COPY_TEST.md) adds source export/re-export
@@ -19,7 +55,7 @@ Local validation: 26 combined/copy tests, all 115 routine native tests (one
 resource test ignored in the routine run), 161 TypeScript tests and 37 desktop
 UI scenarios passed. Linux and Windows GNU Clippy, both production frontends
 and target isolation passed. MSVC CI, installed-app smoke and installer
-publication are pending final validation for this increment.
+publication subsequently passed as recorded above.
 
 ## Completed owner temporary key-loss measurement (2026-10-08)
 

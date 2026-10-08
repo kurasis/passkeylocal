@@ -1,22 +1,35 @@
 # Windows desktop test installers
 
-Latest: **temporary Hello + TPM key-loss test** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37773037961/artifacts/11549687082), [successful Windows run 37773037961](https://github.com/kurasis/passkeylocal/actions/runs/37773037961). [PR #27](https://github.com/kurasis/passkeylocal/pull/27) merged as `0eb2a195a15567bba124fc0cd2591a5028b5ac50`. Code head `a4e9a3cb2870a4716f8350e5735d0c6ba3246ab6`; installed/tested source `4b3ba340f684fc6adefc5b5e2a2e0295add18249`. The merged application tree equals the tested PR tree.
+Latest: **Hello + TPM encrypted test-file transfer** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37783742741/artifacts/11554127672), [successful Windows run 37783742741](https://github.com/kurasis/passkeylocal/actions/runs/37783742741). [PR #28](https://github.com/kurasis/passkeylocal/pull/28) merged as `241e2b515914089754a1815219eec74b4ad85a36`. Code head `ae6143d520964f5a6e6b3a073fa1c3c705134ad6`; installed/tested source `cdcc9542b891b808824c1ca7ce471a260ef176b5`. The merged application tree equals the tested PR tree.
 
 Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`. This is an unsigned experimental installer; Microsoft's signed x64 WebView2 offline installer is included. Node/Python are not required. Artifact retention is 30 days; after expiry run the [Windows workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml) on main.
 
-Installer: 217,949,570 bytes; SHA-256 `06d06cdfdcc016de8dfb4f44ecf5e07b43281f528a92d6e538fe6d2bdf7f7a63`, matched to original metadata and checksum sidecar. Original evidence: [build](build-4b3ba34.json), [installed-app smoke](smoke-4b3ba34.json), [5 GiB resource measurement](file-safe-resource-4b3ba34.json), [signed WebView2](webview2-download-4b3ba34.json), [Russian settings](windows-settings-4b3ba34.png), [locked window](windows-locked-4b3ba34.png). The unversioned sidecar matches this installer.
+Installer: 217,970,294 bytes; SHA-256 `b987738eed24eb11aab84d74d1636d44e8be0b78b1ea5edc6884e024c799405b`, matched to original metadata and checksum sidecar. Original evidence: [build](build-cdcc954.json), [installed-app smoke](smoke-cdcc954.json), [5 GiB resource measurement](file-safe-resource-cdcc954.json), [signed WebView2](webview2-download-cdcc954.json), [Russian settings](windows-settings-cdcc954.png), [locked window](windows-locked-cdcc954.png). The unversioned sidecar matches this installer.
+
+## Two-computer copy procedure
+
+Install this build on both Windows computers. On a fresh destination, an empty test vault is sufficient to reach Settings → Windows Hello. No real vault, master password or private-key files need to be transferred.
+
+1. On the **source**, choose **Создать файл проверки переноса / Create copy-test file**, select a new `.hello-test` filename, and complete the two Windows verifications. Save the report (`copy-exported`, `copy-ready`). **Keep the source test keys until step 4.**
+2. Copy only that file to the **other computer**. Choose **Проверить тестовый файл / Check a copy-test file**. Save the report; expected observation is `copy-isolation-observed` with `different-installation`. Provider/API errors remain blocked and do not prove isolation.
+3. Back on the **source**, use **Проверить тестовый файл** on that same file and complete fresh Hello verification. Save the report; expected `copy-source-roundtrip-passed` and `same-account-and-installation`.
+4. Send all three reports: `copyEvidence.fileSha256` must be identical. After collecting them, choose **Remove test and temporary keys** on the source and save the cleanup report.
+
+If exporting failed after creation, use **Сохранить тестовый файл ещё раз / Save the test file again**, which revalidates the source keys before saving. Existing tests/files are never overwritten. Import reads only; it does not create/delete native keys or adopt a journal. [Full procedure, recovery and limits](../../docs/windows/HELLO_COPY_TEST.md).
+
+Physical cross-computer measurement is pending. This measures copying an encrypted synthetic envelope, not cloning Windows or private key containers. Same-machine/different-account acceptance is separate. Eligibility/enrollment/unlock remain false; the master password remains the normal vault-unlock method.
 
 ## Completed key-loss measurement
 
-The [owner report](hello-target-4b3ba34-key-loss.json) for this installer passes
+The [owner report](hello-target-4b3ba34-key-loss.json) for the earlier `4b3ba34` installer passes
 all 20 stages: decryption before deletion, passkey absence on reopen, the
 still-existing TPM key's positive reopen control, then its absence after deletion.
 `0x80090016` at `loss-tpm-reopen` is the expected `NTE_BAD_KEYSET` observation.
 Cleanup of both native objects and the journal passed; final state is `no-test`,
 outcome `combined-key-loss-passed`.
 
-**The requested test is complete.** No repeated test, restart, manual cleanup or
-new installer is needed. [Reference procedure and limits](../../docs/windows/HELLO_KEY_LOSS.md)
+**That key-loss test is complete.** It needs no repeat or manual cleanup;
+the new copy-file procedure above is separate. [Reference procedure and limits](../../docs/windows/HELLO_KEY_LOSS.md)
 remain available. This is a `same-process` synthetic object-loss observation;
 it does not enable real vault unlock or establish account/machine-copy resistance
 or password recovery after key loss. No prompt count or fingerprint modality is
@@ -67,10 +80,10 @@ key-loss fallback and production lifecycle acceptance remain open.
 
 ## Validation
 
-[General CI 37773038077](https://github.com/kurasis/passkeylocal/actions/runs/37773038077) and Windows CI passed all 11 exact-head checks. Windows: 133 routine native tests, including 15 portable combined cases; independent MSVC/header ABI and 5 GiB resource tests executed separately. TypeScript: 161 tests; desktop UI: 34 scenarios; production PWA: eight scenarios; Linux: 105 routine native tests. Recovery OS/version matrix, offline kit and fresh native/Python parity passed.
+[General CI 37783742796](https://github.com/kurasis/passkeylocal/actions/runs/37783742796) and Windows CI passed all 11 exact-head checks. Windows: 147 routine native tests, including 25 portable combined/copy cases and four Windows context/command cases; independent MSVC/header ABI and 5 GiB resource tests executed separately. TypeScript: 161 tests; desktop UI: 37 scenarios; production PWA: eight scenarios; Linux: 115 routine native tests. Recovery OS/version matrix, offline kit and fresh native/Python parity passed.
 
-Actual NSIS installation, binary equality, packaged UI/IPC/lock and source correlation passed. The new packaged key-loss command refused unsupported hosted preflight before creating native keys and preserved cleanup failure rather than relabeling it as success. Hosted Windows has no usable Hello/TPM; no physical loss success is inferred.
+Actual NSIS installation, binary equality, packaged UI/IPC/lock and source correlation passed. Fourteen source-matched diagnostic reports preserve false eligibility/enrollment/unlock. The new installed copy-export command reports `no-test` without opening a dialog or creating keys. The destination-check control remains available without Hello. Hosted Windows has no usable Hello/TPM; native-dialog orchestration is unit-tested, while actual cross-computer hardware behavior awaits owner reports.
 
-10,000-file restore: 119.156 seconds. Hosted 5 GiB primitive: 92.363 seconds; sampled peak working set 10,563,584 bytes. These are hosted observations, not target guarantees.
+10,000-file restore: 108.959 seconds. Hosted 5 GiB primitive: 44.633 seconds; sampled peak working set 10,604,544 bytes. These are hosted observations, not target guarantees.
 
 [Release evidence](../../docs/RELEASE_EVIDENCE.md) records outstanding account/machine-copy, password-fallback, authorization and production integration work. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.

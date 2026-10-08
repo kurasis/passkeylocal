@@ -4,8 +4,10 @@ Current status: the owner completed the combined restart, fresh prompting,
 first-assertion cancellation and cleanup observations documented in
 [the combined protocol](HELLO_COMBINED_RESTART.md). The new
 [temporary key-loss experiment](HELLO_KEY_LOSS.md) now has an owner report
-passing all 20 stages, including exact object absence and final cleanup. Account/machine copy, password fallback and
-production enrollment remain open. Older investigation notes below preserve
+passing all 20 stages, including exact object absence and final cleanup. The
+[copy-file experiment](HELLO_COPY_TEST.md) is implemented, CI-validated and
+packaged for the owner's two Windows computers; physical reports are pending.
+Other-account copy, password fallback and production enrollment remain open. Older investigation notes below preserve
 their historical scope; they do not request unchanged repeat measurements.
 
 The [local TPM binding implementation](HELLO_LOCAL_TPM_BINDING.md) adds a documented
