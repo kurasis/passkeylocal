@@ -1,45 +1,32 @@
 # Windows desktop test installers
 
-Latest: **local TPM key-binding measurement** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37755898908/artifacts/11540507240), [successful Windows run 37755898908](https://github.com/kurasis/passkeylocal/actions/runs/37755898908). [PR #25](https://github.com/kurasis/passkeylocal/pull/25) merged automatically as `c5e3481a118fd9c50cb2adcb3cc741cacba1ea2a`. Code head `2f51e3d4e60eea9a34e0066d85a2a39dc9d29f89`; installed/tested source `bbead0731ae5fc1bbb4171e861306c70b5257369`. The merged application tree equals the tested PR tree.
+Latest: **combined Hello PRF + TPM restart test** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37764316715/artifacts/11544901097), [successful Windows run 37764316715](https://github.com/kurasis/passkeylocal/actions/runs/37764316715). [PR #26](https://github.com/kurasis/passkeylocal/pull/26) merged as `cedae01de4a19b8810c4bf6a3a0bbc9d3323f170`. Code head `c757fdc45eb79b110c7835173e31ba28d476cb87`; installed/tested source `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`. The merged application tree equals the tested PR tree.
 
-Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`. The installer is unsigned and experimental; Microsoft's signed x64 WebView2 offline installer is included. Node/Python are not required. Artifact retention is 30 days; after expiry run the [Windows workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml) on main.
+Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`. This is an unsigned experimental installer; Microsoft's signed x64 WebView2 offline installer is included. Node/Python are not required. Artifact retention is 30 days; after expiry run the [Windows workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml) on main.
 
-Installer: 217,915,248 bytes; SHA-256 `0a152600b527188e729618d5f1ec1eec24b06e2c4cc965d6135bd8d1a4cc8868`, independently matched to original metadata and checksum sidecar. Original evidence: [build](build-bbead07.json), [installed-app smoke](smoke-bbead07.json), [5 GiB resource measurement](file-safe-resource-bbead07.json), [signed WebView2](webview2-download-bbead07.json), [Russian settings](windows-settings-bbead07.png), [locked window](windows-locked-bbead07.png). The unversioned sidecar matches this installer.
+Installer: 217,960,718 bytes; SHA-256 `5f280928cb26bab52f114be629dfd578b682de8615548af932c02cef616db547`, independently matched to original metadata and checksum sidecar. Original evidence: [build](build-a7f56d8.json), [installed-app smoke](smoke-a7f56d8.json), [5 GiB resource measurement](file-safe-resource-a7f56d8.json), [signed WebView2](webview2-download-a7f56d8.json), [Russian settings](windows-settings-a7f56d8.png), [locked window](windows-locked-a7f56d8.png). The unversioned sidecar matches this installer.
 
-## Completed target measurement
+## New target procedure
 
-The [owner's bbead07 report](hello-target-bbead07-tpm-local-binding.json) matches
-this installed source and passes all 12 stages: policy, exact ReadPublic key/Name
-binding, OAEP roundtrip, reopening/rebinding, negative controls and exact cleanup.
-Attributes `132210` (`0x00020472`) include fixedTPM, fixedParent and
-sensitiveDataOrigin. This is local per-key evidence for the synthetic key under
-the trusted Windows/KSP/TBS model. The test key has been deleted.
+1. Fully quit the old app and install this build. Unlock with the master password; open Settings → Windows Hello → **1. Create Hello + TPM test** / **1. Создать тест Hello + TPM**. Confirm creation and the new verification. Copy the technical report; success is `restart-required`.
+2. Fully quit and reopen the app. A page reload does not count. Choose **2. Continue after restart** / **2. Продолжить после перезапуска**. Confirm both Windows requests; each must require a new fingerprint/face/PIN. Copy the report and note whether fresh verification was required each time.
+3. Expected success: `combined-restart-passed`, `processScope: fresh-process`, both temporary keys and journal removed. `sourceCommit` must be `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`. Vault enrollment/unlock remain false.
+4. To measure cancellation, create another test, restart, cancel the first Windows prompt, and copy the cancelled report. Retry remains available. **Remove test and temporary keys** / **Удалить тест и временные ключи** handles interrupted tests and retryable cleanup, even if Hello becomes unavailable.
 
-No unchanged rerun or replacement installer is needed. The report explicitly
-states same-process / no-Hello-authorization; its fixed `remaining` list does not
-mean the 12 stages failed. The [next development increment](../../docs/windows/HELLO_LOCAL_TPM_BINDING.md#next-implementation-boundary)
-is a synthetic combined PRF/TPM envelope with fresh authorization, full-process
-restart and durable cleanup, followed by account/machine-copy checks. This is
-not yet available in this installer. No further owner action is currently needed.
-
-The [new native route](../../docs/windows/HELLO_LOCAL_TPM_BINDING.md) follows Microsoft's provider/TBS handle documentation. It reads only the app-created key with fixed TPM2_ReadPublic, matches its public material, SHA-256 Name and duplication restrictions against CNG/PCP, repeats after reopening and exercises OAEP/tamper controls. It always deletes its synthetic key. The provider owns borrowed handles. No system keys, policy changes, arbitrary TPM-command IPC or real vault material are involved.
-
-`local-read-public-observed` means a local measurement under trusted Windows/Platform KSP/TBS assumptions; it is not a signed attestation, remote authority, PRF storage proof or completed Hello unlock. All four release gates remain open. The standalone target run is complete as owner-provided evidence; combined-mechanism and production enrollment acceptance remain pending. Master-password unlock and independent recovery remain available.
+[Protocol, recovery and evidence limits](../../docs/windows/HELLO_COMBINED_RESTART.md) explain the bounded journal written before creation, dedicated RP/exact-user recovery after a crash, locally verified TPM key, authenticated metadata, new authorization for every decryption and native process boundary. Only random synthetic data is used. No real vault credentials or PRF output are persisted or returned by IPC. Do not repeat completed standalone probes, reset TPM/Hello or weaken security policy.
 
 ## Completed owner baseline
 
-- [PRF 72a0df6](hello-target-72a0df6-prf.json): all ten stages passed on Win11 Pro 25H2 / build26200, API9, Kensington VeriMark Desktop. The owner confirmed a fresh fingerprint at creation and each assertion.
-- [TPM inner c83ce3f](hello-target-c83ce3f-tpm-inner.json): OAEP, same-process reopening, negative controls and cleanup passed. Three raw private exports returned NTE_BAD_TYPE (unsupported format), not explicit denial. The new action does not reclassify or repeat those results.
-- [Direct attestation bdb2a03](hello-target-bdb2a03-direct-attestation.json): all six stages passed, but Windows returned `none`; no certificate/signature was supplied. Its precise OS cause remains unknown. The new route addresses the application's dependency on that absent certificate.
+- [PRF 72a0df6](hello-target-72a0df6-prf.json): all ten stages passed on Win11 Pro 25H2/build26200, API9, Kensington VeriMark Desktop. The owner confirmed a new fingerprint at creation and each assertion.
+- [Local TPM binding bbead07](hello-target-bbead07-tpm-local-binding.json): all 12 stages passed, including exact public key/Name/duplication restrictions before and after reopening, OAEP negative controls and deletion. This is accepted local evidence under trusted Windows/KSP/TBS, not a remote signed attestation.
+- [TPM inner c83ce3f](hello-target-c83ce3f-tpm-inner.json): raw private exports returned NTE_BAD_TYPE (unsupported format), not explicit permission denial. [Direct attestation bdb2a03](hello-target-bdb2a03-direct-attestation.json) returned `none`. Neither result is relabeled or repeated.
 
 ## Validation
 
-[General CI 37755898901](https://github.com/kurasis/passkeylocal/actions/runs/37755898901) and Windows CI passed all 11 checks. Windows: 117 routine native tests, including six bounded ReadPublic parser controls and an actual Software KSP rejection; independent MSVC/header ABI and 5 GiB tests executed separately; storage/Python parity, bidirectional file recovery, installer and packaged UI/IPC/lock checks passed. The installed application returned eleven source-correlated diagnostic reports; hosted Hello/TPM preflight blocks crypto creation. No hardware pass is inferred.
+[General CI 37764316873](https://github.com/kurasis/passkeylocal/actions/runs/37764316873) and Windows CI passed all 11 exact-head checks. Windows: 127 routine native tests, including nine portable combined protocol/persistence cases and an exact RP/user cleanup-selector test; independent MSVC/header ABI and 5 GiB resource tests executed separately. Native storage/Python parity, bidirectional file recovery, actual NSIS install, packaged UI/IPC/lock and source correlation passed. Hosted hardware observations are not owner-target evidence. The installed combined status/resume/cleanup commands reported no saved test and kept enrollment/unlock disabled.
 
-GitHub could not supply an ARM64 runner for the first macOS job; it executed no test steps and a failed-jobs-only retry stayed queued. The workflow now runs the identical recovery tests on supported macOS 15 Intel. It reported 91 passed and 12 explicitly skipped; this does not claim new ARM64 coverage.
+TypeScript: 161 tests; desktop UI: 31 scenarios; production PWA: eight scenarios. Python OS/version recovery matrix, offline kit and fresh recovery fixtures passed. Locally, ten combined tests passed (including the Unix link control), alongside Windows GNU Clippy, both frontends and target isolation. The final hosted Linux native suite passed 99 routine tests; its explicit 5 GiB resource gate ran separately.
 
-TypeScript: 161 tests; desktop UI: 28 scenarios; production PWA: eight scenarios. Python OS/version recovery matrix, offline kit and fresh recovery fixtures passed. Local Linux: 89 routine native tests / one resource test reserved for CI; typechecks, Linux/Windows GNU Clippy, both frontends and target isolation passed. The initial new UI assertion was corrected to open its collapsed report; all 28 cases passed together in hosted CI.
+10,000-file restore: 108.248 seconds. Hosted 5 GiB primitive: 92.980 seconds; sampled peak working set 10,592,256 bytes. These are hosted observations, not target-device guarantees.
 
-10,000-file restore: 87.543 seconds. Hosted 5 GiB primitive: 42.634 seconds; sampled peak working set 10,596,352 bytes. These hosted performance observations are not target-device guarantees. All original metadata retains the tested source.
-
-The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build, not Windows Hello deployment. [Release evidence](../../docs/RELEASE_EVIDENCE.md) and [Hello design](../../docs/windows/HELLO_SECURITY_DESIGN.md) distinguish completed software checks from pending hardware, composition, fresh authorization/process/copy and enrollment work.
+Physical combined restart, actual fresh prompting/cancellation, account/machine copies, key-loss fallback and production lifecycle acceptance remain pending. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build. [Release evidence](../../docs/RELEASE_EVIDENCE.md) distinguishes completed software checks from owner hardware observations and real-vault enrollment.

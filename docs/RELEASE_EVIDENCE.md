@@ -1,5 +1,37 @@
 # Release evidence and gate status
 
+## Combined Hello PRF + TPM restart publication (2026-10-08)
+
+[PR #26](https://github.com/kurasis/passkeylocal/pull/26) merged as `cedae01de4a19b8810c4bf6a3a0bbc9d3323f170`;
+application tree equals tested source `a7f56d80d6029bcd4185ca6d3ad22d08f957561a` (head `c757fdc45eb79b110c7835173e31ba28d476cb87`).
+[General CI 37764316873](https://github.com/kurasis/passkeylocal/actions/runs/37764316873) and
+[Windows CI 37764316715](https://github.com/kurasis/passkeylocal/actions/runs/37764316715)
+passed all 11 exact-head checks. Logs verify 127 Windows native tests (including
+nine portable combined cases and the exact RP/user selector), separately run
+MSVC/header ABI/resource gates, 99 Linux routine native tests, 161 TypeScript
+tests, 31 UI/eight PWA scenarios,
+recovery matrix/offline kit/native parity/fresh encrypted-file recovery.
+10,000-file restore: 108.248 s; 5 GiB process: 92.980 s,
+sampled peak working set 10,592,256 bytes.
+
+Downloaded original artifact ZIP matches GitHub digest `sha256:2af3386c15442dcfff2b419e64ad1de49c676563aaf307eb62dfe0816abc130f`.
+Installer matches original metadata/sidecar: `5f280928cb26bab52f114be629dfd578b682de8615548af932c02cef616db547`,
+217,960,718 bytes. Actual NSIS install, binary equality, packaged
+UI/storage/lock and twelve source-matched native reports PASS. The combined
+status/resume/cleanup commands were exercised without a saved test. Hosted
+Hello/TPM preflight blocks target crypto creation; no physical combined success
+is inferred. [Original download evidence](../deploy/windows-desktop/) and the
+[new target procedure](windows/HELLO_COMBINED_RESTART.md) are published.
+
+Physical fresh authorization/cancellation/restart, account/machine-copy and real
+enrollment acceptance remain pending. Prior owner component reports remain valid.
+Publication adds only download evidence and deployment archives; no app changes.
+
+[Cloudflare downloads](../deploy/cloudflare-pages/) contain `passkeylocal-cloudflare-pages-cedae01.zip`,
+212,202 bytes, SHA-256 `2d91e4089a647ce117688f98c065d04bc2c484c36975917693c6e202eaead045`. All ten files equal freshly rebuilt production
+output; native IPC is absent. No server deployment occurred. Publication changes
+only docs and deploy artifacts; tested app/test/dependency/workflow bytes match.
+
 ## Combined Hello PRF + TPM restart implementation (2026-10-08)
 
 The [combined synthetic protocol](windows/HELLO_COMBINED_RESTART.md) now composes
@@ -18,8 +50,8 @@ added fixed-staging crash test passed in the focused run. A new injected
 unreadable-journal cleanup test first reproduced a missing failure stage; the
 corrected ten-case combined suite passes. No native deletion occurs after that
 read failure. Windows
-MSVC ABI/native tests, packaged IPC and installer validation are pending CI at
-this commit. Physical combined/restart/cancellation measurements remain pending
+MSVC ABI/native tests, packaged IPC and installer validation subsequently passed
+as recorded above. Physical combined/restart/cancellation measurements remain pending
 on the owner computer. Standalone target evidence below is preserved.
 
 ## Completed local TPM binding target measurement (2026-10-08)
