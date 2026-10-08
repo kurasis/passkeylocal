@@ -1,9 +1,29 @@
 use super::*;
 use crate::hello::{prf::windows::combined::Credential, tpm::windows::combined::Key};
 use std::sync::OnceLock;
+mod transfer;
+pub use transfer::run_copy;
+fn process_id() -> &'static str {
+    static PROCESS: OnceLock<String> = OnceLock::new();
+    PROCESS.get_or_init(|| uuid::Uuid::new_v4().to_string())
+}
 struct Native<'a> {
     credential: Credential<'a>,
     key: Key<'a>,
+}
+impl Reader for Native<'_> {
+    fn reopen_tpm(&mut self, h: &Header) -> ProofResult<()> {
+        self.key.reopen(&h.public, &h.name)
+    }
+    fn reopen_prf(&mut self, h: &Header) -> ProofResult<()> {
+        self.credential.reopen(&h.credential)
+    }
+    fn authorize(&mut self) -> ProofResult<Zeroizing<[u8; 32]>> {
+        self.credential.authorize()
+    }
+    fn unwrap(&mut self, cipher: &[u8]) -> ProofResult<Zeroizing<Vec<u8>>> {
+        self.key.unwrap(cipher)
+    }
 }
 impl Backend for Native<'_> {
     fn initialize(&mut self) -> ProofResult<()> {
@@ -15,21 +35,11 @@ impl Backend for Native<'_> {
     fn create_prf(&mut self) -> ProofResult<(Vec<u8>, Zeroizing<[u8; 32]>)> {
         self.credential.create()
     }
-    fn reopen_tpm(&mut self, h: &Header) -> ProofResult<()> {
-        self.key.reopen(&h.public, &h.name)
-    }
-    fn reopen_prf(&mut self, h: &Header) -> ProofResult<()> {
-        self.credential.reopen(&h.credential)
-    }
+
     fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>> {
         self.key.wrap(secret)
     }
-    fn authorize(&mut self) -> ProofResult<Zeroizing<[u8; 32]>> {
-        self.credential.authorize()
-    }
-    fn unwrap(&mut self, cipher: &[u8]) -> ProofResult<Zeroizing<Vec<u8>>> {
-        self.key.unwrap(cipher)
-    }
+
     fn cleanup_prf(&mut self) -> ProofResult<()> {
         self.credential.cleanup()
     }
@@ -45,8 +55,7 @@ pub fn run(
 ) -> Result<Report> {
     let _attempt = crate::hello::Attempt::begin()?;
     libsodium_rs::ensure_init().map_err(|_| Error::new("UNAVAILABLE"))?;
-    static PROCESS: OnceLock<String> = OnceLock::new();
-    let process = PROCESS.get_or_init(|| uuid::Uuid::new_v4().to_string());
+    let process = process_id();
     let j = Journal::open(root)?;
     let record = j.read()?;
     let observed = state(record.as_ref(), process);

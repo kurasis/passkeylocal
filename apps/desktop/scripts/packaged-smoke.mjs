@@ -135,6 +135,14 @@ try {
   await expect(helloSection.getByRole('button', { name: 'Remove test and temporary keys', exact: true })).toBeDisabled();
   // Exercise the new command only when preflight has already shown that this
   // hosted machine lacks PRF capability; never automate a hardware key deletion.
+  // Export with no saved copy test must return without opening a dialog.
+  const helloCopyExport = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_copy_export'));
+  assert.equal(helloCopyExport.sourceCommit, process.env.GITHUB_SHA);
+  assert.equal(helloCopyExport.purpose, 'synthetic-combined-copy');
+  assert.equal(helloCopyExport.outcome, 'no-test');
+  assert.deepEqual(helloCopyExport.checks, []);
+  for (const key of ['eligible', 'enrolled', 'unlocked']) assert.equal(helloCopyExport[key], false);
+  await expect(helloSection.getByRole('button', { name: 'Check a copy-test file', exact: true })).toBeEnabled();
   let helloKeyLoss = null;
   if (helloWebauthnCapability.outcome === 'blocked') {
     helloKeyLoss = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_combined_key_loss'));
@@ -342,7 +350,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, russianSettingsLayout: layout,
+    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

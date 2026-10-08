@@ -207,3 +207,24 @@ Object.assign((window as any).helloTest, {
   combinedState(value: typeof combinedState) { combinedState = value; },
   combinedCounts() { return { combinedPrepares, combinedResumes, combinedCleanups }; },
 });
+
+let copyChecks = 0;
+let copyRelation: NonNullable<HelloKeyProof['copyEvidence']>['contextRelation'] = 'different-installation';
+const copyEvidence = (): NonNullable<HelloKeyProof['copyEvidence']> => ({ fileSha256: 'ab'.repeat(32), originSourceCommit: 'cd'.repeat(20), contextRelation: copyRelation, correlation: 'match-export-and-source-recheck', tpmAccess: copyRelation === 'same-account-and-installation' ? 'opened' : 'missing', passkeyAccess: copyRelation === 'same-account-and-installation' ? 'opened' : 'missing' });
+export async function prepareNativeHelloCopy(): Promise<HelloKeyProof> {
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  combinedState = 'copy-ready';
+  return { ...combinedReport('copy-exported'), purpose: 'synthetic-combined-copy', copyEvidence: { ...copyEvidence(), contextRelation: 'same-account-and-installation' } };
+}
+export async function exportNativeHelloCopy(): Promise<HelloKeyProof> { return prepareNativeHelloCopy(); }
+export async function checkNativeHelloCopy(): Promise<HelloKeyProof> {
+  copyChecks++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  const report = combinedReport(proofOutcome === 'cancelled' ? 'cancelled' : copyRelation === 'same-account-and-installation' ? 'copy-source-roundtrip-passed' : 'copy-isolation-observed');
+  delete report.combinedState;
+  return { ...report, purpose: 'synthetic-combined-copy', processScope: 'not-measured', copyEvidence: copyEvidence(), checks: [{test: 'copy-file-validate', status: 'passed'}, {test: 'copy-tpm-open', status: 'passed', nativeCode: copyRelation === 'same-account-and-installation' ? undefined : '0x80090016'}] };
+}
+Object.assign((window as any).helloTest, {
+  copyRelation(value: typeof copyRelation) { copyRelation = value; },
+  copyChecks() { return copyChecks; },
+});

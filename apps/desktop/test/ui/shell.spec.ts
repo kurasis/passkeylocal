@@ -554,3 +554,48 @@ test('late key-loss reports stay redacted after Lock All', async ({ page }) => {
   await expect(page.locator('.hello-proof-report')).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).helloTest.keyLossCalls())).toBe(1);
 });
+
+test('copy creation preserves source keys and enables re-export while blocking other creations', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  await hello.getByRole('button', { name: 'Создать файл проверки переноса', exact: true }).click();
+  await expect(hello.getByText('Зашифрованный тестовый файл сохранён и проверен чтением.', { exact: false })).toBeVisible();
+  await expect(hello.getByRole('button', { name: 'Сохранить тестовый файл ещё раз', exact: true })).toBeEnabled();
+  await expect(hello.getByRole('button', { name: '1. Создать тест Hello + TPM', exact: true })).toBeDisabled();
+  await expect(hello.getByRole('button', { name: '2. Продолжить после перезапуска', exact: true })).toBeDisabled();
+  await expect(hello.getByRole('button', { name: 'Проверить потерю временных ключей', exact: true })).toBeDisabled();
+  await expect(hello.getByRole('button', { name: 'Удалить тест и временные ключи', exact: true })).toBeEnabled();
+});
+
+test('copy import works without configured Hello, reports correlation, and preserves source UI state', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.evaluate(() => { (window as any).helloTest.combinedState('copy-ready'); (window as any).helloTest.configure('disabled-by-policy'); });
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const check = hello.getByRole('button', { name: 'Проверить тестовый файл', exact: true });
+  await expect(check).toBeEnabled();
+  await check.click();
+  await expect(hello.locator('.hello-copy-fingerprint')).toHaveText('ab'.repeat(32));
+  await expect(hello.getByText('Тест переноса сохранён.', { exact: false })).toBeVisible();
+  await expect(hello.getByText('В другом контексте Windows отсутствует', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.combinedState).toBeUndefined();
+  expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false,false,false]);
+  await page.evaluate(() => (window as any).helloTest.copyRelation('same-account-and-installation'));
+  await check.click();
+  await expect(hello.getByText('Файл расшифрован через Hello и TPM', { exact: false })).toBeVisible();
+});
+
+test('copy import is single-flight and ignores late replies after Lock All', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  await page.getByRole('button', { name: 'Проверить тестовый файл', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Создать файл проверки переноса', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.locator('.hello-proof-report')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.copyChecks())).toBe(1);
+});

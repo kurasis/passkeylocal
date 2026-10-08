@@ -5,8 +5,9 @@ Windows 11 Pro 25H2/Kensington computer. It uses a new synthetic secret and neve
 reads, enrolls, or unlocks either real vault. The successful standalone reports
 remain valid; they need not be repeated.
 
-The next implementation is the [separate temporary key-loss test](HELLO_KEY_LOSS.md).
-It does not require repeating this restart procedure.
+The [temporary key-loss test](HELLO_KEY_LOSS.md) is also owner-completed.
+The next implementation is the [copy-file test](HELLO_COPY_TEST.md); it does not
+require repeating this restart procedure.
 
 ## Completed owner measurements
 
@@ -65,8 +66,8 @@ and operation; do not repeat the older export or direct-attestation experiments.
 
 The native host derives the directory from the app-local managed root; IPC
 accepts no paths, key names, salts, credential IDs, ciphertext, or secrets. Five
-fixed commands offer status, prepare, resume, cleanup, and the separate key-loss
-experiment. The existing managed
+fixed combined commands offer status, prepare, resume, cleanup, and key loss;
+three separate commands provide copy-file preparation/export/check. The existing managed
 Store process lock and global native authentication single-flight guard serialize
 access. Session generation and active-vault identity cancel stale work; raw
 secrets never cross IPC. A process-random UUID held in native `OnceLock` prevents

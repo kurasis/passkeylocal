@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation, nativeWebauthnCapability, proveNativeHelloPrf, testNativeHelloDirectAttestation, nativeTpmCapability, proveNativeTpmInner, testNativeTpmLocalBinding, nativeCombinedHelloStatus, prepareNativeCombinedHello, resumeNativeCombinedHello, cleanupNativeCombinedHello, testNativeCombinedKeyLoss } from '@platform';
+import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNativeRetention, nativeHelloStatus, verifyNativeHello, openNativeHelloSettings, proveNativeHelloKey, testNativeHelloOaep, testNativeHelloPkcs1, testNativeHelloPkcs1Behavior, testNativeHelloAttestation, nativeWebauthnCapability, proveNativeHelloPrf, testNativeHelloDirectAttestation, nativeTpmCapability, proveNativeTpmInner, testNativeTpmLocalBinding, nativeCombinedHelloStatus, prepareNativeCombinedHello, resumeNativeCombinedHello, cleanupNativeCombinedHello, testNativeCombinedKeyLoss, prepareNativeHelloCopy, exportNativeHelloCopy, checkNativeHelloCopy } from '@platform';
 import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
@@ -58,7 +58,7 @@ export function DesktopHelloSettings() {
     return () => { epoch.current++; window.removeEventListener('focus', focus); };
   }, []);
   if (!desktop) return null;
-  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation' | 'webauthn' | 'prf' | 'direct-attestation' | 'tpm-capability' | 'tpm' | 'tpm-local' | 'combined-prepare' | 'combined-resume' | 'combined-cleanup' | 'combined-key-loss') => {
+  const action = async (kind: 'verify' | 'settings' | 'proof' | 'capability' | 'compatibility' | 'behavior' | 'attestation' | 'webauthn' | 'prf' | 'direct-attestation' | 'tpm-capability' | 'tpm' | 'tpm-local' | 'combined-prepare' | 'combined-resume' | 'combined-cleanup' | 'combined-key-loss' | 'copy-prepare' | 'copy-export' | 'copy-check') => {
     if (inFlight.current) return;
     inFlight.current = true;
     const attempt = ++epoch.current;
@@ -70,7 +70,7 @@ export function DesktopHelloSettings() {
         const response = await verifyNativeHello();
         if (epoch.current === attempt) setResult(response.result);
       } else if (kind !== 'settings') {
-        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation, webauthn: nativeWebauthnCapability, prf: proveNativeHelloPrf, 'direct-attestation': testNativeHelloDirectAttestation, 'tpm-capability': nativeTpmCapability, tpm: proveNativeTpmInner, 'tpm-local': testNativeTpmLocalBinding, 'combined-prepare': prepareNativeCombinedHello, 'combined-resume': resumeNativeCombinedHello, 'combined-cleanup': cleanupNativeCombinedHello, 'combined-key-loss': testNativeCombinedKeyLoss }[kind]());
+        const response = await ({ proof: proveNativeHelloKey, capability: testNativeHelloOaep, compatibility: testNativeHelloPkcs1, behavior: testNativeHelloPkcs1Behavior, attestation: testNativeHelloAttestation, webauthn: nativeWebauthnCapability, prf: proveNativeHelloPrf, 'direct-attestation': testNativeHelloDirectAttestation, 'tpm-capability': nativeTpmCapability, tpm: proveNativeTpmInner, 'tpm-local': testNativeTpmLocalBinding, 'combined-prepare': prepareNativeCombinedHello, 'combined-resume': resumeNativeCombinedHello, 'combined-cleanup': cleanupNativeCombinedHello, 'combined-key-loss': testNativeCombinedKeyLoss, 'copy-prepare': prepareNativeHelloCopy, 'copy-export': exportNativeHelloCopy, 'copy-check': checkNativeHelloCopy }[kind]());
         if (epoch.current === attempt) { setProof(response); if (response.combinedState) setCombinedState(response.combinedState); }
       } else await openNativeHelloSettings();
       completed = true;
@@ -90,6 +90,12 @@ export function DesktopHelloSettings() {
       <button type="button" disabled={busy} onClick={() => void refresh()}>{t('desktopHelloCheck')}</button>
       <button type="button" className="secondary" disabled={busy || configuration !== 'available'} onClick={() => void action('verify')}>{t('desktopHelloTest')}</button>
       <button type="button" className="secondary" disabled={busy} onClick={() => void action('settings')}>{t('desktopHelloSettings')}</button>
+    </div>
+    <p>{t('desktopHelloCopyExplain')}</p>
+    <div className="input-row">
+      <button type="button" disabled={busy || combinedState !== 'no-test' || configuration !== 'available'} onClick={() => void action('copy-prepare')}>{t('desktopHelloCopyPrepare')}</button>
+      <button type="button" className="secondary" disabled={busy || combinedState !== 'copy-ready' || configuration !== 'available'} onClick={() => void action('copy-export')}>{t('desktopHelloCopyExport')}</button>
+      <button type="button" className="secondary" disabled={busy} onClick={() => void action('copy-check')}>{t('desktopHelloCopyCheck')}</button>
     </div>
     <p>{t('desktopHelloKeyLossExplain')}</p>
     <button type="button" disabled={busy || combinedState !== 'no-test' || configuration !== 'available'} onClick={() => void action('combined-key-loss')}>{t('desktopHelloKeyLoss')}</button>
@@ -128,12 +134,17 @@ export function DesktopHelloSettings() {
     {result && <Banner kind={result === 'verified' ? 'info' : 'warn'}>{t(`desktopHello_result_${result}`)}</Banner>}
     {failed && <Banner kind="error">{t('desktopHelloError')}</Banner>}
     {proof && <div className="stack">
-      <p>{t(proof.purpose === 'synthetic-combined-key-loss' ? 'desktopHelloKeyLoss' : proof.purpose === 'synthetic-combined-restart' ? 'desktopHelloCombinedPrepare' : proof.purpose === 'synthetic-tpm-local-binding' ? 'desktopHelloTpmLocal' : proof.purpose === 'synthetic-webauthn-direct-attestation' ? 'desktopHelloDirect' : proof.purpose === 'synthetic-tpm-inner' ? 'desktopHelloTpm' : proof.purpose === 'tpm-inner-capability' ? 'desktopHelloTpmCapability' : proof.purpose === 'synthetic-webauthn-prf' ? 'desktopHelloPrf' : proof.purpose === 'webauthn-prf-capability' ? 'desktopHelloWebauthn' : proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
+      <p>{t(proof.purpose === 'synthetic-combined-copy' ? 'desktopHelloCopyCheck' : proof.purpose === 'synthetic-combined-key-loss' ? 'desktopHelloKeyLoss' : proof.purpose === 'synthetic-combined-restart' ? 'desktopHelloCombinedPrepare' : proof.purpose === 'synthetic-tpm-local-binding' ? 'desktopHelloTpmLocal' : proof.purpose === 'synthetic-webauthn-direct-attestation' ? 'desktopHelloDirect' : proof.purpose === 'synthetic-tpm-inner' ? 'desktopHelloTpm' : proof.purpose === 'tpm-inner-capability' ? 'desktopHelloTpmCapability' : proof.purpose === 'synthetic-webauthn-prf' ? 'desktopHelloPrf' : proof.purpose === 'webauthn-prf-capability' ? 'desktopHelloWebauthn' : proof.purpose === 'synthetic-attestation-capability' ? 'desktopHelloAttestation' : proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloBehavior' : proof.purpose === 'synthetic-pkcs1-compatibility' ? 'desktopHelloCompatibility' : proof.purpose === 'synthetic-oaep-capability' ? 'desktopHelloCapability' : 'desktopHelloProof')}</p>
       <Banner kind={proof.outcome === 'roundtrip-passed' || proof.outcome === 'capability-passed' || proof.outcome === 'combined-key-loss-passed' ? 'info' : 'warn'}>{t(`desktopHello_proofResult_${proof.outcome}`)}</Banner>
       <ul className="hello-proof-checks">{proof.checks.filter((check) => check.status !== 'not-run').map((check) => <li key={check.test}>
         <span>{t(check.test === 'public-wrap' && proof.algorithm === 'rsa-pkcs1-v1_5' ? proof.purpose === 'synthetic-pkcs1-behavior' ? 'desktopHelloPkcs1Wrap' : 'desktopHelloCompatibilityWrap' : `desktopHello_proof_${check.test}`)}</span>
         <span>{t(`desktopHello_proofStatus_${check.status}`)}{check.nativeCode && <> <code>{check.nativeCode}</code></>}</span>
       </li>)}</ul>
+      {proof.copyEvidence && <div className="stack">
+        <p>{t(`desktopHello_copyContext_${proof.copyEvidence.contextRelation}`)}</p>
+        <p>SHA-256: <code className="hello-copy-fingerprint">{proof.copyEvidence.fileSha256}</code></p>
+        <p>{t('desktopHelloCopyCorrelate')}</p>
+      </div>}
       {proof.exportChecks?.length ? <div className="stack">
         <p>{t('desktopHelloExportExplain')}</p>
         <ul className="hello-proof-checks">{proof.exportChecks.map((check) => <li key={check.format}>

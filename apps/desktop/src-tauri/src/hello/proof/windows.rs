@@ -296,7 +296,7 @@ fn require_silent_refusal(
         Ok(()) => Err(Failure::failed().at("silent-decrypt-unexpected-success")),
     }
 }
-fn current_sid() -> std::result::Result<String, Failure> {
+pub(crate) fn current_sid() -> std::result::Result<String, Failure> {
     use windows_sys::Win32::{
         Foundation::{CloseHandle, LocalFree, HANDLE},
         Security::Authorization::ConvertSidToStringSidW,
