@@ -341,3 +341,21 @@ fn interrupted_atomic_write_keeps_committed_identity_and_prunes_only_fixed_stagi
     j.remove().unwrap();
     assert!(j.read().unwrap().is_none());
 }
+
+#[test]
+fn unreadable_cleanup_journal_reports_failure_before_touching_native_objects() {
+    initialized();
+    let dir = tempfile::tempdir().unwrap();
+    let j = Journal::open(dir.path()).unwrap();
+    let p = process();
+    let mut r = Record::new(&p);
+    j.save(&r).unwrap();
+    // Inject a journal read failure after the command's initial read.
+    fs::write(&j.path, b"{").unwrap();
+    let mut b = Fake::new(&j);
+    let report = execute(&j, &mut r, &mut b, Action::Cleanup, &p, &|| false);
+    assert_eq!(report.outcome, "blocked");
+    assert_eq!(report.combined_state, "cleanup-required");
+    assert_eq!((b.prf_deletes, b.tpm_deletes), (0, 0));
+    assert_eq!(report.checks.last().unwrap().status, Outcome::Failed);
+}

@@ -328,14 +328,17 @@ fn verify(r: &Record, b: &mut impl Backend, current: &dyn Fn() -> bool) -> Proof
     Ok(())
 }
 fn cleanup(j: &Journal, b: &mut impl Backend, report: &mut Report) -> ProofResult<()> {
-    // Mark nonresumable BEFORE deleting either object, including successful resumes.
-    let mut record = j
-        .read()
-        .map_err(|_| invalid("combined-cleanup-journal-read"))?
-        .ok_or_else(|| invalid("combined-cleanup-journal-missing"))?;
-    record.ready = false;
-    report.stage("combined-journal-cleanup", j.save(&record))?;
     report.combined_state = "cleanup-required";
+    // Mark nonresumable BEFORE deleting either object, including successful resumes.
+    let prepare_cleanup = (|| {
+        let mut record = j
+            .read()
+            .map_err(|_| invalid("combined-cleanup-journal-read"))?
+            .ok_or_else(|| invalid("combined-cleanup-journal-missing"))?;
+        record.ready = false;
+        j.save(&record)
+    })();
+    report.stage("combined-journal-cleanup", prepare_cleanup)?;
     // Both are attempted even if the other fails. Keep the journal for retry.
     let prf = report.stage("test-passkey-delete", b.cleanup_prf());
     let tpm = report.stage("test-key-delete", b.cleanup_tpm());

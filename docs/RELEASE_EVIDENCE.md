@@ -9,12 +9,15 @@ RP/user-scoped credential recovery after a crash, full-process restart
 discrimination, two new required-UV decryptions and retryable independent cleanup.
 No real-vault enrollment, unlock or copied-account/device proof is claimed.
 
-Local verification: nine portable combined orchestration/crypto/journal cases
+Local verification: ten portable combined orchestration/crypto/journal cases
 PASS, 31 desktop UI scenarios PASS, 161 TypeScript tests and typechecks PASS;
 Windows-target Clippy with warnings denied PASS. Desktop/PWA production builds
 and independent bundle/IPC separation PASS. The earlier full Linux native
 run passed 97 tests with one explicit resource gate ignored; the subsequently
-added fixed-staging crash test passed in the nine-case focused run. Windows
+added fixed-staging crash test passed in the focused run. A new injected
+unreadable-journal cleanup test first reproduced a missing failure stage; the
+corrected ten-case combined suite passes. No native deletion occurs after that
+read failure. Windows
 MSVC ABI/native tests, packaged IPC and installer validation are pending CI at
 this commit. Physical combined/restart/cancellation measurements remain pending
 on the owner computer. Standalone target evidence below is preserved.

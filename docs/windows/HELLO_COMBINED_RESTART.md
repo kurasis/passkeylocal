@@ -120,7 +120,7 @@ state, not a list of failed stages in this synthetic run.
 
 - Microsoft [WebAuthNGetPlatformCredentialList](https://learn.microsoft.com/windows/win32/api/webauthn/nf-webauthn-webauthngetplatformcredentiallist)
   and [credential options](https://learn.microsoft.com/windows/win32/api/webauthn/ns-webauthn-webauthn_get_credentials_options).
-- Pinned official [header](../../../tests/hello/vendor/webauthn.h), including
+- Pinned official [header](../../tests/hello/vendor/webauthn.h), including
   `NTE_NOT_FOUND`, credential user/RP ownership fields and matching free API.
 - [Accepted local TPM binding](HELLO_LOCAL_TPM_BINDING.md) and
   [existing PRF baseline](HELLO_PRF_PROOF.md).
