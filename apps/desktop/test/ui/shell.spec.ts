@@ -506,3 +506,51 @@ test('unfinished combined cleanup stays available when Hello is disabled', async
   await expect(cleanup).toBeEnabled();
   await expect(hello.getByText('Незавершённый тест требует очистки.', { exact: false })).toBeVisible();
 });
+
+test('key-loss experiment is single-flight, shows exact absence evidence and never enrolls', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const loss = hello.getByRole('button', { name: 'Проверить потерю временных ключей', exact: true });
+  await expect(loss).toBeEnabled();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  await loss.click();
+  await expect(loss).toBeDisabled();
+  await expect(hello.getByRole('button', { name: '1. Создать тест Hello + TPM', exact: true })).toBeDisabled();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(hello.getByText('До удаления расшифровка прошла.', { exact: false })).toBeVisible();
+  await hello.getByText('Технический отчёт', { exact: true }).click();
+  const report = JSON.parse(await hello.locator('pre').innerText());
+  expect(report.purpose).toBe('synthetic-combined-key-loss');
+  expect(report.processScope).toBe('same-process');
+  expect([report.eligible, report.enrolled, report.unlocked]).toEqual([false, false, false]);
+  expect(report.checks.find((c: any) => c.test === 'loss-tpm-reopen').nativeCode).toBe('0x80090016');
+  expect(await page.evaluate(() => (window as any).helloTest.keyLossCalls())).toBe(1);
+});
+
+test('key-loss experiment preserves existing work and exposes cleanup after partial deletion', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.evaluate(() => (window as any).helloTest.combinedState('ready-to-resume'));
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
+  const loss = hello.getByRole('button', { name: 'Проверить потерю временных ключей', exact: true });
+  await expect(loss).toBeDisabled();
+  await hello.getByRole('button', { name: 'Удалить тест и временные ключи', exact: true }).click();
+  await expect(loss).toBeEnabled();
+  await page.evaluate(() => (window as any).helloTest.failCleanup());
+  await loss.click();
+  await expect(loss).toBeDisabled();
+  await expect(hello.getByRole('button', { name: 'Удалить тест и временные ключи', exact: true })).toBeEnabled();
+  await expect(hello.getByText('Незавершённый тест требует очистки.', { exact: false })).toBeVisible();
+});
+
+test('late key-loss reports stay redacted after Lock All', async ({ page }) => {
+  await page.goto('/shell.html');
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.defer());
+  await page.getByRole('button', { name: 'Проверить потерю временных ключей', exact: true }).click();
+  await page.getByRole('button', { name: 'Заблокировать всё', exact: true }).click();
+  await page.evaluate(() => (window as any).helloTest.release());
+  await expect(page.locator('.hello-proof-report')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).helloTest.keyLossCalls())).toBe(1);
+});

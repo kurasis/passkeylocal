@@ -89,3 +89,5 @@ export async function nativeCombinedHelloStatus(): Promise<import('../../pwa/src
 export async function prepareNativeCombinedHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_prepare'); }
 export async function resumeNativeCombinedHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_resume'); }
 export async function cleanupNativeCombinedHello(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_cleanup'); }
+
+export async function testNativeCombinedKeyLoss(): Promise<import('../../pwa/src/hello-protocol.ts').HelloKeyProof> { return invoke('hello_combined_key_loss'); }

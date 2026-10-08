@@ -353,6 +353,10 @@ async fn hello_combined_resume(window: WebviewWindow, app: tauri::AppHandle) -> 
 async fn hello_combined_cleanup(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
     hello_combined_experiment(window, app, hello::combined::Action::Cleanup).await
 }
+#[tauri::command]
+async fn hello_combined_key_loss(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_combined_experiment(window, app, hello::combined::Action::KeyLoss).await
+}
 async fn hello_combined_experiment(
     window: WebviewWindow,
     app: tauri::AppHandle,
@@ -684,6 +688,7 @@ pub fn run() {
             hello_combined_prepare,
             hello_combined_resume,
             hello_combined_cleanup,
+            hello_combined_key_loss,
             hello_settings,
             hello_unlock,
             hello_revoke,

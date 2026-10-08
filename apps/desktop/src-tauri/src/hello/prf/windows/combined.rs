@@ -47,6 +47,8 @@ impl<'a> Credential<'a> {
         Ok(())
     }
     pub(crate) fn reopen(&mut self, id: &[u8]) -> std::result::Result<(), Failure> {
+        self.0.credential = None;
+        self.0.created = None;
         for stage in [
             "webauthn-load",
             "webauthn-api",
@@ -55,7 +57,11 @@ impl<'a> Credential<'a> {
         ] {
             self.0.step(stage)?;
         }
-        if self.ids()? != [id.to_vec()] {
+        let ids = self.ids()?;
+        if ids.is_empty() {
+            return Err(invalid("combined-credential-missing"));
+        }
+        if ids != [id.to_vec()] {
             return Err(invalid("combined-credential-identity-mismatch"));
         }
         self.0.credential = Some(id.to_vec());

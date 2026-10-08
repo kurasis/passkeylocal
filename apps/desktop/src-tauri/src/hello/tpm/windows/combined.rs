@@ -35,6 +35,9 @@ impl<'a> Key<'a> {
         public: &[u8],
         name: &[u8],
     ) -> std::result::Result<(), Failure> {
+        // Never retain a previous key/provider handle across a reopen probe.
+        self.0.key = Handle(0);
+        self.0.provider = Handle(0);
         self.0.step("tpm-provider-open")?;
         self.0.step("tpm-provider-properties")?;
         self.0.key = open(self.0.provider.0, &self.0.name)?;
