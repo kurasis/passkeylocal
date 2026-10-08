@@ -24,8 +24,8 @@ for the owner. Preserve original reports and their false eligibility flags.
 | Copy the encrypted test file to a second PC, recheck on source, cleanup | [Correlated copy evidence](../../deploy/windows-desktop/hello-target-cdcc954-copy-evidence.json) | COMPLETED, synthetic envelope-only observation | No repeat; keys already removed |
 | Second account on the same PC | No physical measurement | EXCLUDED BY OWNER from manual acceptance; isolation unverified | No owner task; keep native account scoping and automated boundary checks |
 | Built-in KDBX recovery through actual temporary Hello/TPM keys | [One-button integration](HELLO_VAULT_RECOVERY.md) | COMPLETED, 27 passed stages; public synthetic KDBX, same-process | No repeat; temporary keys and journal removed |
-| Master-password recovery after loss/revocation of real app-owned Hello enrollment | Production enrollment/fallback integration not yet available | PENDING IMPLEMENTATION | Implement and validate with an empty synthetic vault in the existing account before requesting one owner run |
-| Password change, vault replacement, expiry, revoke, stale responses and remaining authorization negatives | [Production requirements](WINDOWS_HELLO_KENSINGTON.md) | PENDING IMPLEMENTATION / NOT RUN as applicable | Automate state, tamper and binding tests; reserve actual OS prompts for packaged owner checks |
+| Master-password recovery after loss/revocation of real app-owned Hello enrollment | [Vault enrollment implementation](HELLO_VAULT_ENROLLMENT.md) | IMPLEMENTED; physical application-lifecycle result pending | New packaged opt-in/revoke/password flow in the existing account; no repeat of completed probes |
+| Password change, vault replacement, expiry, revoke, stale responses and remaining authorization negatives | [Production requirements](WINDOWS_HELLO_KENSINGTON.md) | IMPLEMENTED with automated state/tamper/binding coverage; remaining physical cases NOT RUN | Validate new packaged lifecycle; preserve unmeasured OS-negative scope |
 
 ## Completed two-computer observation
 
@@ -53,7 +53,7 @@ solely to recover the missing initial export report.
 
 ## Remaining format: current account and synthetic vault
 
-The next implementation should exercise the real enrollment/revocation and
+The [new implementation](HELLO_VAULT_ENROLLMENT.md) connects real enrollment/revocation and
 independent master-password path using a disposable vault in the owner's existing
 account. The future packaged procedure must identify the exact build and actions,
 collect one report for the sequence, and preserve original data on cancellation.
@@ -65,8 +65,8 @@ the credential-component and temporary-key recovery sequence in an isolated work
 It is a step toward production integration, not arbitrary user-vault enrollment;
 the [owner report](../../deploy/windows-desktop/hello-target-9200a4b-vault-recovery.json)
 now completes all 27 stages with two entries, one historical version and final
-state `no-test`. No new prompt count or modality is inferred. Production
-enrollment and its lifecycle remain separate pending work.
+state `no-test`. No new prompt count or modality is inferred. Physical acceptance of the new
+enrollment lifecycle remains separate pending work.
 
 Continue automated checks for tampered context/vault/key binding, stale sessions,
 foreign decryption rejection and missing-key/error classification. Existing
@@ -75,8 +75,8 @@ second Windows logon token or prove Windows account isolation. An automated
 actual-account experiment, if ever added, requires its own accurate evidence;
 it must not silently reinstate an owner task to switch accounts.
 
-Real-vault Hello enrollment/unlock remains disabled until the remaining production
-implementation and acceptance work is complete. The exclusion changes the owner's
-manual plan, not the false eligibility flags or the protection requirements.
+Hello enrollment is now an explicit experimental opt-in, off by default. Physical
+acceptance of the new application lifecycle is pending. The exclusion changes the
+owner's manual plan, not the original diagnostic flags or protection requirements.
 Full Windows-profile cloning and native private-key-container transfer are also
 outside the completed envelope-only observation.

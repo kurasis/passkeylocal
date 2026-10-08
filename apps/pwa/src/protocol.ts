@@ -68,6 +68,10 @@ export interface BackupCheckSummary {
 }
 
 export interface Requests {
+  helloVaultStatus: [void, import('./hello-vault-protocol.ts').HelloVaultStatus];
+  enableHelloVault: [{ password: string; mode: import('./hello-vault-protocol.ts').HelloMode }, import('./hello-vault-protocol.ts').HelloVaultStatus];
+  unlockHelloVault: [void, { warnings: PasswordWarning[] }];
+  disableHelloVault: [void, import('./hello-vault-protocol.ts').HelloVaultStatus];
   biometricCredential: [void, BiometricCredential | null];
   enableBiometric: [{ password: string; credential: BiometricCredential; prf: Uint8Array }, void];
   unlockBiometric: [{ credentialId: Uint8Array; prf: Uint8Array }, { warnings: PasswordWarning[] }];

@@ -2,11 +2,20 @@
 import type { Preferences } from '../../../pwa/src/protocol.ts';
 export class VaultRequestError extends Error { code = 'SYNTHETIC'; detail = undefined; }
 let phase = 'unlocked';
+let hello = { state: 'off', mode: 'session', expiresAt: 123456789 };
+const helloCalls: string[] = [];
+let cancelHello = false;
+(window as any).helloVaultTest = { calls: helloCalls, cancel() { cancelHello = true; } };
+
 const prefs: Preferences = { language: 'ru', theme: 'color', lockIntervalMs: 86400000, onboardingBackupVerified: true };
 export class VaultClient {
   epoch = 0;
   async call(operation: string, args?: { key?: keyof Preferences; value?: never }) {
     switch (operation) {
+      case 'helloVaultStatus': return { ...hello };
+      case 'enableHelloVault': helloCalls.push('enable'); hello = { ...hello, state: 'enabled', mode: (args as any).mode }; return { ...hello };
+      case 'disableHelloVault': helloCalls.push('disable'); hello.state = 'off'; return { ...hello };
+      case 'unlockHelloVault': helloCalls.push('unlock'); if (cancelHello) { cancelHello = false; throw { code: 'UNAVAILABLE', detail: 'HELLO_CANCELLED' }; } phase = 'unlocked'; return { warnings: [] };
       case 'state': return { state: phase, persistence: 'persisted', storageUnhealthy: false };
       case 'getPreferences': return { ...prefs };
       case 'setPreference': if (args?.key) prefs[args.key] = args.value!; return;

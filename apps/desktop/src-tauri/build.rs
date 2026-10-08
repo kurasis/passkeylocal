@@ -22,6 +22,7 @@ fn main() {
             "backup_retention",
             "open_external",
             "native_activity",
+            "hello_enrollment",
             "hello_enroll",
             "hello_status",
             "hello_verify",

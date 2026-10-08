@@ -10,8 +10,31 @@ impl<'a> Credential<'a> {
         salt: [u8; 32],
         user: [u8; 32],
     ) -> Self {
+        Self::for_rp(hwnd, current, salt, user, RP)
+    }
+    pub(crate) fn enrollment(
+        hwnd: usize,
+        current: &'a (dyn Fn() -> bool + Sync),
+        salt: [u8; 32],
+        user: [u8; 32],
+    ) -> Self {
+        Self::for_rp(
+            hwnd,
+            current,
+            salt,
+            user,
+            "vault.passkey-local.desktop.invalid",
+        )
+    }
+    fn for_rp(
+        hwnd: usize,
+        current: &'a (dyn Fn() -> bool + Sync),
+        salt: [u8; 32],
+        user: [u8; 32],
+        rp: &'static str,
+    ) -> Self {
         Self(Probe {
-            rp: RP,
+            rp,
             user: Some(user),
             api: None,
             cap: Capability {
@@ -112,7 +135,7 @@ impl<'a> Credential<'a> {
             api.module.symbol(b"WebAuthNGetPlatformCredentialList\0")?;
         let free: WebAuthNFreePlatformCredentialList =
             api.module.symbol(b"WebAuthNFreePlatformCredentialList\0")?;
-        let rp = wide(RP);
+        let rp = wide(self.0.rp);
         let opts = WEBAUTHN_GET_CREDENTIALS_OPTIONS {
             dwVersion: 1,
             pwszRpId: rp.as_ptr(),
@@ -138,7 +161,7 @@ impl<'a> Credential<'a> {
             return Ok(vec![]);
         } // documented NTE_NOT_FOUND
         status(hr, "combined-list-owned-credential")?;
-        unsafe { owned_ids(list.p, &self.0.user.unwrap()) }
+        unsafe { owned_ids_for_rp(list.p, &self.0.user.unwrap(), self.0.rp) }
     }
     pub(crate) fn cleanup(&mut self) -> std::result::Result<(), Failure> {
         self.0.created = None;
@@ -166,19 +189,27 @@ impl Drop for Credential<'_> {
     }
 }
 
-unsafe fn exact_rp(p: *const u16) -> bool {
+unsafe fn exact_rp(p: *const u16, rp: &str) -> bool {
     if p.is_null() {
         return false;
     }
-    let expected = wide(RP);
+    let expected = wide(rp);
     expected
         .iter()
         .enumerate()
         .all(|(i, c)| unsafe { p.add(i).read() == *c })
 }
+#[cfg(test)]
 unsafe fn owned_ids(
     list: *const WEBAUTHN_CREDENTIAL_DETAILS_LIST,
     user: &[u8; 32],
+) -> std::result::Result<Vec<Vec<u8>>, Failure> {
+    unsafe { owned_ids_for_rp(list, user, RP) }
+}
+unsafe fn owned_ids_for_rp(
+    list: *const WEBAUTHN_CREDENTIAL_DETAILS_LIST,
+    user: &[u8; 32],
+    expected_rp: &str,
 ) -> std::result::Result<Vec<Vec<u8>>, Failure> {
     if list.is_null() {
         return Err(invalid("combined-credential-list-null"));
@@ -199,7 +230,7 @@ unsafe fn owned_ids(
         if rp.is_null() || u.is_null() {
             return Err(invalid("combined-credential-owner-missing"));
         }
-        if !unsafe { exact_rp((*rp).pwszId) } {
+        if !unsafe { exact_rp((*rp).pwszId, expected_rp) } {
             continue;
         }
         let uid = unsafe { bytes((*u).pbId, (*u).cbId, 64) }?;

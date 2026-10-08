@@ -1,5 +1,10 @@
 # Build, migration and native storage
 
+Current increment: [Windows Hello vault enrollment](HELLO_VAULT_ENROLLMENT.md)
+adds experimental session/remembered opt-in for the active password vault.
+Physical application-lifecycle acceptance remains pending; older blocked-stage
+notes below retain their historical scope.
+
 This is an experimental Windows integration, not an accepted production release. See [ACCEPTANCE.md](ACCEPTANCE.md) and [HELLO_SECURITY_DESIGN.md](HELLO_SECURITY_DESIGN.md). The web frontend, KDBX engine and Python utility are shared in this repository.
 
 ## Development

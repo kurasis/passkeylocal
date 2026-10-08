@@ -7,6 +7,7 @@ export default defineConfig({
   server: { port: 4181, strictPort: true },
   resolve: {
     alias: [
+      { find: '@platform-storage', replacement: fileURLToPath(new URL('../../src/worker-storage.ts', import.meta.url)) },
       { find: '@platform', replacement: fileURLToPath(new URL('./shell-platform.ts', import.meta.url)) },
       { find: /.*vault-client\.ts$/, replacement: fileURLToPath(new URL('./shell-client.ts', import.meta.url)) },
     ],

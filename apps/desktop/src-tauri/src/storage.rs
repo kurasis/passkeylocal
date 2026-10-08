@@ -361,6 +361,21 @@ impl Store {
         }
         Ok(())
     }
+    #[cfg(any(windows, test))]
+    pub fn hello_binding(&self) -> Result<crate::hello::enrollment::Binding> {
+        let h = self
+            .meta
+            .head
+            .as_ref()
+            .ok_or_else(|| Error::new("INVALID_STATE"))?;
+        let (blob, _) = self.read_blob(&h.blob_id, true)?;
+        Ok(crate::hello::enrollment::Binding {
+            vault: self.meta.backup.owner.clone(),
+            password_epoch: h.password_epoch,
+            generation: h.generation,
+            sha256: blob.sha256.clone(),
+        })
+    }
     pub fn begin(&mut self) -> String {
         let token = id();
         self.session = Some(token.clone());

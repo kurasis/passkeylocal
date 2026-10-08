@@ -40,6 +40,7 @@ import {
 } from '@passkey-local/vault-core';
 import type { Args, EntryDetail, Op, Preferences, Result, SafeError } from '../protocol.ts';
 import { BiometricVault } from './biometric.ts';
+import type { HelloVault } from '../hello-vault-protocol.ts';
 
 type KdbxEntry = ReturnType<typeof findEntry>;
 
@@ -93,7 +94,10 @@ export class VaultWorkerHandlers {
   private candidate: RestoreCandidate | null = null;
   private readonly biometric: BiometricVault;
 
-  constructor(storage: VaultStore, controller = new VaultController(storage)) {
+  private readonly hello: HelloVault | null;
+
+  constructor(storage: VaultStore, controller = new VaultController(storage), helloFactory: (storage: VaultStore, controller: VaultController) => HelloVault | null = () => null) {
+    this.hello = helloFactory(storage, controller);
     this.storage = storage;
     this.controller = controller;
     this.biometric = new BiometricVault(storage, controller);
@@ -116,6 +120,10 @@ export class VaultWorkerHandlers {
   }
 
   private readonly ops: { [O in Op]: (args: Args<O>) => Promise<Result<O>> | Result<O> } = {
+    helloVaultStatus: () => this.hello?.status() ?? { state: 'off', mode: null, expiresAt: null },
+    enableHelloVault: ({ password, mode }) => { if (!this.hello) throw new StorageError('UNAVAILABLE'); return this.hello.enable(password, mode); },
+    unlockHelloVault: () => { if (!this.hello) throw new StorageError('UNAVAILABLE'); return this.hello.unlock(); },
+    disableHelloVault: () => { if (!this.hello) throw new StorageError('UNAVAILABLE'); return this.hello.disable(); },
     biometricCredential: () => this.biometric.credential(),
     enableBiometric: ({ password, credential, prf }) => this.biometric.enable(password, credential, prf),
     unlockBiometric: ({ credentialId, prf }) => this.biometric.unlock(credentialId, prf),

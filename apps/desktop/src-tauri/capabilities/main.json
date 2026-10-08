@@ -20,6 +20,7 @@
     "allow-backup-retention",
     "allow-open-external",
     "allow-native-activity",
+    "allow-hello-enrollment",
     "allow-hello-enroll",
     "allow-hello-status",
     "allow-hello-verify",
