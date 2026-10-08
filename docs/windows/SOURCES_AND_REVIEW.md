@@ -28,6 +28,62 @@ Prepared: 2026-10-05; Windows Hello/Kensington update: 2026-10-06. These are off
 | S20 | [Microsoft — NCryptExportKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptexportkey) | `NTE_BAD_TYPE` means the key cannot be exported into the requested blob type; it is not explicit permission denial. |
 | S21 | [Microsoft — NCryptCreateClaim](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptcreateclaim) | Key-attestation claim API; availability alone does not establish Passport support or verified TPM binding. |
 
+## Direct-attestation target follow-up (2026-10-08)
+
+Implementation follow-up to the [bdb2a03 owner report](../../deploy/windows-desktop/hello-target-bdb2a03-direct-attestation.json),
+separate from the original uploaded handoff. All six stages pass on the owner's
+Windows build 26200/API 9: platform/unique-Hello-route checks, temporary passkey
+creation and exact cleanup. The direct preference returns `none`, decode zero,
+statement/object lengths 1/194. No decoded attestation is provided; no verification
+occurs. The JSON does not identify a privacy, policy, network, provider or hardware
+cause. It does not establish a defective reader or absent TPM. No new prompt
+observation is inferred. This acquisition measurement is complete; unchanged
+direct/PRF/provider/inner/export retests add no evidence.
+
+Primary sources re-read over verified HTTPS during this follow-up:
+
+- [Microsoft Windows Hello app development](https://learn.microsoft.com/en-us/windows/apps/develop/security/windows-hello),
+  served source version `48a0f7b00cc049e994c65b4754ec499668b151b5`.
+  `KeyCredential.GetAttestationAsync` concerns its own generated signing key.
+  The verification section requires a trusted, time-valid AIK chain with EKU
+  `2.23.133.8.3`, issuing-CA revocation checks, a valid attestation signature and
+  exact attested/public RSA key correspondence. Ordinary Hello authentication
+  does not require an added PKI, and the API can use software keys without TPM.
+  Neither statement establishes TPM/PRF-secret protection for this different
+  ES256 credential or the separate Platform KSP decrypt key. Attesting another
+  signing key cannot meet the required same-inner-key correspondence.
+- [Microsoft TPM key attestation deployment](https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/tpm-key-attestation),
+  served source version `b81f4cc63976d2a5834df5b805eae0fb0f7114c0`.
+  This enterprise CA/certificate-template flow establishes trust using an EK
+  certificate chain, an administrator-approved EK public key or domain user
+  credentials, then issues a certificate with the corresponding policy OID.
+  Its documented deployment uses Platform KSP/RSA and an enterprise CA;
+  standalone CA attestation is unsupported in that described flow. Provider
+  flags alone are insufficient. This is a distinct enterprise provisioning
+  architecture, not a drop-in local unlock API or a requirement to add a CA to
+  this personal offline application. No enrollment, remote submission or
+  certificate-store/policy change was attempted.
+
+The existing pinned [Chromium authority implementation](https://github.com/chromium/chromium/blob/544a340956293550ca5eeb89d7a046879527df18/crypto/unexportable_key_win.cc)
+uses a separate restricted AIK, raw TPM2 creation and PCP opaque import before
+certifying its subject. It explicitly explains the limitation of directly
+creating modern AIKs via `NCryptCreatePersistedKey`. The pinned
+[Microsoft PCP sample](https://github.com/microsoft/TSS.MSR/blob/52cb9f432318e8e95cdfeaf98b824ece89370744/PCPTool.v11/exe/SDKSample.cpp)
+documents an older identity-key handshake with SHA-1 identity-binding input.
+That sample is not approval of guessed SHA-256 creation properties or a
+replacement for the app's SHA-256 inspection/signature/trust profile. No raw
+TPM codec or OS AIK/EK extraction was implemented or executed in this follow-up.
+
+The next prerequisite remains a supported same-app-inner-key certification and
+authority contract, followed by trusted restricted-authority chain/policy/
+revocation validation. A future native implementation needs bounded same-subject
+and fresh-nonce checks using the existing untrusted certification boundary;
+successful parsing/signature checks must not confer trust by themselves. No
+eligible replacement contract was established by this review, and no new target
+probe is justified solely by changing the failed claim/preference parameters.
+All four gates remain open; real enrollment/unlock stays unavailable. This
+evidence-only update needs no new installer or owner action.
+
 ## Same-key attestation investigation (2026-10-07)
 
 The subsequent [broader Windows Hello integration review](HELLO_INTERNET_RESEARCH.md)

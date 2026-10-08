@@ -1,0 +1,62 @@
+{
+  "algorithm": "webauthn-es256-direct-attestation",
+  "checks": [
+    {
+      "status": "passed",
+      "test": "webauthn-load"
+    },
+    {
+      "status": "passed",
+      "test": "webauthn-api"
+    },
+    {
+      "status": "passed",
+      "test": "hello-platform"
+    },
+    {
+      "status": "passed",
+      "test": "hello-route"
+    },
+    {
+      "status": "passed",
+      "test": "webauthn-direct-create"
+    },
+    {
+      "status": "passed",
+      "test": "test-passkey-delete"
+    }
+  ],
+  "directAttestation": {
+    "decodeType": 0,
+    "format": "none",
+    "innerRsaKey": "not-attested",
+    "objectBytes": 194,
+    "prfSecretProtection": "not-verified",
+    "requested": "direct",
+    "statementBytes": 1,
+    "subject": "synthetic-webauthn-prf-credential",
+    "verification": "not-performed"
+  },
+  "eligible": false,
+  "enrolled": false,
+  "outcome": "direct-attestation-not-provided",
+  "purpose": "synthetic-webauthn-direct-attestation",
+  "remaining": [
+    "per-key-tpm-proof",
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "bdb2a034e15f483dcbaadb29781234248a26dfed",
+  "unlocked": false,
+  "version": 1,
+  "webauthn": {
+    "apiVersion": 9,
+    "helloCandidates": 1,
+    "helloLocked": false,
+    "osBuild": 26200,
+    "platformAvailable": true,
+    "routing": "display-name-candidate",
+    "tpmBinding": "not-verified"
+  }
+}

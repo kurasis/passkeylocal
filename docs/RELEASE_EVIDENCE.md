@@ -1,5 +1,32 @@
 # Release evidence and gate status
 
+## Completed direct-attestation target measurement (2026-10-08)
+
+The [owner JSON](../deploy/windows-desktop/hello-target-bdb2a03-direct-attestation.json)
+matches the installed/tested source `bdb2a034e15f483dcbaadb29781234248a26dfed`.
+All six stages PASS: load/API/platform/route, temporary passkey creation and
+exact deletion. Windows build 26200/API 9 reports one unlocked Hello candidate
+and platform availability. The direct preference returns `format: none`, decode
+zero, statement length one and object length 194; outcome is
+`direct-attestation-not-provided`. No decoded attestation/certificate/signature
+was supplied or verified. No new prompt observations accompanied the JSON.
+This is owner-provided target evidence, not a cloud-executed hardware test.
+
+The acquisition measurement is complete; unchanged direct/PRF/provider/inner/
+export retests are unnecessary. This does not establish the omission's cause,
+defective hardware, accepted per-key TPM binding, PRF-secret protection or the
+separate RSA key's certification. Eligibility/enrollment/unlock remain false
+and all four gates stay open. The next blocker is supported same-inner-key
+certification/authority acquisition with trusted signature/certificate/chain/
+revocation policy, documented in [the source follow-up](windows/SOURCES_AND_REVIEW.md#direct-attestation-target-follow-up-2026-10-08).
+
+This update records the report and corrects pending owner instructions only.
+JSON source/schema/stage/false-flag/gate consistency and relative document links
+were checked; no application/test/dependency/workflow bytes changed and no new
+software or hardware test was executed. The checked bdb2a03 installer and
+536e5f7 Cloudflare archive remain unchanged; no replacement build/deployment
+or security-policy change occurred.
+
 ## Direct WebAuthn attestation discovery (2026-10-08)
 
 Added the fixed argument-free `hello_webauthn_attestation` command and localized
@@ -18,7 +45,7 @@ impostor and even valid native observations stay explicitly unverified. `none`
 is reported as no attestation provided. PRF-secret protection and the separate
 inner RSA key remain unverified/unattested; all four gates and false eligibility/
 enrollment/unlock remain. Native state is now also checked after PRF/direct
-cleanup to reject a late successful observation. [Contract and next owner procedure](windows/HELLO_DIRECT_ATTESTATION.md).
+cleanup to reject a late successful observation. [Contract and completed owner measurement](windows/HELLO_DIRECT_ATTESTATION.md).
 
 Local native 81 tests PASS (one explicit resource ignored), focused PRF tests,
 Windows GNU production/all-target Clippy, typecheck, all 26 isolated UI scenarios,
@@ -42,7 +69,7 @@ unavailable, so creation/PRF/TPM operations do not run there. Downloaded origina
 installer checksum matches metadata/sidecar: `1d64c660da0909911f9688f62af3071595258594adc7e9a9ebc48c54e54fd3d2`,
 217,901,754 bytes. [Windows download evidence](../deploy/windows-desktop/)
 retains original metadata/screenshots and source-correlated artifact link.
-The new target action remains pending the owner's measurement; no old PRF/provider/
+The completed owner measurement is recorded above; no unchanged direct/PRF/provider/
 inner/export rerun is needed. No physical TPM/fingerprint or attestation trust is
 inferred from hosted/software checks. All four gates remain open.
 

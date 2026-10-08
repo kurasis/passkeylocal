@@ -83,7 +83,33 @@ and all four remaining hardware/authorization/process/account-machine gates.
 The new UI uses existing localization and busy/late-response/cleanup controls.
 It never offers actual Hello vault unlock.
 
-## Owner procedure
+## Completed owner measurement (2026-10-08)
+
+The [owner's complete JSON](../../deploy/windows-desktop/hello-target-bdb2a03-direct-attestation.json)
+matches installed source `bdb2a034e15f483dcbaadb29781234248a26dfed`.
+All six stages PASS, including temporary credential creation and exact deletion.
+Windows reports build 26200, API 9, one unlocked Hello candidate and an available
+platform. It returns `format: none`, decode type zero, statement length one and
+object length 194 despite the direct preference. Outcome is
+`direct-attestation-not-provided`; no certificate, signature, TPM certify-info
+or public area was provided in the decoded report. The object bytes were not
+parsed. No new fingerprint/privacy-prompt observation was supplied with this
+JSON; the earlier PRF prompt observations remain separate.
+
+This completes this acquisition measurement on the owner's Windows 11 Pro 25H2 /
+Kensington baseline. It does not establish why attestation was omitted or prove
+that the TPM/reader is absent, defective or incapable of every attestation route.
+The result cannot attest the separate inner RSA key or PRF-secret storage; all
+four gates and false eligibility/enrollment/unlock remain. It is owner-provided
+evidence, not a cloud-executed hardware result. **Do not repeat this unchanged
+direct test, PRF test or inner/export diagnostics.** No replacement installer
+or OS-policy change is needed for this evidence update.
+
+Supported same-inner-key certification/authority acquisition and trusted
+certificate/signature/chain/revocation verification remain the next integration
+blocker. See [the source review](SOURCES_AND_REVIEW.md#direct-attestation-target-follow-up-2026-10-08).
+
+## Historical owner procedure
 
 Use the source-correlated build in [Windows downloads](../../deploy/windows-desktop/).
 Open Settings → Windows Hello and select **Get Windows Hello attestation** /
@@ -91,7 +117,8 @@ Open Settings → Windows Hello and select **Get Windows Hello attestation** /
 PIN or an attestation privacy choice; use its owned system dialog. Copy the full
 technical JSON including `sourceCommit`. No repeated PRF or TPM export test is
 needed. Do not clear TPM, reset Hello or change enterprise/security policy.
-Target results remain pending until that owner measurement is received.
+That source-correlated measurement is now complete above; this procedure records
+how it was obtained and is not a request for another run.
 
 Sources: [pinned Microsoft WebAuthn header](https://github.com/microsoft/webauthn/blob/ef82c157125a0490e05f6ea82a7adb1b8e1bad08/webauthn.h),
 [Microsoft make-credential API](https://learn.microsoft.com/en-us/windows/win32/api/webauthn/nf-webauthn-webauthnauthenticatormakecredential),

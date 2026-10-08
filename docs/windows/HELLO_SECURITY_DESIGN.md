@@ -8,6 +8,13 @@ guarantee or inner RSA-key binding is considered verified. A `none` result is
 reported honestly; no fallback/enterprise policy is requested. This creates a
 new acquisition measurement without repeating completed PRF/TPM export tests.
 All four gates remain open and real Hello vault unlock stays unavailable.
+The [bdb2a03 owner report](../../deploy/windows-desktop/hello-target-bdb2a03-direct-attestation.json)
+completes this measurement: all six stages PASS, including exact credential
+cleanup, but the requested direct preference returns `format: none` / decode
+zero. No attestation was provided and no signature/chain verification occurred.
+Do not repeat the unchanged action. This result does not identify the omission's
+cause or indicate defective hardware; same-inner-key certification/authority and
+trust validation remain the integration blocker.
 
 The [Platform KSP inner-envelope experiment](HELLO_TPM_INNER.md) now measures
 the next, separate wrapping layer through two fixed native commands. Read-only
