@@ -1,6 +1,6 @@
 //! Bounded TPM 2.0 certification inspection for an exact app RSA public key.
 //! Parsed claims and even valid signatures are UNTRUSTED: AIK certificate/trust
-//! verification and a supported same-key Passport acquisition route are absent.
+//! verification and supported same-key authority acquisition are absent.
 //! This module has no IPC, enrollment, credential, OS-key or provider access.
 use sha2::{Digest, Sha256};
 
@@ -83,8 +83,7 @@ fn cng_modulus(blob: &[u8]) -> Result<&[u8], Error> {
 }
 
 fn subject_name(area: &[u8], expected_public: &[u8]) -> Result<[u8; 34], Error> {
-    // Name hashes exactly TPMT_PUBLIC. A future provider adapter must extract
-    // these bytes according to its verified contract, never hash TPM2B framing.
+    // Name hashes exactly TPMT_PUBLIC, never a TPM2B or provider size prefix.
     let mut r = Reader::new(area);
     if r.u16()? != RSA || r.u16()? != SHA256 {
         return Err(Error::UnsupportedProfile);
@@ -154,8 +153,8 @@ pub struct UnverifiedCertification<'a> {
 }
 
 /// Inspect standard TPMS_ATTEST/TPMT_PUBLIC and a raw RSASSA/SHA256 signature.
-/// Provider-specific framing is intentionally outside this module until its
-/// contract is established. Expected key/nonce must come from native state.
+/// Expected key/nonce must come from native state. For the documented Platform
+/// KSP KAWA wrapper use inspect_pcp_web_authn; never guess another blob's layout.
 /// This does NOT establish Passport support, signer trust or TPM binding.
 pub fn inspect<'a>(
     certify_info: &'a [u8],
@@ -197,6 +196,9 @@ impl UnverifiedCertification<'_> {
 mod signature;
 #[cfg(windows)]
 pub use signature::SignatureCheckedCertification;
+
+mod pcp;
+pub use pcp::inspect_pcp_web_authn;
 
 #[cfg(test)]
 mod tests;

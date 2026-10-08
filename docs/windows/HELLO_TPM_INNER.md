@@ -113,12 +113,24 @@ not implemented or accepted by this experiment.
 
 ## Owner procedure
 
-Install the new build from [the Windows download folder](../../deploy/windows-desktop/).
-In Settings → Windows Hello select **Check TPM provider** / **Проверить провайдер TPM**,
-then **Test TPM inner layer** / **Проверить внутренний слой TPM**. A fingerprint
-prompt is not expected for this inner-layer experiment; PRF supplies authorization
-in the future composition. Copy the complete technical JSON including source SHA.
-Do not reset TPM, change Windows Hello or repeat the completed PRF experiment.
+**Measurement completed:** the [owner report from c83ce3f](../../deploy/windows-desktop/hello-target-c83ce3f-tpm-inner.json)
+passes the first nine stages and exact test-key deletion. Actual policies are
+export zero, common decrypt-only one, RSA2048, PCP raw 65538/kind two/flag 65536;
+the opaque key-name length is 34. OAEP/SHA-256 wrap, exact decrypt comparison,
+same-process reopening and both negative controls PASS on the reported target.
+The private-export stage remains FAILED: all three fixed formats return
+`0x8009000A` (`NTE_BAD_TYPE`), classified as unsupported, not explicit denial.
+This is owner-provided installed-source evidence, not a cloud-executed test.
+All eligibility/enrollment/unlock flags remain false and all four gates open.
+
+Do not repeat the unchanged provider/inner/export or completed PRF checks.
+Do not reset TPM or change Windows Hello. The next implementation prerequisite
+is supported same-key certification with a trusted authority, then complete
+authorization/process/account/machine proof and the real enrollment lifecycle.
+The [documented PCP wrapper verifier](HELLO_ATTESTATION_VERIFIER.md#documented-platform-ksp-wrapper-2026-10-08)
+is a software-tested building block, not a new owner diagnostic or accepted
+hardware proof. The [Windows folder](../../deploy/windows-desktop/) preserves
+the source-correlated installer and target result.
 
 `tpm-inner-roundtrip-passed` means the listed synthetic inner-layer operations
 passed; hardware and authorization acceptance still remain open. A blocked

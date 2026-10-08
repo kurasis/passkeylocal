@@ -1,5 +1,34 @@
 # Release evidence and gate status
 
+## PCP certification framing and completed target measurement (2026-10-08)
+
+The [owner JSON from installed source c83ce3facce7abdae040b27133e5aec258d4ec23](../deploy/windows-desktop/hello-target-c83ce3f-tpm-inner.json)
+is retained unchanged in meaning. The first nine stages and exact-key cleanup
+PASS: actual Platform KSP OAEP/SHA-256 wrap/decrypt, same-process reopening and
+changed-ciphertext/wrong-hash negative controls now execute successfully. Policy
+observations are export zero, common decrypt-only one, RSA2048, PCP raw 65538,
+kind two/flag 65536 and opaque key-name length 34. The private-export stage is
+FAILED: all three fixed formats return `0x8009000A` (`NTE_BAD_TYPE`), not explicit
+permission denial. Outcome remains BLOCKED; false eligibility/enrollment/unlock,
+no Hello authorization, same-process scope and all four gates are preserved.
+This is owner evidence, not a cloud-executed hardware proof. Do not request an
+unchanged PRF/provider/inner/export rerun.
+
+Added a bounded zero-allocation parser for the exact SDK version-1 Platform KSP
+KAWA certification wrapper, connected to existing exact native subject/nonce/
+Name inspection and Windows public RSA signature verification. SDK size/offset
+assertions and software-signed impostor tests verify framing without granting
+trust. Sources and limitations: [verifier contract](windows/HELLO_ATTESTATION_VERIFIER.md#documented-platform-ksp-wrapper-2026-10-08).
+No claim acquisition, authority creation, raw TPM commands, OS keys, dependency,
+new IPC action or real-vault envelope is added. Trusted same-key certification,
+AIK chain/policy/revocation and all four acceptance gates remain open.
+
+Local 77 native tests PASS (one explicit resource gate ignored), including all
+15 certification tests. Windows GNU production/all-target Clippy, formatting and
+independent Python wrapped-signature verification PASS. Hosted Windows signature
+and complete CI validation are pending. No new installer is required to repeat this completed
+hardware diagnostic; the existing source-correlated download remains available.
+
 ## PCP provider-marker corrected installer evidence (2026-10-08)
 
 [PR #22](https://github.com/kurasis/passkeylocal/pull/22), code head `d813e0d4f87a2cd44286603fdf7841a1281e4553`,
@@ -24,7 +53,7 @@ not physical hardware. Downloaded installer checksum matches original metadata
 and sidecar: `f6073ba6d4079e71f36c259ea52d01e33667500f9d0d7bd36dcbf5a8376e8284`, 217,896,990 bytes. Original small
 artifact metadata/screenshots and download link are retained in [Windows downloads](../deploy/windows-desktop/).
 All four security gates remain open and actual Hello unlock is unavailable;
-corrected target-device measurement is pending. No successful hardware crypto or per-key TPM 2 acceptance is inferred from
+the completed corrected target measurement is recorded above. Per-key TPM 2 acceptance is not inferred from
 the recognized PCP marker or software/hosted evidence. All four gates stay open.
 Cloudflare's existing ZIP matches all ten freshly rebuilt production files;
 no web repack or direct server deployment was performed. This publication changes docs and
