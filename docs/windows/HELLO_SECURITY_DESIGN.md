@@ -8,6 +8,15 @@ and cleanup. It does not consume real vault material or PRF output and does not
 claim per-key TPM attestation, fresh-process proof or Hello authorization.
 All four gates remain open; real enrollment/unlock remains unavailable.
 
+The [c83ce3f owner result](../../deploy/windows-desktop/hello-target-c83ce3f-tpm-inner.json)
+now passes OAEP/SHA-256 wrap/decrypt, same-process reopening, negative controls
+and deletion. The export stage remains blocked: all three private formats return
+`NTE_BAD_TYPE`, not explicit permission denial. This completed measurement should
+not be repeated unchanged. The [verification module](HELLO_ATTESTATION_VERIFIER.md#documented-platform-ksp-wrapper-2026-10-08)
+now handles the documented Platform KSP KAWA wrapper and actual Windows signature
+checks; synthetic software signatures still confer no trusted TPM origin.
+Same-key authority acquisition, AIK trust and the remaining gates stay open.
+
 The native [WebAuthn PRF increment](HELLO_PRF_PROOF.md) now implements read-only
 capability and synthetic PRF/AES/cleanup checks. The
 [owner's installed-source report](../../deploy/windows-desktop/hello-target-72a0df6-prf.json)

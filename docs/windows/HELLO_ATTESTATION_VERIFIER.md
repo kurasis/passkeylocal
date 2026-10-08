@@ -50,6 +50,46 @@ wrong AIK and signed-data substitution. Even its correct signature leaves direct
 `hello_enroll` / `hello_unlock` unavailable. This is hosted software/API evidence,
 not a hardware certificate or a physical target result.
 
+## Documented Platform KSP wrapper (2026-10-08)
+
+`inspect_pcp_web_authn` now accepts only the SDK's version-1
+`NCRYPT_PCP_TPM_WEB_AUTHN_ATTESTATION_STATEMENT`: six little-endian DWORDs,
+magic `0x4B415741` (bytes `AWAK`, named `KAWA`), version one, header size 24,
+then exact certify-info, raw RSA signature and TPM public-area lengths.
+It borrows bounded slices without allocation or unchecked length sums,
+rejects all trailing data, unknown versions/header extensions, oversized or
+truncated fields and alternate TPM2B/TPMT_SIGNATURE framing. The existing
+standard inspector still binds the native expected subject/nonce and exact
+TPMT_PUBLIC Name. Windows compile-time assertions check header size and all
+six offsets against maintained SDK bindings.
+
+The [pinned Microsoft header](https://github.com/microsoft/win32metadata/blob/1bfb76db1c360653bdcb56512af0fdf987aceab8/generation/WinSDK/RecompiledIdlHeaders/um/ncrypt.h)
+defines the wrapper. [Pinned Chromium](https://github.com/chromium/chromium/blob/544a340956293550ca5eeb89d7a046879527df18/crypto/unexportable_key_win.cc)
+parses that order and produces it via `NCRYPT_CLAIM_WEB_AUTH_SUBJECT_ONLY`
+with an actual **separate restricted attestation authority**. Its authority
+creation uses raw TPM commands/PCP opaque import, not the failed no-authority
+Passport experiment. No such command codec, OS AIK/EK access, authority creation,
+claim API fallback or new renderer command is added here. The format is
+established; supported same-app-key acquisition and trusted authority remain
+unimplemented. This parser must not be applied to an unknown Passport/VBS blob.
+
+The existing public-only software impostor now includes a **synthetically
+assembled** wrapper, independently verified by Python against the original
+components and RSA signature. It is not captured PCP output. Six additional
+portable tests cover complete/truncated/hostile envelopes, component ordering,
+native key/nonce substitution and unsupported framing; two Windows tests pass
+the wrapped input through actual BCrypt verification, reject wrong signatures,
+signers and stale sessions, and retain false enrollment/unlock. Correct framing
+and signature still return only `UnverifiedCertification` /
+`SignatureCheckedCertification`, never trusted hardware evidence.
+
+The [c83ce3f owner report](../../deploy/windows-desktop/hello-target-c83ce3f-tpm-inner.json)
+completes the inner RSA capability measurement: wrap/decrypt, same-process
+reopen, negative controls and cleanup PASS. All three private exports remain
+unsupported format (`NTE_BAD_TYPE`), not explicit denial. Do not repeat either
+completed PRF or unchanged inner/export test. This verification increment has
+no new owner action and closes no hardware/authorization/process/copy gate.
+
 ## Separate same-key capability experiment
 
 **Target measurement completed:** the [6ae6e24 owner report](../../deploy/windows-desktop/hello-target-6ae6e24.json)
