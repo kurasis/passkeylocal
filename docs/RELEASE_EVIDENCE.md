@@ -1,5 +1,37 @@
 # Release evidence and gate status
 
+## Completed owner cancellation/cleanup sequence (2026-10-08)
+
+After the [cancelled first assertion](../deploy/windows-desktop/hello-target-a7f56d8-combined-cancel.json),
+the owner supplied the requested [cleanup report](../deploy/windows-desktop/hello-target-a7f56d8-combined-cleanup.json)
+for source `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`. All four cleanup
+stages PASS: journal marked for cleanup, test passkey deleted, test TPM key
+deleted, and journal deleted. Outcome is `combined-cleaned`, final state `no-test`.
+
+The requested cancellation followed by explicit cleanup is complete. Together
+with the earlier successful preparation/restart reports and the owner's four
+fingerprint confirmations, this completes the current target procedure. No
+repeat, new test, manual key deletion or installer is requested from the owner.
+The reports are attributed to the owner's supplied sequence; they do not expose
+credential/key identifiers for independent cross-report identity correlation.
+
+Preserve `processScope: same-process` in this cleanup report: it is the cleanup
+operation's scope, not another fresh-process unlock measurement. The earlier
+restart and cancellation reports retain their own `fresh-process` scope. No
+additional fingerprint prompt, successful retry after cancellation, silent-access
+denial or production enrollment is inferred. False eligibility/enrollment/unlock
+and the original static `remaining` list are preserved.
+
+Next implementation/acceptance work is synthetic account/machine-copy and
+key-loss/password-fallback coverage, remaining authorization negatives, and
+production enrollment/lifecycle integration. Real Hello unlock remains disabled.
+A future target procedure must exercise new coverage rather than repeat the
+completed component, successful restart or first-cancellation/cleanup sequence.
+
+This documentation/evidence update validates report source, stages, flags and
+links. It changes no application code, installer or Pages archive and claims no
+new cloud test execution, build or deployment.
+
 ## Owner cancellation measurement (2026-10-08)
 
 The [owner cancellation report](../deploy/windows-desktop/hello-target-a7f56d8-combined-cancel.json)
@@ -12,15 +44,13 @@ later operation is reported. Eligibility, enrollment and unlock remain false.
 `ready-to-resume` is the expected retained test state after cancellation. It
 indicates availability for retry/cleanup, not a measured successful retry.
 This completes the requested first-assertion cancellation observation. It does
-not establish silent-access denial, cancellation of every other stage or cleanup
-of this new test. The earlier successful run's cleanup belongs to that earlier
-run and must not be substituted for the cancelled test's cleanup.
+not by itself establish silent-access denial, cancellation of every other stage
+or cleanup. The owner has now supplied the separate cleanup report above; the
+earlier successful run's deletion was not substituted for this observation.
 
-Next: in the same installed app, choose **Remove test and temporary keys** and
-supply its report. Expected: `combined-cleaned`, `no-test`, both native deletions
-and journal deletion passed. No new test, restart, installer or repeat of the
-completed cancellation is needed. Account/machine copies, key-loss/password
-fallback and production lifecycle acceptance remain open.
+The requested cleanup is now complete as recorded above. No repeat, restart or
+new installer is needed. Account/machine copies, key-loss/password fallback,
+remaining authorization negatives and production lifecycle acceptance remain open.
 
 The original report and static `remaining` array are preserved. This evidence
 update checks source/stage/flag consistency, links and documentation-only scope;
@@ -54,8 +84,8 @@ enrollment and unlock flags intact: they are static release-state metadata,
 not three failed measurements. No real vault was enrolled or unlocked.
 
 The subsequently supplied cancellation report above completes the next requested
-negative observation. Only cleanup of that cancelled test is currently requested;
-do not repeat the successful path or cancellation.
+negative observation, and its separate cleanup report now completes the requested
+sequence. Do not repeat the successful path, first-assertion cancellation or cleanup.
 
 This update records owner evidence and updates current guidance only. Report
 source/stages/flags, relative links and documentation-only scope were checked.

@@ -6,7 +6,7 @@ Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-W
 
 Installer: 217,960,718 bytes; SHA-256 `5f280928cb26bab52f114be629dfd578b682de8615548af932c02cef616db547`, independently matched to original metadata and checksum sidecar. Original evidence: [build](build-a7f56d8.json), [installed-app smoke](smoke-a7f56d8.json), [5 GiB resource measurement](file-safe-resource-a7f56d8.json), [signed WebView2](webview2-download-a7f56d8.json), [Russian settings](windows-settings-a7f56d8.png), [locked window](windows-locked-a7f56d8.png). The unversioned sidecar matches this installer.
 
-## Completed target result and next check
+## Completed target result
 
 The owner supplied [preparation](hello-target-a7f56d8-combined-prepare.json) and
 [restart](hello-target-a7f56d8-combined-resume.json) reports for this installer:
@@ -14,31 +14,36 @@ all nine preparation and seven restart stages passed, ending in
 `combined-restart-passed` / `fresh-process` / `no-test`. The owner confirmed **two
 fingerprint verifications for each button**, covering creation/first unwrap and
 the two unwraps after restart. Both temporary keys and the journal were deleted.
-The successful path is complete; no new download is needed for the next check.
+The successful path is complete; the cancellation/cleanup sequence below is
+also complete, with no new download requested.
 
 The [cancellation report](hello-target-a7f56d8-combined-cancel.json) now confirms
 that the first assertion after restart was cancelled with `0x80090036`
 (`NTE_USER_CANCELLED`), after reopening/binding passed. No successful unwrap is
-reported. `ready-to-resume` is the expected retained test state, not proof of a
-successful retry or deletion.
+reported. `ready-to-resume` was the expected retained test state. A successful
+retry is not claimed; the separate deletion measurement follows below.
 
-**Next: choose Remove test and temporary keys / Удалить тест и временные ключи
-and copy its cleanup JSON.** Expected: `combined-cleaned`, `no-test`, both native
-deletions and journal deletion passed. Use the existing cancelled test; no new
-test, restart or installer is needed. The successful run's earlier cleanup does
-not establish cleanup of this new cancelled test.
+The [cleanup report](hello-target-a7f56d8-combined-cleanup.json) now passes all
+four stages, including deletion of both native test objects and the journal.
+Outcome/state is `combined-cleaned` / `no-test`. The report correctly retains
+`processScope: same-process` for cleanup; it is not another unlock measurement.
+
+**The current target procedure is complete.** No new test, restart, manual key
+deletion, repeated report or installer is requested. Next implementation and
+acceptance work concerns synthetic account/machine-copy and key-loss/password
+fallback coverage, remaining authorization negatives and production integration.
 
 False eligibility/enrollment/unlock and the static `remaining` array are preserved
 in the original reports. The completed synthetic test does not enable real-vault
-Hello enrollment. Cleanup after cancellation, other cancellation points,
-silent-access negatives, account/machine copies,
+Hello enrollment. Other cancellation points, silent-access negatives,
+account/machine copies,
 key-loss fallback and production lifecycle acceptance remain open.
 
 [Protocol, recovery and evidence limits](../../docs/windows/HELLO_COMBINED_RESTART.md) explain the bounded journal written before creation, dedicated RP/exact-user recovery after a crash, locally verified TPM key, authenticated metadata, new authorization for every decryption and native process boundary. Only random synthetic data is used. No real vault credentials or PRF output are persisted or returned by IPC. Do not repeat completed standalone probes, reset TPM/Hello or weaken security policy.
 
 ## Completed owner baseline
 
-- [Combined a7f56d8 cancellation](hello-target-a7f56d8-combined-cancel.json): the first assertion after restart was cancelled before a successful unwrap; cleanup of that test remains pending.
+- [Combined a7f56d8 cancellation](hello-target-a7f56d8-combined-cancel.json): the first assertion after restart was cancelled before a successful unwrap; [subsequent cleanup](hello-target-a7f56d8-combined-cleanup.json) passed all four stages and ended in `no-test`.
 - [Combined a7f56d8 preparation](hello-target-a7f56d8-combined-prepare.json) and [restart](hello-target-a7f56d8-combined-resume.json): all 16 stages passed across two reports; four fingerprint verifications confirmed by the owner, with cleanup complete.
 - [PRF 72a0df6](hello-target-72a0df6-prf.json): all ten stages passed on Win11 Pro 25H2/build26200, API9, Kensington VeriMark Desktop. The owner confirmed a new fingerprint at creation and each assertion.
 - [Local TPM binding bbead07](hello-target-bbead07-tpm-local-binding.json): all 12 stages passed, including exact public key/Name/duplication restrictions before and after reopening, OAEP negative controls and deletion. This is accepted local evidence under trusted Windows/KSP/TBS, not a remote signed attestation.
@@ -52,4 +57,4 @@ TypeScript: 161 tests; desktop UI: 31 scenarios; production PWA: eight scenarios
 
 10,000-file restore: 108.248 seconds. Hosted 5 GiB primitive: 92.980 seconds; sampled peak working set 10,592,256 bytes. These are hosted observations, not target-device guarantees.
 
-Physical combined restart and fresh prompting on its successful path are owner-confirmed above. First-assertion cancellation after restart is also owner-observed; cleanup of that cancelled test, other cancellation points, silent-access negatives, account/machine copies, key-loss fallback and production lifecycle acceptance remain pending. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build. [Release evidence](../../docs/RELEASE_EVIDENCE.md) distinguishes completed software checks from owner hardware observations and real-vault enrollment.
+Physical combined restart and fresh prompting on its successful path are owner-confirmed above. First-assertion cancellation after restart and cleanup of that cancelled test are also owner-observed. Other cancellation points, silent-access negatives, account/machine copies, key-loss fallback and production lifecycle acceptance remain pending. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build. [Release evidence](../../docs/RELEASE_EVIDENCE.md) distinguishes completed software checks from owner hardware observations and real-vault enrollment.

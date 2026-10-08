@@ -5,7 +5,7 @@ Windows 11 Pro 25H2/Kensington computer. It uses a new synthetic secret and neve
 reads, enrolls, or unlocks either real vault. The successful standalone reports
 remain valid; they need not be repeated.
 
-## Owner result and next measurement
+## Completed owner measurements
 
 [Preparation](../../deploy/windows-desktop/hello-target-a7f56d8-combined-prepare.json)
 passed all nine stages; [restart](../../deploy/windows-desktop/hello-target-a7f56d8-combined-resume.json)
@@ -18,16 +18,23 @@ journal were removed. The successful combined/restart path is complete.
 is now owner-observed in a fresh process: reopening/binding passed, then
 `webauthn-prf-assertion` returned `0x80090036` (`NTE_USER_CANCELLED`) and the first
 unwrap was cancelled. No successful unwrap or later operation is reported.
-`ready-to-resume` retains the test for retry/cleanup; a retry has not been measured.
+`ready-to-resume` retained the test for retry/cleanup; a successful retry has not
+been measured. The subsequently requested explicit cleanup is recorded below.
 
-The next action is **Remove test and temporary keys** on this existing cancelled
-test, followed by copying the cleanup JSON. Expect `combined-cleaned`, `no-test`,
-both native deletions and journal deletion passed. Do not create another test or
-repeat the completed successful/cancellation measurements. Cleanup of the earlier
-successful run does not establish cleanup of this new cancelled run.
-The report's static `remaining` list does not negate the completed observations.
+[Cleanup after cancellation](../../deploy/windows-desktop/hello-target-a7f56d8-combined-cleanup.json)
+now passes all four stages: mark journal for cleanup, delete the test passkey,
+delete the TPM key, then delete the journal. Final outcome/state is
+`combined-cleaned` / `no-test`. Preserve this report's `same-process` scope;
+it is a cleanup operation, not another fresh-process authorization measurement.
+No additional fingerprint prompt is inferred from its authorization metadata.
 
-## Reference procedure (successful path already completed)
+The current target procedure is complete. No new test, restart, manual key
+deletion or installer is requested. The static `remaining` list is release-state
+metadata and does not negate the completed observations. Next work is synthetic
+account/machine-copy and key-loss/password-fallback coverage, remaining
+authorization negatives, and production lifecycle integration.
+
+## Reference procedure (successful path and first cancellation/cleanup completed)
 
 1. Install the build linked from `deploy/windows-desktop/README.md`. In Windows
    Hello settings choose **1. Create Hello + TPM test**. Allow creation and the
@@ -133,8 +140,8 @@ not assert that the PRF secret itself has a remotely attested TPM binding.
 The exposed WebAuthn API has no implemented silent-PRF experiment here: required
 UV is requested on every assertion. Actual fresh prompting on the successful
 path is owner-confirmed, as is cancellation of the first assertion after restart.
-Cleanup after that cancellation, other cancellation points and silent-access
-negatives remain open.
+Cleanup after that cancellation is also owner-confirmed. Other cancellation
+points and silent-access negatives remain open.
 No simulated silent failure is reported as proof.
 Account/machine copying, native-object loss/password fallback, complete production
 lifecycle and independent review remain acceptance work. Reports always keep
