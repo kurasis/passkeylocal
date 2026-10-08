@@ -23,6 +23,10 @@ The relevant Microsoft contracts are
 [NCryptCreatePersistedKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptcreatepersistedkey),
 [NCryptDecrypt](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptdecrypt),
 and [NCryptDeleteKey](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptdeletekey).
+The pinned Microsoft PCP sample sets `NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY`
+and deletes its key with flags zero. `NCRYPT_PCP_ENCRYPTION_KEY` is **2**,
+while common CNG `NCRYPT_ALLOW_DECRYPT_FLAG` is **1**; these namespaces must not
+be confused. Both values are requested and independently read back.
 PCP/TBS identifiers and the device-info structure come from pinned SDK bindings.
 The [TBS device-info contract](https://learn.microsoft.com/en-us/windows/win32/api/tbs/nf-tbs-tbsi_getdeviceinfo)
 provides the numeric TPM version. Microsoft’s
@@ -45,8 +49,13 @@ not infer a numeric TPM version from that property. No sample source is imported
   nonempty object-name property. Only that new key is opened/deleted.
 
 CNG initialization uses documented flags zero (per-user, no overwrite);
-key generation/finalization and all private/export/delete operations use the
-silent flag. Preparation is separate from key generation; an unsupported
+key generation/finalization and all private/export operations use the
+silent flag. Deletion uses documented flags zero. Platform KSP on
+the owner's target rejected the silent delete flag with `NTE_BAD_FLAGS`
+(`0x80090009`). Deletion uses zero directly, without first trying or retrying
+an interactive decrypt. Only the newly created app-owned synthetic key, with
+no requested UI/PIN/Hello policy, can reach this deletion path. No interactive
+cryptographic fallback is introduced. Preparation is separate from key generation; an unsupported
 silent cryptographic operation cannot fall back to an interactive one.
 
 The public component alone goes to BCrypt for encrypting 32 random native bytes
@@ -68,6 +77,11 @@ not-verified` and all four unresolved security gates. A hardware flag, provider
 name, opaque object-name length or successful roundtrip does not establish
 trusted per-key TPM attestation. No key name, blob, ciphertext, secret or PIN is
 returned to UI or logs. Only nonsensitive metadata and native errors are reported.
+Policy diagnostics include actual `exportPolicy`, common `keyUsage`,
+`keyLengthBits` and `pcpKeyUsage`, retained even when policy validation fails.
+Export policy must still be zero, common usage exactly one, PCP usage exactly
+two and length exactly 2048. A mismatch has a property-specific operation;
+broader/signing usage, export permission and unsupported readback remain failures.
 
 ## Lifecycle and limits
 

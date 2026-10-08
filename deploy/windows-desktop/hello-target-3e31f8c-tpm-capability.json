@@ -1,0 +1,35 @@
+{
+  "algorithm": "platform-rsa-oaep-sha256",
+  "authorization": "no-hello-authorization",
+  "eligible": false,
+  "enrolled": false,
+  "exportChecks": [],
+  "perKeyTpmEvidence": "not-verified",
+  "processScope": "same-process",
+  "remaining": [
+    "per-key-tpm-proof",
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "3e31f8c645300cef8c2acf0e7e386a6fcc5847b5",
+  "tpm": {
+    "implementationFlags": 1,
+    "interfaceType": 3,
+    "tpmVersion": 2
+  },
+  "unlocked": false,
+  "version": 1,
+  "purpose": "tpm-inner-capability",
+  "outcome": "tpm-capability-observed",
+  "checks": [
+    {
+      "test": "tpm-provider-open",
+      "status": "passed"
+    },
+    {
+      "test": "tpm-provider-properties",
+      "status": "passed"
+    }
+  ]
+}

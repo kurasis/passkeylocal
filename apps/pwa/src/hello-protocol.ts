@@ -29,7 +29,7 @@ export interface HelloKeyProof {
   exportChecks?: { format: 'rsa-private' | 'rsa-full-private' | 'pkcs8-private'; result: 'refused' | 'unsupported-format' | 'unexpected-success' | 'failed' | 'not-run'; nativeCode?: string }[];
   attestationClaim?: { api: 'NCryptCreateClaim'; claimType: 'subject-only'; result: 'returned-unverified' | 'unavailable' | 'invalid-length'; verification: 'not-performed'; bytes?: number };
   webauthn?: { osBuild?: number; apiVersion?: number; platformAvailable?: boolean; helloCandidates?: number; helloLocked?: boolean; routing: 'display-name-candidate'; tpmBinding: 'not-verified' };
-  tpm?: { implementationFlags?: number; tpmVersion?: number; interfaceType?: number; keyNameBytes?: number; exportPolicy?: number; keyUsage?: number };
+  tpm?: { implementationFlags?: number; tpmVersion?: number; interfaceType?: number; keyNameBytes?: number; exportPolicy?: number; keyUsage?: number; keyLengthBits?: number; pcpKeyUsage?: number };
   perKeyTpmEvidence?: 'not-verified';
   authorization?: 'no-hello-authorization';
   processScope?: 'same-process';

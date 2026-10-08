@@ -1,5 +1,36 @@
 # Release evidence and gate status
 
+## Platform KSP target readback and cleanup correction (2026-10-08)
+
+Owner reports from installed source `3e31f8c645300cef8c2acf0e7e386a6fcc5847b5`
+are retained unchanged in meaning: [TPM capability](../deploy/windows-desktop/hello-target-3e31f8c-tpm-capability.json)
+PASS, implementation flags 1, TPM version 2, interface type 3;
+[synthetic inner test](../deploy/windows-desktop/hello-target-3e31f8c-tpm-inner.json)
+BLOCKED at policy readback, then exact-key deletion failed with `0x80090009`
+(`NTE_BAD_FLAGS`). All subsequent crypto/export stages were NOT RUN. The old
+report did not include actual key policies, so the particular mismatch cannot
+be inferred. No successful hardware roundtrip or real unlock is claimed.
+
+The adapter now requests the PCP-specific encryption usage (2) in addition
+to common decrypt-only usage (1), requires both exact readbacks, and returns
+actual bounded policy/length observations with property-specific failures.
+Common export/decrypt/length validation remains strict. The Microsoft-pinned
+PCP sample demonstrates the separate usage property and zero-flag deletion;
+cleanup now uses zero directly for the exact newly created synthetic key.
+Finalization/decrypt/export remain silent; no interactive crypto fallback
+exists. A failed cleanup remains visible and blocks another key until exact
+RAM-tracked retry. The previous process's unknown leftover synthetic key is
+not recovered or broadly enumerated/deleted; durable cleanup remains open.
+
+Added portable mismatch controls and a Windows software control that checks
+actual policy observations survive unsupported PCP readback, followed by
+actual zero-flag deletion. Software controls cannot satisfy hardware gates.
+Local typecheck, formatting, Windows GNU production/all-target Clippy and
+70 Linux native tests PASS (one resource gate ignored). Native Windows execution
+and installer publication will be recorded after the hosted checks complete.
+All four hardware/authorization/process/copy gates and false eligibility,
+enrollment and unlock remain unchanged. Completed owner PRF evidence is retained.
+
 ## Platform KSP final hosted evidence (2026-10-07)
 
 [PR #20](https://github.com/kurasis/passkeylocal/pull/20) code head `fdc5bfabb8623fe4f380511c052e7749ff648b0c`;

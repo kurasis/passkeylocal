@@ -44,6 +44,24 @@ pub struct Metadata {
     pub export_policy: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key_usage: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key_length_bits: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pcp_key_usage: Option<u32>,
+}
+
+fn policy_matches(export: u32, usage: u32, length: u32) -> Result<(), Failure> {
+    // Common CNG usage values differ from Platform KSP usage values.
+    if export != 0 {
+        return Err(super::prf::invalid("tpm-export-policy-mismatch"));
+    }
+    if usage != 1 {
+        return Err(super::prf::invalid("tpm-key-usage-mismatch"));
+    }
+    if length != 2048 {
+        return Err(super::prf::invalid("tpm-key-length-mismatch"));
+    }
+    Ok(())
 }
 
 #[derive(Serialize)]
@@ -169,6 +187,28 @@ fn exercise(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn policy_readback_rejects_every_broader_usage_export_and_wrong_length() {
+        assert!(policy_matches(0, 1, 2048).is_ok());
+        for export in [1, 2, 4, 8, u32::MAX] {
+            assert_eq!(
+                policy_matches(export, 1, 2048).unwrap_err().operation,
+                Some("tpm-export-policy-mismatch")
+            );
+        }
+        for usage in [0, 2, 3, 4, 16, 0x00ffffff, u32::MAX] {
+            assert_eq!(
+                policy_matches(0, usage, 2048).unwrap_err().operation,
+                Some("tpm-key-usage-mismatch")
+            );
+        }
+        for length in [0, 1024, 2047, 2049, 4096] {
+            assert_eq!(
+                policy_matches(0, 1, length).unwrap_err().operation,
+                Some("tpm-key-length-mismatch")
+            );
+        }
+    }
     struct Fake {
         calls: Vec<&'static str>,
         fail: Option<&'static str>,
