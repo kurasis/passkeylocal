@@ -37,7 +37,11 @@ export async function testNativeHelloRecovery(signal?: AbortSignal): Promise<Hel
         worker.onmessage = async event => {
           const m = event.data;
           if (!live) return;
-          if (m?.kind === 'result') { resolve(m.report); return; }
+          if (m?.kind === 'result') {
+            // The worker has reported its explicit cleanup result. Do not silently
+            // retry it after publishing a cleanup-required status to the user.
+            ticket = undefined; resolve(m.report); return;
+          }
           if (m?.kind !== 'native' || nativeBusy || !['prepare','revoke'].includes(m.action)) { reject(new Error('INVALID_WORKER_MESSAGE')); return; }
           nativeBusy = true;
           let reply: RecoveryReply | undefined;
@@ -60,7 +64,7 @@ export async function testNativeHelloRecovery(signal?: AbortSignal): Promise<Hel
             if (!live) await dispose(); // Handles a late successful prepare after lock.
           }
         };
-      }, () => reject(new Error('UNAVAILABLE')));
+      }).catch(() => reject(new Error('UNAVAILABLE')));
       if (signal?.aborted) abort();
     });
   } finally {

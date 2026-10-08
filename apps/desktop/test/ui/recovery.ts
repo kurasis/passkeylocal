@@ -6,6 +6,7 @@ let next=1;
 const calls:string[]=[];
 let wrong=false;
 let block=false;
+let failDelete=false;
 let release: (()=>void) | undefined;
 const callbacks = new Map<number, (event: unknown)=>void>();
 let lockHandler=0;
@@ -24,8 +25,8 @@ w.__TAURI_INTERNALS__={
       if(wrong)component.fill(1);
       return {report:report('recovery-prepared'),ticket:'00000000-0000-4000-8000-000000000001',passwordHash:component};
     }
-    if(command==='hello_recovery_revoke')return {report:report('recovery-revoked')};
+    if(command==='hello_recovery_revoke')return {report:failDelete?{...report('blocked'),combinedState:'cleanup-required',checks:[{test:'test-key-delete',status:'failed'}]}:report('recovery-revoked')};
     throw new Error('unexpected test command');
   }
 };
-w.recoveryTest={calls,wrong(){wrong=true;},block(){block=true;},release(){release?.();},lock(){callbacks.get(lockHandler)?.({event:'native-lock',id:1,payload:null});},run:()=>testNativeHelloRecovery().then(r=>{w.result=r;},()=>{w.error='interrupted';})};
+w.recoveryTest={calls,failDelete(){failDelete=true;},failWorkerOnce(){const Original=w.Worker;w.Worker=class{constructor(){w.Worker=Original;throw new Error('synthetic worker construction failure');}};},wrong(){wrong=true;},block(){block=true;},release(){release?.();},lock(){callbacks.get(lockHandler)?.({event:'native-lock',id:1,payload:null});},run:()=>testNativeHelloRecovery().then(r=>{w.result=r;},()=>{w.error='interrupted';})};

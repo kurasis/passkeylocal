@@ -647,3 +647,18 @@ test('late native prepare after lock is disposed without returning a worker repo
   expect(await page.evaluate(()=>(window as any).result)).toBeUndefined();
   expect(await page.evaluate(()=>(window as any).error)).toBe('interrupted');
 });
+test('worker construction failure releases the client for a later recovery run', async ({ page }) => {
+  await page.goto('/recovery.html');
+  await page.evaluate(()=>{(window as any).recoveryTest.failWorkerOnce();return (window as any).recoveryTest.run();});
+  expect(await page.evaluate(()=>(window as any).error)).toBe('interrupted');
+  expect(await page.evaluate(()=>(window as any).recoveryTest.calls)).toEqual([]);
+  await page.evaluate(()=>(window as any).recoveryTest.run());
+  expect(await page.evaluate(()=>(window as any).result.outcome)).toBe('vault-recovery-passed');
+});
+test('a published cleanup failure is not silently retried by the desktop bridge', async ({ page }) => {
+  await page.goto('/recovery.html');
+  await page.evaluate(()=>{(window as any).recoveryTest.failDelete();return (window as any).recoveryTest.run();});
+  expect(await page.evaluate(()=>(window as any).result.combinedState)).toBe('cleanup-required');
+  expect(await page.evaluate(()=>(window as any).result.outcome)).toBe('blocked');
+  expect(await page.evaluate(()=>(window as any).recoveryTest.calls)).toEqual(['hello_recovery_prepare','hello_recovery_revoke','hello_recovery_revoke']);
+});

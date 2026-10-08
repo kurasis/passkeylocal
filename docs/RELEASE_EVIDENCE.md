@@ -12,7 +12,7 @@ vault. Native tickets, session redaction and durable cleanup prevent stale work
 from adopting/deleting another test. No production user vault is enrolled.
 
 Local validation passed: 122 routine native tests (33 combined/copy/recovery),
-168 TypeScript tests, 41 desktop/browser-worker scenarios, independent Python
+168 TypeScript tests, 43 desktop/browser-worker scenarios, independent Python
 recovery of component-opened/re-saved KDBX, Linux and Windows GNU Clippy, both
 frontend builds and target isolation. Windows/MSVC, installed smoke and publication
 are pending CI for this increment. Physical KDBX/Hello acceptance awaits the owner. Prior
