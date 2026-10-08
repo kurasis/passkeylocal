@@ -1,5 +1,13 @@
 # Windows Hello eligibility decision
 
+Current status: the owner completed the combined restart, fresh prompting,
+first-assertion cancellation and cleanup observations documented in
+[the combined protocol](HELLO_COMBINED_RESTART.md). The new
+[temporary key-loss experiment](HELLO_KEY_LOSS.md) is implemented and packaged;
+its physical result is pending. Account/machine copy, password fallback and
+production enrollment remain open. Older investigation notes below preserve
+their historical scope; they do not request unchanged repeat measurements.
+
 The [local TPM binding implementation](HELLO_LOCAL_TPM_BINDING.md) adds a documented
 provider/TBS ReadPublic route for the exact app-owned inner key, avoiding reliance
 on Windows supplying a remote attestation certificate. It compares the actual

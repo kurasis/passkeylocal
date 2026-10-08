@@ -1,0 +1,12 @@
+{
+  "officialUrl": "https://go.microsoft.com/fwlink/?linkid=2124701",
+  "productVersion": "1.3.275.13",
+  "bytes": 212358352,
+  "signerThumbprint": "4028CAD637509D4744B17EC5B42AED8D7A31E6AF",
+  "sha256": "ac22ecdc19c5b88b87f3fa752c00da9541653a8f5c0c5fc4a3b2b6ebe6591f69",
+  "resolvedUrl": "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/18c66e75-0385-4019-be3f-3f4a2bb867d5/MicrosoftEdgeWebView2RuntimeInstallerX64.exe",
+  "purpose": "Official x64 Evergreen offline installer; Tauri cache prefetch; no TLS or signature bypass",
+  "signer": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+  "signatureStatus": "Valid",
+  "sourceCommit": "4b3ba340f684fc6adefc5b5e2a2e0295add18249"
+}

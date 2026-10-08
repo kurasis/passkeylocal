@@ -1,5 +1,38 @@
 # Release evidence and gate status
 
+## Temporary key-loss publication (2026-10-08)
+
+[PR #27](https://github.com/kurasis/passkeylocal/pull/27) merged as `0eb2a195a15567bba124fc0cd2591a5028b5ac50`;
+application tree equals tested source `4b3ba340f684fc6adefc5b5e2a2e0295add18249` (head `a4e9a3cb2870a4716f8350e5735d0c6ba3246ab6`).
+[General CI 37773038077](https://github.com/kurasis/passkeylocal/actions/runs/37773038077) and
+[Windows CI 37773037961](https://github.com/kurasis/passkeylocal/actions/runs/37773037961)
+passed all 11 exact-head checks. Logs verify 133 Windows routine native tests
+(including 15 combined cases), separately executed MSVC/header ABI and 5 GiB
+resource checks, 105 Linux native tests, 161 TypeScript tests, 34 desktop UI and
+eight production PWA scenarios, recovery matrix/offline kit/fresh interop.
+10,000-file restore: 119.156 s; hosted 5 GiB process:
+92.363 s; sampled peak working set 10,563,584 bytes.
+
+Downloaded original ZIP matches GitHub digest `sha256:683f1f401e401a5404b57f8394bf2ae171ed21d5613c9d9183938d0041d67f67`.
+Installer matches original build metadata and sidecar: `06d06cdfdcc016de8dfb4f44ecf5e07b43281f528a92d6e538fe6d2bdf7f7a63`,
+217,949,570 bytes. Actual installation/binary equality and packaged
+UI/IPC smoke passed. Thirteen source-matched reports retain false enrollment,
+eligibility and unlock. On the hosted machine the new key-loss IPC stops at
+unavailable PRF preflight, creates no native keys and retains its recovery
+journal when the unavailable TPM provider prevents absence verification. This
+is a tested failure path, not a physical key-loss success.
+
+[Download evidence](../deploy/windows-desktop/) and the [new single-button target
+procedure](windows/HELLO_KEY_LOSS.md) are published. Physical key-loss observation
+is pending the owner's report. Prior restart/cancellation/cleanup observations
+remain complete. Account/machine copy, password fallback, remaining authorization
+negatives and production enrollment/lifecycle acceptance remain open.
+
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-0eb2a19.zip): 213,004 bytes,
+SHA-256 `bc357044cde261cefa8db26e46eb34cdab3168e81f5be5e1d5f23012c90fd967`; all ten files equal freshly rebuilt production output, with
+native IPC absent. No server deployment occurred. Publication changes only docs
+and deploy artifacts; application/test/dependency/workflow bytes remain tested.
+
 ## Temporary key-loss implementation (2026-10-08)
 
 The [next synthetic experiment](windows/HELLO_KEY_LOSS.md) adds one fixed native
@@ -15,7 +48,7 @@ routine native tests PASS (one resource test remains ignored in the routine
 suite); 33 desktop UI scenarios PASS, then all three key-loss scenarios PASS
 including the added late-result/Lock All case. Native clippy, both production
 frontend builds and bundle isolation PASS. Windows CI, the packaged command and
-the owner-facing installer are pending publication. The earlier owner reports
+the owner-facing installer subsequently passed as recorded above. The earlier owner reports
 below remain intact and need no repeated measurement.
 
 ## Completed owner cancellation/cleanup sequence (2026-10-08)

@@ -1,21 +1,30 @@
 # Windows desktop test installers
 
-Latest: **combined Hello PRF + TPM restart test** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37764316715/artifacts/11544901097), [successful Windows run 37764316715](https://github.com/kurasis/passkeylocal/actions/runs/37764316715). [PR #26](https://github.com/kurasis/passkeylocal/pull/26) merged as `cedae01de4a19b8810c4bf6a3a0bbc9d3323f170`. Code head `c757fdc45eb79b110c7835173e31ba28d476cb87`; installed/tested source `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`. The merged application tree equals the tested PR tree.
+Latest: **temporary Hello + TPM key-loss test** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37773037961/artifacts/11549687082), [successful Windows run 37773037961](https://github.com/kurasis/passkeylocal/actions/runs/37773037961). [PR #27](https://github.com/kurasis/passkeylocal/pull/27) merged as `0eb2a195a15567bba124fc0cd2591a5028b5ac50`. Code head `a4e9a3cb2870a4716f8350e5735d0c6ba3246ab6`; installed/tested source `4b3ba340f684fc6adefc5b5e2a2e0295add18249`. The merged application tree equals the tested PR tree.
 
 Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`. This is an unsigned experimental installer; Microsoft's signed x64 WebView2 offline installer is included. Node/Python are not required. Artifact retention is 30 days; after expiry run the [Windows workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml) on main.
 
-Installer: 217,960,718 bytes; SHA-256 `5f280928cb26bab52f114be629dfd578b682de8615548af932c02cef616db547`, independently matched to original metadata and checksum sidecar. Original evidence: [build](build-a7f56d8.json), [installed-app smoke](smoke-a7f56d8.json), [5 GiB resource measurement](file-safe-resource-a7f56d8.json), [signed WebView2](webview2-download-a7f56d8.json), [Russian settings](windows-settings-a7f56d8.png), [locked window](windows-locked-a7f56d8.png). The unversioned sidecar matches this installer.
+Installer: 217,949,570 bytes; SHA-256 `06d06cdfdcc016de8dfb4f44ecf5e07b43281f528a92d6e538fe6d2bdf7f7a63`, matched to original metadata and checksum sidecar. Original evidence: [build](build-4b3ba34.json), [installed-app smoke](smoke-4b3ba34.json), [5 GiB resource measurement](file-safe-resource-4b3ba34.json), [signed WebView2](webview2-download-4b3ba34.json), [Russian settings](windows-settings-4b3ba34.png), [locked window](windows-locked-4b3ba34.png). The unversioned sidecar matches this installer.
 
-## Completed target result
+## New key-loss procedure
+
+1. Fully quit the old app and install this build. Unlock with the master password and open Settings → Windows Hello → **Test temporary key loss / Проверить потерю временных ключей**.
+2. Allow both Windows verifications. This creates a **new temporary pair**, verifies decryption, then deletes each key and checks reopening. No restart or manual key deletion is needed.
+3. Copy the technical report. Expected: `combined-key-loss-passed`, `combinedState: no-test`, all 20 stages passed, source `4b3ba340f684fc6adefc5b5e2a2e0295add18249`. The `loss-tpm-reopen` stage deliberately expects `0x80090016` (missing key). No vault is enrolled or unlocked.
+4. If any stage fails or is cancelled, send its report. Cleanup is attempted automatically; **Remove test and temporary keys** remains available if needed. Do not reset TPM/Hello or change Windows security policy.
+
+An existing saved test disables the new action and is never overwritten. Your last supplied cleanup ended in `no-test`, so no repeat of the older procedure is requested. [Protocol and limits](../../docs/windows/HELLO_KEY_LOSS.md): this is same-process object loss, not cross-account/machine or master-password fallback evidence. Physical key-loss measurement is pending your new report.
+
+## Completed restart and cancellation baseline
 
 The owner supplied [preparation](hello-target-a7f56d8-combined-prepare.json) and
-[restart](hello-target-a7f56d8-combined-resume.json) reports for this installer:
+[restart](hello-target-a7f56d8-combined-resume.json) reports for the earlier `a7f56d8` installer:
 all nine preparation and seven restart stages passed, ending in
 `combined-restart-passed` / `fresh-process` / `no-test`. The owner confirmed **two
 fingerprint verifications for each button**, covering creation/first unwrap and
 the two unwraps after restart. Both temporary keys and the journal were deleted.
 The successful path is complete; the cancellation/cleanup sequence below is
-also complete, with no new download requested.
+also complete and does not need to be repeated.
 
 The [cancellation report](hello-target-a7f56d8-combined-cancel.json) now confirms
 that the first assertion after restart was cancelled with `0x80090036`
@@ -28,10 +37,9 @@ four stages, including deletion of both native test objects and the journal.
 Outcome/state is `combined-cleaned` / `no-test`. The report correctly retains
 `processScope: same-process` for cleanup; it is not another unlock measurement.
 
-**The current target procedure is complete.** No new test, restart, manual key
-deletion, repeated report or installer is requested. Next implementation and
-acceptance work concerns synthetic account/machine-copy and key-loss/password
-fallback coverage, remaining authorization negatives and production integration.
+**That earlier target procedure is complete.** The new key-loss procedure above
+is separate. Account/machine-copy, password fallback after key loss, remaining
+authorization negatives and production integration still need acceptance work.
 
 False eligibility/enrollment/unlock and the static `remaining` array are preserved
 in the original reports. The completed synthetic test does not enable real-vault
@@ -51,10 +59,10 @@ key-loss fallback and production lifecycle acceptance remain open.
 
 ## Validation
 
-[General CI 37764316873](https://github.com/kurasis/passkeylocal/actions/runs/37764316873) and Windows CI passed all 11 exact-head checks. Windows: 127 routine native tests, including nine portable combined protocol/persistence cases and an exact RP/user cleanup-selector test; independent MSVC/header ABI and 5 GiB resource tests executed separately. Native storage/Python parity, bidirectional file recovery, actual NSIS install, packaged UI/IPC/lock and source correlation passed. Hosted hardware observations are not owner-target evidence. The installed combined status/resume/cleanup commands reported no saved test and kept enrollment/unlock disabled.
+[General CI 37773038077](https://github.com/kurasis/passkeylocal/actions/runs/37773038077) and Windows CI passed all 11 exact-head checks. Windows: 133 routine native tests, including 15 portable combined cases; independent MSVC/header ABI and 5 GiB resource tests executed separately. TypeScript: 161 tests; desktop UI: 34 scenarios; production PWA: eight scenarios; Linux: 105 routine native tests. Recovery OS/version matrix, offline kit and fresh native/Python parity passed.
 
-TypeScript: 161 tests; desktop UI: 31 scenarios; production PWA: eight scenarios. Python OS/version recovery matrix, offline kit and fresh recovery fixtures passed. Locally, ten combined tests passed (including the Unix link control), alongside Windows GNU Clippy, both frontends and target isolation. The final hosted Linux native suite passed 99 routine tests; its explicit 5 GiB resource gate ran separately.
+Actual NSIS installation, binary equality, packaged UI/IPC/lock and source correlation passed. The new packaged key-loss command refused unsupported hosted preflight before creating native keys and preserved cleanup failure rather than relabeling it as success. Hosted Windows has no usable Hello/TPM; no physical loss success is inferred.
 
-10,000-file restore: 108.248 seconds. Hosted 5 GiB primitive: 92.980 seconds; sampled peak working set 10,592,256 bytes. These are hosted observations, not target-device guarantees.
+10,000-file restore: 119.156 seconds. Hosted 5 GiB primitive: 92.363 seconds; sampled peak working set 10,563,584 bytes. These are hosted observations, not target guarantees.
 
-Physical combined restart and fresh prompting on its successful path are owner-confirmed above. First-assertion cancellation after restart and cleanup of that cancelled test are also owner-observed. Other cancellation points, silent-access negatives, account/machine copies, key-loss fallback and production lifecycle acceptance remain pending. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build. [Release evidence](../../docs/RELEASE_EVIDENCE.md) distinguishes completed software checks from owner hardware observations and real-vault enrollment.
+[Release evidence](../../docs/RELEASE_EVIDENCE.md) records outstanding account/machine-copy, password-fallback, authorization and production integration work. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.
