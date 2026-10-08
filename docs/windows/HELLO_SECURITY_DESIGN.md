@@ -5,9 +5,11 @@ first-assertion cancellation and cleanup observations documented in
 [the combined protocol](HELLO_COMBINED_RESTART.md). The new
 [temporary key-loss experiment](HELLO_KEY_LOSS.md) now has an owner report
 passing all 20 stages, including exact object absence and final cleanup. The
-[copy-file experiment](HELLO_COPY_TEST.md) is implemented, CI-validated and
-packaged for the owner's two Windows computers; physical reports are pending.
-Other-account copy, password fallback and production enrollment remain open. Older investigation notes below preserve
+[copy-file experiment](HELLO_COPY_TEST.md) now has matching second-PC/source
+reports, a checked file digest and successful cleanup. The owner excluded
+second-account manual testing: follow the [one-account acceptance plan](HELLO_OWNER_ACCEPTANCE.md).
+Account isolation remains unverified; it is not a new owner task. Password
+fallback and production enrollment remain pending. Older investigation notes below preserve
 their historical scope; they do not request unchanged repeat measurements.
 
 The [local TPM binding implementation](HELLO_LOCAL_TPM_BINDING.md) adds a documented
@@ -163,9 +165,9 @@ Threat model: native file operations do not isolate the existing decrypted JS/WA
 
 ## Controlled hardware proof procedure
 
-Use a synthetic vault and a separate test account/machine. Record exact Kensington VeriMark Desktop SKU/revision (manufacturer candidate K62330WW), USB topology, official Windows Update/Kensington driver version, Windows 11 build, WebView2, TPM2 readiness, per-key evidence and ESS policy. OS enrollment remains in Windows Settings; the app never captures biometrics or a Windows PIN, installs drivers or changes ESS/VBS/Memory Integrity/Secure Boot/TPM policies.
+Use a synthetic vault in the existing account and the documented second-PC evidence; the owner does not need a separate account. The current one-account plan supersedes older manual prerequisites. Record exact Kensington VeriMark Desktop SKU/revision (manufacturer candidate K62330WW), USB topology, official Windows Update/Kensington driver version, Windows 11 build, WebView2, TPM2 readiness, per-key evidence and ESS policy. OS enrollment remains in Windows Settings; the app never captures biometrics or a Windows PIN, installs drivers or changes ESS/VBS/Memory Integrity/Secure Boot/TPM policies.
 
-A native synthetic-secret proof must establish supported wrap/unwrap algorithms and padding, per-key non-exportable TPM protection, rejection of silent unwrap and private-key export, fresh authorization on repeated attempts in one/fresh process, cancellation/lockout returning no secret, account/machine copy resistance, and fallback after key loss. Only then implement/enroll the actual protected envelope and execute H-01–H-16 in [WINDOWS_HELLO_KENSINGTON.md](WINDOWS_HELLO_KENSINGTON.md). Do not clear the owner's TPM or reset real Hello enrollment as a test. Driver/ESS incompatibility is an owner OS-policy decision; keep password access usable.
+A native synthetic-secret proof must establish supported wrap/unwrap algorithms and padding, per-key non-exportable TPM protection, rejection of silent unwrap and private-key export, fresh authorization on repeated attempts in one/fresh process, cancellation/lockout returning no secret, the scoped second-PC copy observation, and fallback after key loss. Actual other-account isolation is excluded from owner manual acceptance and remains unverified; preserve native account scoping and automated boundary tests. Only then implement/enroll the actual protected envelope and execute H-01–H-16 in [WINDOWS_HELLO_KENSINGTON.md](WINDOWS_HELLO_KENSINGTON.md). Do not clear the owner's TPM or reset real Hello enrollment as a test. Driver/ESS incompatibility is an owner OS-policy decision; keep password access usable.
 
 ## OS configuration and diagnostic actions (2026-10-06)
 

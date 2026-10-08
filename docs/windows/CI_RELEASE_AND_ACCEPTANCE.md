@@ -113,7 +113,7 @@ Every result must identify the source commit, environment/tool versions, fixture
 | UPGRADE-01 | Upgrade and reinstall using the same app identity | Existing vault/settings and backups remain usable; no unintended fresh data directory. |
 | UPGRADE-02 | Uninstall with external backup folder configured | Default uninstall leaves user data/backups intact and does not delete unrelated folder content. |
 | RELEASE-01 | Desktop workflow/tag/artifact alongside normal web release | Correct target artifact; no overwritten web deploy output, unintended web deployment or latest-release collision. |
-| HELLO-00 | All H-01 through H-16 gates in the Kensington document | Actual sensor/TPM evidence recorded; unsupported, failed and unrun cases are distinguished; no mocked hardware success. |
+| HELLO-00 | H-01 through H-16 with the [owner procedure amendment](HELLO_OWNER_ACCEPTANCE.md) | Record actual sensor/TPM evidence; distinguish unsupported, failed, unrun and owner-excluded cases. Same-PC/other-account manual testing is excluded and unverified; no mocked hardware success. |
 
 Fault injection must cover explicit Windows replacement error paths, not just generic exceptions in a mocked browser filesystem. Power-loss durability claims must stay within what the implementation and environment can establish.
 

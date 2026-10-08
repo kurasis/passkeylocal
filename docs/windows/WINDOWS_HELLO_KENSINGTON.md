@@ -1,6 +1,12 @@
 # Kensington VeriMark Desktop and Windows Hello
 
-Specification version: 1.1.0 — 2026-10-06.
+Specification version: 1.2.0 — 2026-10-08.
+
+Owner-requested manual acceptance amendment: use the existing Windows account;
+no second-account test on the same PC is required from the owner. Follow the
+[current acceptance plan](HELLO_OWNER_ACCEPTANCE.md). Other-account isolation
+remains unverified and must not be claimed as tested. Preserve native account
+scoping and automated boundary checks; this amendment does not enable Hello.
 
 This is required additional scope for the existing Windows extension in the same GitHub repository. Preserve already implemented web and desktop code. This document supersedes version 1.0.0's exclusion of Windows Hello; all compatible persistence, backup and release requirements remain in force.
 
@@ -41,7 +47,7 @@ Prove all of the following on actual hardware:
 1. The protection key is non-exportable and hardware-backed by the intended TPM. Document per-key evidence, provider guarantees and limitations. A provider-wide hardware flag or `TPM present` check alone is insufficient; fail eligibility when the claimed binding cannot be established.
 2. The actual unwrap operation requires Windows Hello authorization for each quick-unlock attempt, including repeated attempts in the same process and after a fresh launch. Reject a path that silently reuses a cached authorization to reopen a locked vault.
 3. Cancel, failed verification and unsupported/locked-out states return no usable secret. Attempts to perform the same unwrap silently, without satisfying authorization, must not succeed.
-4. Copying app files and the envelope to another account/machine does not enable Hello unlocking there.
+4. Copying app files and the envelope must not bypass native account/machine binding. Manual acceptance uses a second computer and a matching source decryption control. Same-PC/other-account testing is excluded by the owner; record that isolation as unverified, keep account scoping and automated boundary checks, and do not claim a physical account-isolation pass. Production file/envelope recovery still requires its own acceptance.
 5. Key reset/loss causes a recoverable fallback to the master password, not loss of the portable vault.
 
 Do not substitute any of these weaker constructions:
@@ -114,7 +120,7 @@ Web builds keep the existing master-password behavior and must neither load nati
 
 ## 8. Additional acceptance gates
 
-Use only synthetic vaults and test Windows accounts. Record actual SKU, driver, Windows build, TPM/provider evidence, ESS state, app commit and PASS/FAIL/NOT RUN/BLOCKED. Hosted CI cannot supply physical biometric evidence. Do not enroll the owner's fingerprints remotely, capture biometrics in test artifacts, or disable system protections for a green test result.
+Use only synthetic vaults in the owner's existing Windows account; a second account is not a manual prerequisite. Record actual SKU, driver, Windows build, TPM/provider evidence, ESS state, app commit and PASS/FAIL/NOT RUN/BLOCKED. Hosted CI cannot supply physical biometric evidence. Do not enroll the owner's fingerprints remotely, capture biometrics in test artifacts, or disable system protections for a green test result.
 
 | ID | Test | Required result |
 | --- | --- | --- |
@@ -125,7 +131,7 @@ Use only synthetic vaults and test Windows accounts. Record actual SKU, driver, 
 | H-05 | Session mode restart/crash and persistent mode restart/expiry | Session envelope disappears; opt-in persistent mode works until policy expiry; password path remains available. |
 | H-06 | Lock/suspend/user switch/close while prompt is pending; owned-dialog focus changes | No stale response reveals secrets; owned-dialog flow can complete safely without disabling real lock triggers. |
 | H-07 | Envelope corruption, wrong vault, swapped enrollment/key ID and clock rollback | Authentication/binding/policy checks fail closed; vault file is not modified. |
-| H-08 | Copy files/envelope to another machine or Windows account | Hello cannot unwrap there; master-password recovery still works. |
+| H-08 | Copy files/envelope to another machine and recheck source | Hello cannot unwrap on the other machine; source still decrypts; master-password recovery works independently. Synthetic envelope observation is complete; production recovery remains pending. Same-PC/other-account manual testing is excluded by the owner and remains unverified. |
 | H-09 | Multiple normal saves, KDF salt changes and reopen | Engine-compatible unlock material continues to work without format changes or lost history. |
 | H-10 | Password change/import/restore plus injected crashes between stages | Valid vault retained; previous enrollment invalid; re-enrollment uses the new credential after master-password verification. |
 | H-11 | Disable/revoke, replay old envelope, missing key and simulated reset | No silent re-enrollment; replay fails after confirmed key revocation; errors accurately reported. |

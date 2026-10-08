@@ -1,5 +1,42 @@
 # Release evidence and gate status
 
+## One-account manual acceptance and completed copy observation (2026-10-08)
+
+At the owner's explicit request, the [current manual plan](windows/HELLO_OWNER_ACCEPTANCE.md)
+uses the existing Windows account and excludes a second-account test on the same
+PC. That isolation is unverified, not passed, and does not block development of
+current-account password recovery and lifecycle coverage. Native account scoping,
+cryptographic requirements and automated boundary tests remain in force. The
+Kensington H-08 row and active procedures now distinguish second-PC evidence from
+excluded other-account testing; older investigation text is historical.
+
+[Destination](../deploy/windows-desktop/hello-target-cdcc954-copy-destination.json)
+passes six stages with `copy-isolation-observed`, `different-installation`, and
+both keys missing (exact TPM open `0x80090016`; passkey `combined-credential-missing`).
+[Source recheck](../deploy/windows-desktop/hello-target-cdcc954-copy-source.json)
+passes seven stages with `copy-source-roundtrip-passed`, matching current context,
+both keys opened and authenticated decryption. Both identify cdcc954 source and
+`processScope: not-measured`. The supplied 3,119-byte file SHA-256 is
+`844f0313dd5a69463d1cb817d4e151857ae807a4dfaa969d1300fa6df02ebcef`,
+matching both reports. The initial export report was not supplied or reconstructed;
+the later authenticated source roundtrip and identical file digest support the
+narrow observed transfer result. No fingerprint count/modality is inferred.
+
+[Cleanup](../deploy/windows-desktop/hello-target-cdcc954-copy-cleanup.json) passes
+all four stages: journal cleanup, passkey deletion, TPM-key deletion and journal
+deletion. Outcome/state is `combined-cleaned` / `no-test`; its shared-command
+purpose and same-process scope are preserved. No repeated measurement is needed.
+[Evidence index](../deploy/windows-desktop/hello-target-cdcc954-copy-evidence.json)
+records the scopes and missing initial export report. Real enrollment/unlock
+and all original false flags/static remaining arrays are unchanged.
+
+This change updates requirements, procedures and received evidence only. Validation
+checks report stages/codes/sources, exact uploaded-file hash/size, documentation
+links, and unchanged application/installer/Pages bytes. No new hardware test,
+application test suite, build or deployment is claimed. Production master-password
+fallback, remaining authorization negatives and enrollment/lifecycle integration
+are pending; the current installer does not yet run that recovery sequence.
+
 ## Copy-file publication (2026-10-08)
 
 [PR #28](https://github.com/kurasis/passkeylocal/pull/28) merged as `241e2b515914089754a1815219eec74b4ad85a36`;

@@ -6,18 +6,26 @@ Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-W
 
 Installer: 217,970,294 bytes; SHA-256 `b987738eed24eb11aab84d74d1636d44e8be0b78b1ea5edc6884e024c799405b`, matched to original metadata and checksum sidecar. Original evidence: [build](build-cdcc954.json), [installed-app smoke](smoke-cdcc954.json), [5 GiB resource measurement](file-safe-resource-cdcc954.json), [signed WebView2](webview2-download-cdcc954.json), [Russian settings](windows-settings-cdcc954.png), [locked window](windows-locked-cdcc954.png). The unversioned sidecar matches this installer.
 
-## Two-computer copy procedure
+## Completed two-computer result and next procedure
 
-Install this build on both Windows computers. On a fresh destination, an empty test vault is sufficient to reach Settings → Windows Hello. No real vault, master password or private-key files need to be transferred.
+The owner supplied [destination](hello-target-cdcc954-copy-destination.json),
+[source recheck](hello-target-cdcc954-copy-source.json) and
+[cleanup](hello-target-cdcc954-copy-cleanup.json) reports. The destination finds
+both keys missing; the source opens both and decrypts successfully. SHA-256 of
+the supplied 3,119-byte test file matches both copy reports. The
+[evidence record](hello-target-cdcc954-copy-evidence.json) notes the absent initial
+export report without inventing it. Cleanup passed all four stages and ended in
+`no-test`. This synthetic envelope-only procedure is complete; no repeat,
+additional cleanup or replacement installer is requested.
 
-1. On the **source**, choose **Создать файл проверки переноса / Create copy-test file**, select a new `.hello-test` filename, and complete the two Windows verifications. Save the report (`copy-exported`, `copy-ready`). **Keep the source test keys until step 4.**
-2. Copy only that file to the **other computer**. Choose **Проверить тестовый файл / Check a copy-test file**. Save the report; expected observation is `copy-isolation-observed` with `different-installation`. Provider/API errors remain blocked and do not prove isolation.
-3. Back on the **source**, use **Проверить тестовый файл** on that same file and complete fresh Hello verification. Save the report; expected `copy-source-roundtrip-passed` and `same-account-and-installation`.
-4. Send all three reports: `copyEvidence.fileSha256` must be identical. After collecting them, choose **Remove test and temporary keys** on the source and save the cleanup report.
-
-If exporting failed after creation, use **Сохранить тестовый файл ещё раз / Save the test file again**, which revalidates the source keys before saving. Existing tests/files are never overwritten. Import reads only; it does not create/delete native keys or adopt a journal. [Full procedure, recovery and limits](../../docs/windows/HELLO_COPY_TEST.md).
-
-Physical cross-computer measurement is pending. This measures copying an encrypted synthetic envelope, not cloning Windows or private key containers. Same-machine/different-account acceptance is separate. Eligibility/enrollment/unlock remain false; the master password remains the normal vault-unlock method.
+The owner excluded a second Windows account from manual testing. Follow the
+[revised one-account acceptance plan](../../docs/windows/HELLO_OWNER_ACCEPTANCE.md).
+Account isolation remains unverified; automated logic tests are not a Windows
+account-isolation measurement. Next work is production password recovery and
+lifecycle integration using a synthetic vault in the existing account. The
+current installer does not yet provide that production acceptance sequence.
+Real-vault Hello enrollment/unlock remains disabled. The [copy protocol](../../docs/windows/HELLO_COPY_TEST.md)
+is retained as a reference, not a request to repeat completed measurements.
 
 ## Completed key-loss measurement
 
@@ -59,14 +67,14 @@ Outcome/state is `combined-cleaned` / `no-test`. The report correctly retains
 `processScope: same-process` for cleanup; it is not another unlock measurement.
 
 **That earlier target procedure is complete.** The separate key-loss procedure
-above is now also complete. Account/machine-copy, password fallback after key loss, remaining
-authorization negatives and production integration still need acceptance work.
+above is now also complete. The later second-PC observation is complete too.
+Other-account manual testing is excluded and unverified; password fallback,
+remaining authorization negatives and production integration remain pending.
 
 False eligibility/enrollment/unlock and the static `remaining` array are preserved
 in the original reports. The completed synthetic test does not enable real-vault
-Hello enrollment. Other cancellation points, silent-access negatives,
-account/machine copies,
-key-loss fallback and production lifecycle acceptance remain open.
+Hello enrollment. Other cancellation points, silent-access negatives, key-loss fallback and
+production lifecycle acceptance remain open under the revised one-account plan.
 
 [Protocol, recovery and evidence limits](../../docs/windows/HELLO_COMBINED_RESTART.md) explain the bounded journal written before creation, dedicated RP/exact-user recovery after a crash, locally verified TPM key, authenticated metadata, new authorization for every decryption and native process boundary. Only random synthetic data is used. No real vault credentials or PRF output are persisted or returned by IPC. Do not repeat completed standalone probes, reset TPM/Hello or weaken security policy.
 
@@ -86,4 +94,4 @@ Actual NSIS installation, binary equality, packaged UI/IPC/lock and source corre
 
 10,000-file restore: 108.959 seconds. Hosted 5 GiB primitive: 44.633 seconds; sampled peak working set 10,604,544 bytes. These are hosted observations, not target guarantees.
 
-[Release evidence](../../docs/RELEASE_EVIDENCE.md) records outstanding account/machine-copy, password-fallback, authorization and production integration work. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.
+[Release evidence](../../docs/RELEASE_EVIDENCE.md) records the scoped copy result, excluded account test, and outstanding password-fallback, authorization and production integration work. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.

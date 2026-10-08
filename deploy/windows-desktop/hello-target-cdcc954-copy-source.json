@@ -1,0 +1,55 @@
+{
+  "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+  "authorization": "os-required-user-verification",
+  "checks": [
+    {
+      "status": "passed",
+      "test": "copy-file-read"
+    },
+    {
+      "status": "passed",
+      "test": "copy-file-validate"
+    },
+    {
+      "status": "passed",
+      "test": "copy-context"
+    },
+    {
+      "status": "passed",
+      "test": "copy-tpm-open"
+    },
+    {
+      "status": "passed",
+      "test": "copy-passkey-open"
+    },
+    {
+      "status": "passed",
+      "test": "copy-source-decrypt"
+    },
+    {
+      "status": "passed",
+      "test": "copy-session-final"
+    }
+  ],
+  "copyEvidence": {
+    "contextRelation": "same-account-and-installation",
+    "correlation": "match-export-and-source-recheck",
+    "fileSha256": "844f0313dd5a69463d1cb817d4e151857ae807a4dfaa969d1300fa6df02ebcef",
+    "originSourceCommit": "cdcc9542b891b808824c1ca7ce471a260ef176b5",
+    "passkeyAccess": "opened",
+    "tpmAccess": "opened"
+  },
+  "eligible": false,
+  "enrolled": false,
+  "outcome": "copy-source-roundtrip-passed",
+  "processScope": "not-measured",
+  "purpose": "synthetic-combined-copy",
+  "remaining": [
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "cdcc9542b891b808824c1ca7ce471a260ef176b5",
+  "unlocked": false,
+  "version": 1
+}

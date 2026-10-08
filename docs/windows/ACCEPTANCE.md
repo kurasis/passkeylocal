@@ -1,5 +1,13 @@
 # Acceptance report — experimental integration
 
+## Current owner procedure amendment (2026-10-08)
+
+Follow [one-account owner acceptance](HELLO_OWNER_ACCEPTANCE.md). The cdcc954
+synthetic second-PC/source/hash/cleanup observation is complete. Same-PC account
+switching is excluded by the owner, with isolation unverified. Historical rows
+below do not request a new account or repeats of completed synthetic tests;
+production enrollment/password recovery and remaining lifecycle tests stay pending.
+
 Baseline source: `be52275e23a5c8bc0eabbf62198f4ee0c4f75d4d`. Final implementation is identified by the Git commit containing this report and CI artifact `build.json`; do not substitute the baseline SHA for the installer SHA. Local environment: Debian 13 x64, Node 24.19, Python 3.12.14, Rust 1.90.0, Chromium 151.0.7922.173. No physical Windows/TPM/Kensington/iPhone is attached.
 
 ## Owner PRF measurement (2026-10-07)
@@ -72,7 +80,7 @@ Every full gate below remains NOT RUN until its complete scenario is observed on
 | H-05 | Session mode restart/crash and persistent mode restart/expiry | BLOCKED: physical TPM/provider/Kensington proof unavailable |
 | H-06 | Lock/suspend/user switch/close while prompt is pending; owned-dialog focus changes | BLOCKED: physical TPM/provider/Kensington proof unavailable |
 | H-07 | Envelope corruption, wrong vault, swapped enrollment/key ID and clock rollback | BLOCKED: physical TPM/provider/Kensington proof unavailable |
-| H-08 | Copy files/envelope to another machine or Windows account | BLOCKED: physical TPM/provider/Kensington proof unavailable |
+| H-08 | Second-PC copy and matching source control | COMPLETED for cdcc954 synthetic envelope-only observation and cleanup; production file/envelope/password recovery NOT RUN. Other-account manual test EXCLUDED BY OWNER; isolation unverified. |
 | H-09 | Multiple normal saves, KDF salt changes and reopen | BLOCKED: physical TPM/provider/Kensington proof unavailable |
 | H-10 | Password change/import/restore plus injected crashes between stages | BLOCKED: physical TPM/provider/Kensington proof unavailable |
 | H-11 | Disable/revoke, replay old envelope, missing key and simulated reset | BLOCKED: physical TPM/provider/Kensington proof unavailable |

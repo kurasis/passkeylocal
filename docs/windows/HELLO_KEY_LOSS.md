@@ -23,8 +23,10 @@ modality; no new fingerprint observation is inferred. Existing owner prompting
 confirmations for earlier experiments retain their original scope.
 
 Eligibility, enrollment and unlock remain false; the original static `remaining`
-list is preserved. Account/machine-copy, password recovery after key loss,
-remaining authorization negatives and production lifecycle work remain open.
+list is preserved. The [second-PC copy observation](HELLO_COPY_TEST.md) is now
+complete. Follow the [one-account acceptance plan](HELLO_OWNER_ACCEPTANCE.md):
+other-account manual testing is excluded and isolation unverified; production
+password recovery, remaining authorization negatives and lifecycle work stay open.
 
 ## Reference procedure (completed; no repeat requested)
 

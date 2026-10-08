@@ -6,8 +6,9 @@ reads, enrolls, or unlocks either real vault. The successful standalone reports
 remain valid; they need not be repeated.
 
 The [temporary key-loss test](HELLO_KEY_LOSS.md) is also owner-completed.
-The next implementation is the [copy-file test](HELLO_COPY_TEST.md); it does not
-require repeating this restart procedure.
+The [copy-file test](HELLO_COPY_TEST.md) is also owner-completed in its narrow
+second-PC/source/cleanup scope. Follow the [one-account acceptance plan](HELLO_OWNER_ACCEPTANCE.md);
+no repeat or second-account manual test is requested.
 
 ## Completed owner measurements
 
@@ -34,9 +35,10 @@ No additional fingerprint prompt is inferred from its authorization metadata.
 
 The current target procedure is complete. No new test, restart, manual key
 deletion or installer is requested. The static `remaining` list is release-state
-metadata and does not negate the completed observations. Next work is synthetic
-account/machine-copy and key-loss/password-fallback coverage, remaining
-authorization negatives, and production lifecycle integration.
+metadata and does not negate the completed observations. Next work is production
+password-fallback coverage, remaining authorization negatives and lifecycle
+integration in the existing account; other-account isolation remains unverified
+and excluded from the owner's manual plan.
 
 ## Reference procedure (successful path and first cancellation/cleanup completed)
 
