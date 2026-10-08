@@ -30,6 +30,7 @@
     "allow-hello-attestation-capability",
     "allow-hello-webauthn-capability",
     "allow-hello-prf-proof",
+    "allow-hello-webauthn-attestation",
     "allow-hello-tpm-capability",
     "allow-hello-tpm-proof",
     "allow-hello-settings",

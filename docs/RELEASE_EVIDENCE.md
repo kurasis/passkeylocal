@@ -27,6 +27,14 @@ is byte-identical. New Windows pointer-shape/ABI execution, complete hosted CI,
 installation and target hardware measurement remain pending. The new target action must use the next
 source-correlated installer after CI; do not repeat existing diagnostics.
 
+The initial installed-app smoke for tested source
+`ef0da0ae9bb4c5514bedcdf62b1a1414fa55b89e` failed before executing the new
+command: Tauri correctly denied it because the main-window capability omitted
+`allow-hello-webauthn-attestation`. The correction adds only that generated
+permission to the existing local `main` capability, retaining its window/origin
+scope and every native session/HWND guard. No failed installer is published;
+the corrected exact-head hosted and installed-app checks must pass first.
+
 ## PCP certification framing and completed target measurement (2026-10-08)
 
 The [owner JSON from installed source c83ce3facce7abdae040b27133e5aec258d4ec23](../deploy/windows-desktop/hello-target-c83ce3f-tpm-inner.json)
