@@ -21,6 +21,8 @@ use tauri::{Emitter, Manager, State, WebviewWindow};
 
 struct NativeState {
     store: Mutex<Store>,
+    hello: Mutex<hello::enrollment::Manager>,
+    hello_serial: AtomicU64,
     active: Mutex<Option<String>>,
     serial: AtomicU64,
     inactivity: Mutex<Inactivity>,
@@ -131,6 +133,30 @@ async fn storage(
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<NativeState>();
         state.check(&token)?;
+        // Invalidate before any credential-changing write; a busy OS prompt
+        // makes this write retryable, never lets it race an old unwrap.
+        if hello::enrollment::credential_write(&operation, &args) {
+            state.hello_serial.fetch_add(1, Ordering::SeqCst);
+            let root = app
+                .path()
+                .app_local_data_dir()
+                .map_err(|_| Error::new("UNAVAILABLE"))?;
+            let revoked = state.hello.try_lock().map_err(|_| Error::new("BUSY"))?.run(
+                &root,
+                0,
+                &|| true,
+                &|| Err(Error::new("INVALID_STATE")),
+                &hello::enrollment::windows::Action::Revoke,
+            );
+            // The envelope is already durably nonresumable when only native
+            // object deletion failed. Password recovery must remain possible;
+            // Settings keeps reporting cleanup-required until deletion succeeds.
+            if let Err(e) = revoked {
+                if e.code != "HELLO_CLEANUP_REQUIRED" {
+                    return Err(e);
+                }
+            }
+        }
         let mut managed = store(&state)?;
         state.check(&token)?;
         managed.native_deadline(
@@ -644,6 +670,83 @@ fn hello_settings(window: WebviewWindow) -> Result<()> {
     }
 }
 #[tauri::command]
+async fn hello_enrollment(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    token: String,
+    request: hello::enrollment::windows::Action,
+) -> Result<Value> {
+    use hello::enrollment::windows::Action;
+    if matches!(request, Action::Enroll { .. } | Action::Unlock) {
+        focused(&window)?;
+    } else {
+        trusted(&window)?;
+    }
+    if token.len() > 64 {
+        return Err(Error::new("INVALID_STATE"));
+    }
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    let root = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|_| Error::new("UNAVAILABLE"))?;
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    if matches!(request, Action::Revoke) {
+        app.state::<NativeState>()
+            .hello_serial
+            .fetch_add(1, Ordering::SeqCst);
+    }
+    let hello_serial = app
+        .state::<NativeState>()
+        .hello_serial
+        .load(Ordering::SeqCst);
+    let owner = app.clone();
+    let session = token.clone();
+    let reply = tauri::async_runtime::spawn_blocking(move || {
+        let state = owner.state::<NativeState>();
+        let current = || {
+            state.serial.load(Ordering::SeqCst) == serial
+                && state.hello_serial.load(Ordering::SeqCst) == hello_serial
+                && state.check(&session).is_ok()
+        };
+        if !current() {
+            return Err(Error::new("STALE"));
+        }
+        let context = || {
+            if !current() {
+                return Err(Error::new("STALE"));
+            }
+            let binding = store(&state)?.hello_binding()?;
+            Ok((binding, chrono::Utc::now().timestamp_millis()))
+        };
+        let result = if matches!(request, Action::Revoke) {
+            state
+                .hello
+                .lock()
+                .map_err(|_| Error::new("UNAVAILABLE"))?
+                .run(&root, hwnd, &current, &context, &request)
+        } else {
+            state
+                .hello
+                .try_lock()
+                .map_err(|_| Error::new("BUSY"))?
+                .run(&root, hwnd, &current, &context, &request)
+        };
+        result
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))??;
+    let state = app.state::<NativeState>();
+    if state.serial.load(Ordering::SeqCst) != serial
+        || state.hello_serial.load(Ordering::SeqCst) != hello_serial
+        || state.check(&token).is_err()
+    {
+        return Err(Error::new("STALE"));
+    }
+    serde_json::to_value(&reply).map_err(|_| Error::new("UNAVAILABLE"))
+}
+
+#[tauri::command]
 fn hello_enroll(window: WebviewWindow) -> Result<Value> {
     focused(&window)?;
     hello::enroll()
@@ -804,6 +907,7 @@ pub fn run() {
             retry_backup,
             backup_retention,
             open_external,
+            hello_enrollment,
             hello_enroll,
             hello_status,
             hello_verify,
@@ -878,6 +982,8 @@ pub fn run() {
             });
             let (wake, jobs) = mpsc::sync_channel(1);
             app.manage(NativeState {
+                hello: Mutex::new(hello::enrollment::Manager::default()),
+                hello_serial: AtomicU64::new(0),
                 store: Mutex::new(state),
                 active: Mutex::new(None),
                 serial: AtomicU64::new(0),

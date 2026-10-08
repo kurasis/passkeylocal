@@ -1,5 +1,30 @@
 # Release evidence and gate status
 
+## Experimental active-vault Hello integration (2026-10-08)
+
+[Vault enrollment](windows/HELLO_VAULT_ENROLLMENT.md) now connects native PRF/TPM
+protection to the active crypto worker. Session mode is the default; remembered
+6/12/24-hour modes are explicit opt-ins. Each unlock needs protected authorization
+and current head/session checks. Password change/restore/replacement invalidates
+the old enrollment before the write. Disable revokes only app-owned keys;
+deferred deletion remains visible, and password-based recovery is preserved.
+No master-password string or new password verifier is stored in the envelope.
+
+Local checks passed: 134 routine native tests (12 new enrollment lifecycle
+cases; one resource test excluded from the routine run), 174 TypeScript tests
+(including six new real KDBX worker cases), 46 desktop/browser scenarios and
+eight production PWA scenarios. The actual vault worker/native bridge was
+exercised with synthetic IPC. Type checks, Linux and Windows GNU Clippy, both
+frontend builds, native/web separation and independent Python recovery passed. Full
+Windows/MSVC and installed smoke results are recorded on publication; GNU checking
+is not a physical Windows runtime pass. The new packaged IPC smoke checks only
+nonsensitive off/revoke, malformed input and stale-session behavior on the hosted
+runner. Physical acceptance of this new opt-in lifecycle remains pending.
+
+The completed owner recovery/copy/restart reports retain their original flags
+and scope. Second-account manual testing stays excluded and unverified. No new
+hardware success or repetition of completed diagnostic procedures is requested.
+
 ## Completed owner KDBX recovery integration (2026-10-08)
 
 The [original owner report](../deploy/windows-desktop/hello-target-9200a4b-vault-recovery.json)

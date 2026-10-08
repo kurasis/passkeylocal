@@ -86,10 +86,30 @@ try {
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const helloEnrollmentBoundary = await page.evaluate(async () => {
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    const token = await invoke('session_begin');
+    const status = await invoke('hello_enrollment', { token, request: { operation: 'status' } });
+    const revoke = await invoke('hello_enrollment', { token, request: { operation: 'revoke' } });
+    let staleRejected = false, malformedRejected = false;
+    try { await invoke('hello_enrollment', { token: 'invalid-session', request: { operation: 'unlock' } }); } catch { staleRejected = true; }
+    try { await invoke('hello_enrollment', { token, request: { operation: 'decrypt', ciphertext: [1] } }); } catch { malformedRejected = true; }
+    await invoke('session_end', { token });
+    return { status, revoke, staleRejected, malformedRejected };
+  });
+  assert.equal(helloEnrollmentBoundary.status.status.state, 'off');
+  assert.equal(helloEnrollmentBoundary.revoke.status.state, 'off');
+  assert(helloEnrollmentBoundary.staleRejected && helloEnrollmentBoundary.malformedRejected);
+  assert(!('component' in helloEnrollmentBoundary.status) && !('component' in helloEnrollmentBoundary.revoke));
+  await page.reload();
+  await page.getByLabel('Master password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   const helloReport = await page.evaluate(() => window.__TAURI_INTERNALS__.invoke('hello_status'));
   assert.equal(helloReport.available, false, 'OS configuration must not enable unproved vault unwrap');
   assert.equal(helloReport.enrolled, false);
   assert(['available', 'device-not-present', 'not-configured', 'disabled-by-policy', 'device-busy', 'unknown'].includes(helloReport.helloConfiguration), 'Actual WinRT availability probe returns a sanitized configuration');
+  await page.getByText('Windows Hello diagnostics', { exact: true }).click();
   const helloSection = page.getByRole('region', { name: 'Windows Hello', exact: true });
   await helloSection.getByRole('button', { name: 'Check Windows Hello', exact: true }).click();
   await expect(helloSection.getByRole('button', { name: 'Windows sign-in settings', exact: true })).toBeEnabled();
@@ -367,7 +387,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
+    helloEnrollmentBoundary, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

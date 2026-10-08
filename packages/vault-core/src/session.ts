@@ -15,6 +15,7 @@ import {
   changeMasterPassword,
   createVault,
   openVault,
+  openVaultWithPasswordHash,
   readProductMetadata,
   reopenWithCredentialsOf,
   serializeVerified,
@@ -186,6 +187,24 @@ export class VaultController {
     this.checkLive(token);
     this.session = new UnlockedSession(this, token, opened.db, current.head, current.blob.sha256, opened.readOnlyReason);
     return { session: this.session, warnings: opened.warnings };
+  }
+
+  /** Native Hello supplies only a binary component to this crypto worker. */
+  async unlockWithPasswordHash(component: Uint8Array, expected: { generation: number; sha256: string }): Promise<{ session: UnlockedSession; warnings: PasswordWarning[] }> {
+    this.lock();
+    const token = this.token;
+    try {
+      const current = await this.storage.readCurrent();
+      this.checkLive(token);
+      if (!current || current.head.generation !== expected.generation || current.blob.sha256 !== expected.sha256) throw new StorageError('CONFLICT');
+      const opened = await openVaultWithPasswordHash(current.blob.bytes, component);
+      this.checkLive(token);
+      const latest = await this.storage.readHead();
+      this.checkLive(token);
+      if (latest?.generation !== current.head.generation || latest.blobId !== current.head.blobId) throw new StorageError('CONFLICT');
+      this.session = new UnlockedSession(this, token, opened.db, current.head, current.blob.sha256, opened.readOnlyReason);
+      return { session: this.session, warnings: opened.warnings };
+    } finally { component.fill(0); }
   }
 
   // ---- local snapshots (DATA-05) -----------------------------------------

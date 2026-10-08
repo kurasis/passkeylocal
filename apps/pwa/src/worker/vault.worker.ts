@@ -4,7 +4,7 @@
  * decrypted database, keys and any in-flight KDF work with it.
  */
 
-import { openPlatformStorage } from '@platform-storage';
+import { openPlatformStorage, createPlatformHello } from '@platform-storage';
 import type { RequestMessage, ResponseMessage } from '../protocol.ts';
 import { VaultWorkerHandlers, toSafeError } from './handlers.ts';
 
@@ -13,7 +13,7 @@ declare const self: DedicatedWorkerGlobalScope;
 let handlers: Promise<VaultWorkerHandlers> | null = null;
 
 function getHandlers(): Promise<VaultWorkerHandlers> {
-  handlers ??= openPlatformStorage().then((storage) => new VaultWorkerHandlers(storage));
+  handlers ??= openPlatformStorage().then((storage) => new VaultWorkerHandlers(storage, undefined, createPlatformHello));
   return handlers;
 }
 

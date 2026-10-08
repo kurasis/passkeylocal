@@ -347,12 +347,22 @@ impl Probe<'_> {
             .as_ref()
             .ok_or_else(|| invalid("webauthn-not-loaded"))?;
         let rp_id = wide(self.rp);
-        let rp_name = wide(if direct {
+        let rp_name = wide(if self.rp == "vault.passkey-local.desktop.invalid" {
+            "PassKey Local vault unlock"
+        } else if direct {
             "PassKey Local attestation test"
         } else {
             "PassKey Local PRF test"
         });
-        let name = wide(&format!("PassKey Local test {}", uuid::Uuid::new_v4()));
+        let name = wide(&format!(
+            "PassKey Local {} {}",
+            if self.rp == "vault.passkey-local.desktop.invalid" {
+                "vault"
+            } else {
+                "test"
+            },
+            uuid::Uuid::new_v4()
+        ));
         let kind = wide("public-key");
         let hash = wide("SHA-256");
         let mut user_id = [0u8; 32];

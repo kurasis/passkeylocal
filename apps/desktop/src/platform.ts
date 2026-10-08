@@ -9,15 +9,24 @@ export function bindStorageBridge(worker: Worker): () => void {
   const session = invoke<string>('session_begin');
   const receive = async (event: MessageEvent) => {
     const m = event.data;
-    if (m?.channel !== 'native-storage' || !live) return;
+    if (!['native-storage', 'native-hello'].includes(m?.channel) || !live) return;
     try {
       const token = await session;
       if (!live) return;
-      const result = await invoke('storage', { token, operation: m.operation, args: m.args ?? {} });
-      if (live) worker.postMessage({ channel: 'native-storage-result', nativeId: m.nativeId, ok: true, result });
+      let result: unknown;
+      try {
+        result = m.channel === 'native-hello'
+          ? await invoke('hello_enrollment', { token, request: m.request })
+          : await invoke('storage', { token, operation: m.operation, args: m.args ?? {} });
+        if (live) worker.postMessage({ channel: 'native-storage-result', nativeId: m.nativeId, ok: true, result });
+      } finally {
+        // Only the bridge and crypto worker see this short-lived material.
+        m.request?.component?.fill(0);
+        (result as { component?: number[] } | undefined)?.component?.fill(0);
+      }
     } catch (error) {
       if (live) worker.postMessage({ channel: 'native-storage-result', nativeId: m.nativeId, ok: false, error });
-    }
+    } finally { m.request?.component?.fill(0); }
   };
   worker.addEventListener('message', receive);
   return () => {

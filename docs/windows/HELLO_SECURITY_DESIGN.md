@@ -1,6 +1,13 @@
 # Windows Hello eligibility decision
 
-Current status: the owner completed the combined restart, fresh prompting,
+Current implementation: [vault enrollment](HELLO_VAULT_ENROLLMENT.md) now connects
+the native PRF/TPM mechanism to the active vault, with explicit session or bounded
+remembered opt-in, credential-change revocation and independent password access.
+This is experimental; physical acceptance of this new lifecycle is pending.
+The earlier synthetic evidence below is preserved with its original scope and
+false flags, rather than being relabeled as production acceptance.
+
+Prior synthetic milestones: the owner completed the combined restart, fresh prompting,
 first-assertion cancellation and cleanup observations documented in
 [the combined protocol](HELLO_COMBINED_RESTART.md). The new
 [temporary key-loss experiment](HELLO_KEY_LOSS.md) now has an owner report
@@ -8,8 +15,8 @@ passing all 20 stages, including exact object absence and final cleanup. The
 [copy-file experiment](HELLO_COPY_TEST.md) now has matching second-PC/source
 reports, a checked file digest and successful cleanup. The owner excluded
 second-account manual testing: follow the [one-account acceptance plan](HELLO_OWNER_ACCEPTANCE.md).
-Account isolation remains unverified; it is not a new owner task. Production
-password fallback and enrollment remain pending. The
+Account isolation remains unverified; it is not a new owner task. Physical
+acceptance of the new production lifecycle remains pending. The
 [one-account KDBX integration experiment](HELLO_VAULT_RECOVERY.md) now has an owner
 report passing all 27 stages in the same process. It opens a built-in public
 test vault with the native-unwrapped component, revokes its temporary keys and

@@ -3,6 +3,7 @@ import { configureNativeBackup, desktop, nativeStatus, retryNativeBackup, setNat
 import type { HelloStatus, HelloVerificationResult, HelloKeyProof } from '../hello-protocol.ts';
 import { useT } from '../i18n.ts';
 import { Banner } from './common.tsx';
+import { HelloVaultSettings } from './hello-vault.tsx';
 
 export function DesktopSettings() {
   const t = useT();
@@ -27,7 +28,7 @@ export function DesktopSettings() {
     <label>{t('desktopRetention')}<select value={status?.retention ?? 30} disabled={busy} onChange={(e) => void action(() => setNativeRetention(Number(e.target.value)))}>
       {[1, 5, 10, 30, 60, 100].map((n) => <option key={n} value={n}>{n}</option>)}
     </select></label>
-  </section><DesktopHelloSettings /></>;
+  </section><HelloVaultSettings /><details className="card"><summary>{t('helloVaultDiagnostics')}</summary><DesktopHelloSettings /></details></>;
 }
 
 export function DesktopHelloSettings() {
@@ -169,7 +170,7 @@ export function DesktopHelloSettings() {
       {copied && <p role="status">{t('desktopHelloProofCopied')}</p>}
       {copyFailed && <p role="status">{t('desktopHelloProofCopyFailed')}</p>}
     </div>}
-    <p className="muted">{t('desktopHelloUnlockBlocked')}</p>
+    <p className="muted">{t('helloVaultDiagnosticsExplain')}</p>
   </section>;
 }
 
