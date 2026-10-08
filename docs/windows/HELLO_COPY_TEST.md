@@ -6,7 +6,17 @@ in another Windows context without importing state or creating/deleting keys.
 It extends the completed restart/cancellation/key-loss observations. It does not
 enroll or unlock a real vault or close production eligibility gates.
 
-## Two-computer procedure
+## Completed owner result and revised scope
+
+The [current one-account acceptance plan](HELLO_OWNER_ACCEPTANCE.md) records the
+completed second-PC observation, hash-matched source decryption and cleanup.
+The initial export report was not supplied; its absence is documented, not filled
+in. The actual file hash plus later authenticated source roundtrip correlates the
+received destination result. No repeat or new installer is requested.
+The owner excluded a second Windows account from manual acceptance; account
+isolation remains unverified and does not create a new owner task.
+
+## Two-computer reference procedure (completed)
 
 Use the same current installer from [Windows downloads](../../deploy/windows-desktop/)
 on both computers. Settings → Windows Hello contains the following actions.
@@ -34,9 +44,10 @@ no real vault or master password needs to be copied to the other computer.
    computer and save its cleanup report. Delete the transport file normally when
    no longer needed; it contains only synthetic ciphertext/public metadata.
 
-A different-account test on the same installation uses the same procedure and
-expects `different-account`. The owner's two-computer measurement does not
-substitute for an unexecuted same-machine/different-account measurement.
+The `different-account` classification remains supported by the diagnostic code
+and covered by synthetic logic tests. An actual second-account measurement is
+excluded from the owner's manual plan and is not marked passed. The two-PC result
+only establishes the documented envelope-only observation.
 No old standalone/restart/key-loss procedure needs repeating.
 
 If saving fails after creation, the source test stays `copy-ready`; use **Save
@@ -71,8 +82,10 @@ unsupported APIs and generic provider failures do not count as missing keys.
 
 A foreign context without the keys cannot authenticate the imported envelope or
 its origin labels. Consequently, `copy-isolation-observed` alone is insufficient:
-its complete-file digest must match the successful export **and** subsequent
-source decryption reports. Reports explicitly request this correlation and keep
+its complete-file digest must match a successful subsequent source decryption
+report. Also correlate the original export report when available. The received
+owner sequence lacks that initial report; the checked file bytes and later
+authenticated source recheck support the narrower recorded observation. Reports explicitly request this correlation and keep
 eligibility/enrollment/unlock false. The hash is a comparison aid, not a signature
 or automatic source attestation. `processScope: not-measured` makes no new
 restart claim. No native key-container/private files or complete Windows profile
@@ -115,8 +128,10 @@ Windows tests additionally exercise the real local SID/MachineGuid reader and
 native command orchestration with cancelled dialogs, malformed files, and
 existing journals; test dialogs are supplied by an internal function parameter,
 not a production IPC/configuration switch. Installed smoke checks no-record
-export IPC without a dialog. Real cross-computer and account measurements,
-production password fallback and enrollment/lifecycle acceptance remain pending.
+export IPC without a dialog. The owner has completed the narrow cross-computer
+observation and cleanup described above. Actual account isolation is unverified
+and excluded from manual acceptance; production password fallback and
+enrollment/lifecycle acceptance remain pending.
 
 References: Microsoft [RegGetValueW](https://learn.microsoft.com/en-us/windows/win32/api/winreg/nf-winreg-reggetvaluew),
 [GetTokenInformation](https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-gettokeninformation),

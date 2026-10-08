@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "sourceCommit": "cdcc9542b891b808824c1ca7ce471a260ef176b5",
+  "fileSha256": "844f0313dd5a69463d1cb817d4e151857ae807a4dfaa969d1300fa6df02ebcef",
+  "fileBytes": 3119,
+  "fileFormat": "PassKey Local synthetic Hello copy test",
+  "exportReport": "not-supplied",
+  "destinationReport": "hello-target-cdcc954-copy-destination.json",
+  "sourceRecheckReport": "hello-target-cdcc954-copy-source.json",
+  "cleanupReport": "hello-target-cdcc954-copy-cleanup.json",
+  "scope": "synthetic-envelope-only",
+  "accountIsolation": "not-tested-owner-excluded-from-manual-procedure",
+  "productionHelloUnlock": "disabled"
+}
