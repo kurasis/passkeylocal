@@ -6,15 +6,26 @@ Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-W
 
 Installer: 218,094,016 bytes; SHA-256 `d92b83420c8b2e0d6110a1e998effdef00dd255472db1f5c41331532293ac13a`, matched to original metadata and checksum sidecar. Original evidence: [build](build-9200a4b.json), [installed-app smoke](smoke-9200a4b.json), [5 GiB resource measurement](file-safe-resource-9200a4b.json), [signed WebView2](webview2-download-9200a4b.json), [Russian settings](windows-settings-9200a4b.png), [locked window](windows-locked-9200a4b.png). The unversioned sidecar matches this installer.
 
-## New single-button procedure
+## Completed single-button KDBX recovery
 
-1. Quit the old app and install this build on the source PC. Use your existing Windows account, unlock normally, then open Settings → Windows Hello → **Проверить восстановление после удаления ключей Hello / Test vault recovery after Hello key removal**.
-2. Allow the two Windows verifications. A separate built-in public test KDBX is opened using an actual native-unwrapped credential component and re-saved; its temporary keys are removed, then wrong-password refusal and complete master-password recovery are checked automatically.
-3. Send the single JSON report. Expected: `vault-recovery-passed`, `combinedState: no-test`, all stages passed, `recovery.scope: public-synthetic-kdbx`, two entries and one historical version. Source must be `9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae`.
+The [owner report](hello-target-9200a4b-vault-recovery.json) for source
+`9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae` passes all 27 stages. The built-in
+public KDBX opened through actual native Hello/TPM keys and was re-saved. After
+temporary key removal and exact absence checks, a wrong password was refused,
+and fresh master-password credentials recovered both records and one historical
+version with full logical integrity. The TPM error `0x80090016` is the expected
+missing-key result. Both temporary keys and the cleanup journal were removed.
 
-No account switching, file transport, password entry, manual key deletion or restart is needed. Your active vault and OS Hello enrollment are not changed. A failure/cancellation report is useful; **Remove test and temporary keys** remains available if cleanup is incomplete. No previous standalone/restart/copy/key-loss probe needs repeating. [Protocol and limits](../../docs/windows/HELLO_VAULT_RECOVERY.md).
+Outcome is `vault-recovery-passed`, `combinedState: no-test`, scope
+`public-synthetic-kdbx`, process scope `same-process`. This procedure is complete;
+no repeat, new installer, restart or additional cleanup is requested. The
+[reference procedure and limits](../../docs/windows/HELLO_VAULT_RECOVERY.md)
+remain available. No new prompt count or biometric modality is inferred from
+the JSON; original false eligibility/enrollment/unlock flags are preserved.
 
-This is real KDBX/native-key integration for a public synthetic fixture. Production enrollment of your own vault remains disabled and the full physical integration result is pending your report. The [one-account acceptance plan](../../docs/windows/HELLO_OWNER_ACCEPTANCE.md) excludes a second-account manual test and leaves that isolation unverified.
+Production enrollment of your own vault remains disabled. The
+[one-account acceptance plan](../../docs/windows/HELLO_OWNER_ACCEPTANCE.md)
+excludes a second-account manual test and leaves that isolation unverified.
 
 ## Completed two-computer result and next procedure
 
