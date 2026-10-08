@@ -1,0 +1,44 @@
+{
+  "fixture": "5 GiB synthetic repeated canary",
+  "sourceCommit": "e3f3f0a2ac849ecc813621852c86008d4e406c17",
+  "limits": "Hosted runner; no physical Windows/TPM or stalled-I/O measurement; working set includes executable/runtime, not just crypto buffers",
+  "architecture": "x64",
+  "os": "Microsoft Windows NT 10.0.26100.0",
+  "sampledPeakWorkingSetBytes": 10596352,
+  "status": "PASS",
+  "seconds": 46.2528846,
+  "machine": {
+    "tpmAndReader": "Physical TPM/Kensington authorization NOT TESTED; hosted virtual machine",
+    "runnerImage": "20260925.250.1",
+    "disks": [
+      {
+        "DeviceID": "C:",
+        "FileSystem": "NTFS",
+        "Size": 160467759104,
+        "FreeSpace": 32984092672
+      },
+      {
+        "DeviceID": "D:",
+        "FileSystem": "NTFS",
+        "Size": 161059172352,
+        "FreeSpace": 153103499264
+      }
+    ],
+    "cpu": [
+      {
+        "Name": "Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz",
+        "NumberOfCores": 2,
+        "NumberOfLogicalProcessors": 4
+      }
+    ],
+    "physicalMemoryBytes": 17174360064
+  },
+  "native": {
+    "encryption_seconds": 25.9015008,
+    "frame_bytes": 1048576,
+    "plaintext_bytes": "5368709120",
+    "status": "PASS",
+    "total_seconds": 45.2561351,
+    "verification_seconds": 19.3544965
+  }
+}

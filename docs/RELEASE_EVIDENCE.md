@@ -1,5 +1,35 @@
 # Release evidence and gate status
 
+## Platform KSP corrected installer evidence (2026-10-08)
+
+[PR #21](https://github.com/kurasis/passkeylocal/pull/21), code head `af6ebb4cc3e57519238408697c2897ace943f951`,
+installed/tested source `e3f3f0a2ac849ecc813621852c86008d4e406c17`: all 11 checks PASS. [General CI 37733203533](https://github.com/kurasis/passkeylocal/actions/runs/37733203533)
+and [Windows CI 37733203393](https://github.com/kurasis/passkeylocal/actions/runs/37733203393)
+completed successfully. Automatic merge `4fca853b35cfae8d3cbb09e2848a5e56298230cc` equals the tested PR tree.
+Local typecheck/formatting, Windows GNU all-target production Clippy, 70 Linux
+native tests (one resource ignored), 161 TypeScript tests and PWA build PASS.
+Hosted 24 UI/eight PWA scenarios, Python OS/version matrix/offline kit/fresh
+interop/recovery, pinned binding regeneration and independent public fixtures PASS.
+Windows 89 routine native tests PASS (ABI/resource separately excluded), explicit
+MSVC/header ABI and 5 GiB native resource checks PASS, native KDBX/Python parity,
+fresh bidirectional encrypted-file recovery and 10,000-file restore PASS.
+Restore: 83.943 s; hosted 5 GiB primitive process:
+46.253 s, sampled peak working set 10,596,352 bytes.
+
+Actual NSIS install, installed/built binary equality, packaged UI/real IPC/worker,
+native storage/lock and nine source-matched diagnostics PASS. Hosted Hello and
+Platform KSP are unavailable, so private PRF/TPM operations do not execute there.
+Software controls verify actual crypto/policy observation/zero-flag cleanup,
+not physical hardware. Downloaded installer checksum matches original metadata
+and sidecar: `869b09422cecae751df6fd2bfe959b06fad7a668a330b2d934adc766660706e3`, 217,893,267 bytes. Original small
+artifact metadata/screenshots and download link are retained in [Windows downloads](../deploy/windows-desktop/).
+All four security gates remain open and actual Hello unlock is unavailable;
+corrected target-device measurement is pending. Neither the original policy
+mismatch nor successful correction on hardware is inferred without target evidence.
+Cloudflare's existing ZIP matches all ten freshly rebuilt production files;
+no web repack or direct server deployment was performed. This publication changes docs and
+small evidence artifacts only; tested application/test/workflow bytes are retained.
+
 ## Platform KSP target readback and cleanup correction (2026-10-08)
 
 Owner reports from installed source `3e31f8c645300cef8c2acf0e7e386a6fcc5847b5`
