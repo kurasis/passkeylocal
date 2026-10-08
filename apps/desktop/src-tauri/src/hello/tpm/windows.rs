@@ -1,5 +1,5 @@
 //! App-owned Platform KSP key only. No Passport/AIK/EK/owner-auth access.
-use super::{exercise, Experiment, Metadata, Provider, Report};
+use super::{exercise, policy_matches, Experiment, Metadata, Provider, Report};
 use crate::{
     hello::{
         prf::{interrupted, invalid},
@@ -156,7 +156,9 @@ fn delete_pending(provider: usize) -> std::result::Result<(), Failure> {
     if let Some(name) = pending.as_ref() {
         match open(provider, name) {
             Ok(mut key) => {
-                unsafe { NCryptDeleteKey(NCRYPT_KEY_HANDLE(key.0), NCRYPT_SILENT_FLAG.0) }
+                // Platform KSP rejects SILENT on deletion (NTE_BAD_FLAGS).
+                // Documented flags zero, only the exact app-owned synthetic key.
+                unsafe { NCryptDeleteKey(NCRYPT_KEY_HANDLE(key.0), 0) }
                     .map_err(|e| failed(e, "tpm-delete-pending-key"))?;
                 key.0 = 0;
             }
@@ -180,12 +182,40 @@ struct Probe<'a> {
 }
 impl Probe<'_> {
     fn policy(&self, key: usize) -> std::result::Result<(), Failure> {
-        if number(key, NCRYPT_EXPORT_POLICY_PROPERTY, "tpm-read-export-policy")? != 0
-            || number(key, NCRYPT_KEY_USAGE_PROPERTY, "tpm-read-key-usage")?
-                != NCRYPT_ALLOW_DECRYPT_FLAG
-            || number(key, NCRYPT_LENGTH_PROPERTY, "tpm-read-key-length")? != 2048
-        {
-            return Err(invalid("tpm-key-policy-mismatch"));
+        let export = number(key, NCRYPT_EXPORT_POLICY_PROPERTY, "tpm-read-export-policy")?;
+        let usage = number(key, NCRYPT_KEY_USAGE_PROPERTY, "tpm-read-key-usage")?;
+        let length = number(key, NCRYPT_LENGTH_PROPERTY, "tpm-read-key-length")?;
+        policy_matches(export, usage, length)
+    }
+    fn readback(&mut self) -> std::result::Result<(), Failure> {
+        // Keep actual bounded observations even when a later comparison fails.
+        self.metadata.export_policy = Some(number(
+            self.key.0,
+            NCRYPT_EXPORT_POLICY_PROPERTY,
+            "tpm-read-export-policy",
+        )?);
+        self.metadata.key_usage = Some(number(
+            self.key.0,
+            NCRYPT_KEY_USAGE_PROPERTY,
+            "tpm-read-key-usage",
+        )?);
+        self.metadata.key_length_bits = Some(number(
+            self.key.0,
+            NCRYPT_LENGTH_PROPERTY,
+            "tpm-read-key-length",
+        )?);
+        self.metadata.pcp_key_usage = Some(number(
+            self.key.0,
+            NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY,
+            "tpm-read-pcp-key-usage",
+        )?);
+        policy_matches(
+            self.metadata.export_policy.unwrap(),
+            self.metadata.key_usage.unwrap(),
+            self.metadata.key_length_bits.unwrap(),
+        )?;
+        if self.metadata.pcp_key_usage != Some(NCRYPT_PCP_ENCRYPTION_KEY) {
+            return Err(invalid("tpm-pcp-key-usage-mismatch"));
         }
         Ok(())
     }
@@ -329,6 +359,14 @@ impl Provider for Probe<'_> {
                     NCRYPT_ALLOW_DECRYPT_FLAG,
                     "tpm-set-decrypt-only",
                 )?;
+                // PCP_ENCRYPTION_KEY (2) is decrypt-only in the PCP namespace;
+                // common CNG ALLOW_DECRYPT (1) has a different numbering scheme.
+                set(
+                    self.key.0,
+                    NCRYPT_PCP_KEY_USAGE_POLICY_PROPERTY,
+                    NCRYPT_PCP_ENCRYPTION_KEY,
+                    "tpm-set-pcp-decrypt-only",
+                )?;
                 set(
                     self.key.0,
                     NCRYPT_EXPORT_POLICY_PROPERTY,
@@ -339,9 +377,7 @@ impl Provider for Probe<'_> {
                     .map_err(|e| failed(e, "tpm-finalize-test-key"))?;
             }
             "tpm-key-readback" => {
-                self.policy(self.key.0)?;
-                self.metadata.export_policy = Some(0);
-                self.metadata.key_usage = Some(NCRYPT_ALLOW_DECRYPT_FLAG);
+                self.readback()?;
                 let mut name = [0u8; 1024];
                 let mut actual = 0;
                 unsafe {
@@ -374,6 +410,7 @@ impl Provider for Probe<'_> {
                     .map_err(|e| failed(e, "tpm-reopen-provider"))?;
                 self.provider = Handle(provider.0);
                 self.key = open(self.provider.0, &self.name)?;
+                self.readback()?;
                 self.unwrap(self.key.0)?;
             }
             "tpm-negative-controls" => {
@@ -413,7 +450,8 @@ impl Provider for Probe<'_> {
     fn cleanup(&mut self) -> std::result::Result<(), Failure> {
         // Cleanup is unconditional, independent of session invalidation.
         if self.key.0 != 0 {
-            unsafe { NCryptDeleteKey(NCRYPT_KEY_HANDLE(self.key.0), NCRYPT_SILENT_FLAG.0) }
+            // Deletion is a separate lifecycle operation, not a decrypt fallback.
+            unsafe { NCryptDeleteKey(NCRYPT_KEY_HANDLE(self.key.0), 0) }
                 .map_err(|e| failed(e, "tpm-delete-test-key"))?;
             self.key.0 = 0;
             *PENDING_DELETE
@@ -514,6 +552,31 @@ mod tests {
             synthetic: true,
         }
     }
+    fn prepare_software_control(p: &mut Probe<'_>) -> std::result::Result<(), Failure> {
+        // Software KSP has no PCP usage property. Explicit test-only preparation;
+        // production always requests and verifies PCP_ENCRYPTION_KEY.
+        p.step("tpm-key-create")?;
+        set(
+            p.key.0,
+            NCRYPT_LENGTH_PROPERTY,
+            2048,
+            "software-control-length",
+        )?;
+        set(
+            p.key.0,
+            NCRYPT_KEY_USAGE_PROPERTY,
+            NCRYPT_ALLOW_DECRYPT_FLAG,
+            "software-control-decrypt-only",
+        )?;
+        set(
+            p.key.0,
+            NCRYPT_EXPORT_POLICY_PROPERTY,
+            0,
+            "software-control-export-policy",
+        )?;
+        unsafe { NCryptFinalizeKey(NCRYPT_KEY_HANDLE(p.key.0), NCRYPT_SILENT_FLAG) }
+            .map_err(|e| failed(e, "software-control-finalize"))
+    }
     #[test]
     fn software_provider_cannot_satisfy_the_hardware_preflight() {
         let mut p = software_probe();
@@ -522,14 +585,32 @@ mod tests {
         assert_eq!(p.key.0, 0);
     }
     #[test]
+    fn readback_retains_observed_properties_when_pcp_usage_is_unsupported() {
+        let _control = SOFTWARE_CONTROLS.lock().unwrap();
+        let mut p = software_probe();
+        let result = (|| {
+            prepare_software_control(&mut p)?;
+            let error = p.readback().unwrap_err();
+            assert_eq!(error.operation, Some("tpm-read-pcp-key-usage"));
+            assert_eq!(p.metadata.export_policy, Some(0));
+            assert_eq!(p.metadata.key_usage, Some(NCRYPT_ALLOW_DECRYPT_FLAG));
+            assert_eq!(p.metadata.key_length_bits, Some(2048));
+            assert_eq!(p.metadata.pcp_key_usage, None);
+            Ok::<_, Failure>(())
+        })();
+        p.cleanup().unwrap();
+        assert_eq!(p.key.0, 0);
+        assert!(PENDING_DELETE.lock().unwrap().is_none());
+        result.unwrap();
+    }
+    #[test]
     fn software_control_exercises_actual_wrap_unwrap_negative_controls_and_export_policy() {
         let _control = SOFTWARE_CONTROLS.lock().unwrap();
         // This oracle checks native crypto plumbing. It cannot select a software
         // provider in the installed command or supply physical TPM evidence.
         let mut p = software_probe();
         let result = (|| {
-            p.step("tpm-key-create")?;
-            p.step("tpm-key-policy")?;
+            prepare_software_control(&mut p)?;
             p.policy(p.key.0)?;
             p.step("tpm-public-wrap")?;
             p.step("tpm-unwrap-first")?;
