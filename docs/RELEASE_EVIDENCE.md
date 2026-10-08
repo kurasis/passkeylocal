@@ -1,5 +1,41 @@
 # Release evidence and gate status
 
+## KDBX recovery integration publication (2026-10-08)
+
+[PR #30](https://github.com/kurasis/passkeylocal/pull/30) merged as `8d2d95b4d074cb37fd6f7c0f78cfa9468a9e9a47`;
+application tree equals tested source `9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae` (head `c1d55c3f7a3a54b818bce8bfb3a0324c49935d5b`).
+[General CI 37795750725](https://github.com/kurasis/passkeylocal/actions/runs/37795750725) and
+[Windows CI 37795750712](https://github.com/kurasis/passkeylocal/actions/runs/37795750712)
+passed all 11 exact-head checks. Logs verify 154 Windows routine native tests
+(32 portable combined/copy/recovery cases), separate MSVC/header ABI and 5 GiB
+resource checks, 122 Linux native tests, 168 TypeScript tests, 43 desktop/browser
+worker scenarios and eight production PWA scenarios. Recovery matrix/offline
+kit/fresh interop passed, including the new component-opened/re-saved KDBX check:
+independent Python wrong-password refusal and complete logical recovery parity.
+10,000-file restore: 136.150 s; hosted 5 GiB process:
+45.269 s; sampled peak working set 10,616,832 bytes.
+
+Downloaded original ZIP matches GitHub digest `sha256:079a62b476df23f554d0aa8bf31be656144f06f8877d5d91615985e35e0317f6`.
+Installer matches original build metadata and sidecar: `d92b83420c8b2e0d6110a1e998effdef00dd255472db1f5c41331532293ac13a`,
+218,094,016 bytes. Actual installation/binary equality and packaged
+UI/IPC smoke passed. The new recovery no-record revoke and existing-test refusal
+return no credential or ticket. Hosted Windows has no usable Hello/TPM; no
+physical success is inferred from these paths or synthetic IPC browser doubles.
+
+[Installer/evidence](../deploy/windows-desktop/) and the [one-button procedure](windows/HELLO_VAULT_RECOVERY.md)
+are published. The owner needs only the current account and one report; previous
+copy/restart/object-loss measurements are complete. This actual KDBX integration
+uses a public fixture and temporary native keys; arbitrary user-vault enrollment
+remains disabled. Physical integration observation, production lifecycle and
+remaining authorization negatives are pending. Other-account manual testing
+remains excluded and unverified. Original owner reports/flags are unchanged.
+
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-8d2d95b.zip): 215,568 bytes,
+SHA-256 `0528aec8d4fdb193f17393048e3e1ec99d8f1c4cd04717b749947d101024338b`; all ten files equal freshly rebuilt production output. Native
+IPC and the built-in desktop recovery worker/fixture are absent from the web build.
+No server deployment occurred. Publication changes only docs/deploy artifacts;
+application/test/dependency/workflow bytes remain the tested version.
+
 ## Current-account KDBX recovery integration (2026-10-08)
 
 The [one-button recovery experiment](windows/HELLO_VAULT_RECOVERY.md) connects a
@@ -15,7 +51,7 @@ Local validation passed: 122 routine native tests (33 combined/copy/recovery),
 168 TypeScript tests, 43 desktop/browser-worker scenarios, independent Python
 recovery of component-opened/re-saved KDBX, Linux and Windows GNU Clippy, both
 frontend builds and target isolation. Windows/MSVC, installed smoke and publication
-are pending CI for this increment. Physical KDBX/Hello acceptance awaits the owner. Prior
+subsequently passed as recorded above. Physical KDBX/Hello acceptance awaits the owner. Prior
 restart/copy/key-loss evidence remains complete, and other-account manual testing
 remains excluded and unverified. Real-vault enrollment/lifecycle is still pending.
 

@@ -1,10 +1,20 @@
 # Windows desktop test installers
 
-Latest: **Hello + TPM encrypted test-file transfer** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37783742741/artifacts/11554127672), [successful Windows run 37783742741](https://github.com/kurasis/passkeylocal/actions/runs/37783742741). [PR #28](https://github.com/kurasis/passkeylocal/pull/28) merged as `241e2b515914089754a1815219eec74b4ad85a36`. Code head `ae6143d520964f5a6e6b3a073fa1c3c705134ad6`; installed/tested source `cdcc9542b891b808824c1ca7ce471a260ef176b5`. The merged application tree equals the tested PR tree.
+Latest: **one-account KDBX recovery after temporary Hello key removal** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37795750712/artifacts/11559517802), [successful Windows run 37795750712](https://github.com/kurasis/passkeylocal/actions/runs/37795750712). [PR #30](https://github.com/kurasis/passkeylocal/pull/30) merged as `8d2d95b4d074cb37fd6f7c0f78cfa9468a9e9a47`. Code head `c1d55c3f7a3a54b818bce8bfb3a0324c49935d5b`; installed/tested source `9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae`. The merged application tree equals the tested PR tree.
 
 Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`. This is an unsigned experimental installer; Microsoft's signed x64 WebView2 offline installer is included. Node/Python are not required. Artifact retention is 30 days; after expiry run the [Windows workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml) on main.
 
-Installer: 217,970,294 bytes; SHA-256 `b987738eed24eb11aab84d74d1636d44e8be0b78b1ea5edc6884e024c799405b`, matched to original metadata and checksum sidecar. Original evidence: [build](build-cdcc954.json), [installed-app smoke](smoke-cdcc954.json), [5 GiB resource measurement](file-safe-resource-cdcc954.json), [signed WebView2](webview2-download-cdcc954.json), [Russian settings](windows-settings-cdcc954.png), [locked window](windows-locked-cdcc954.png). The unversioned sidecar matches this installer.
+Installer: 218,094,016 bytes; SHA-256 `d92b83420c8b2e0d6110a1e998effdef00dd255472db1f5c41331532293ac13a`, matched to original metadata and checksum sidecar. Original evidence: [build](build-9200a4b.json), [installed-app smoke](smoke-9200a4b.json), [5 GiB resource measurement](file-safe-resource-9200a4b.json), [signed WebView2](webview2-download-9200a4b.json), [Russian settings](windows-settings-9200a4b.png), [locked window](windows-locked-9200a4b.png). The unversioned sidecar matches this installer.
+
+## New single-button procedure
+
+1. Quit the old app and install this build on the source PC. Use your existing Windows account, unlock normally, then open Settings → Windows Hello → **Проверить восстановление после удаления ключей Hello / Test vault recovery after Hello key removal**.
+2. Allow the two Windows verifications. A separate built-in public test KDBX is opened using an actual native-unwrapped credential component and re-saved; its temporary keys are removed, then wrong-password refusal and complete master-password recovery are checked automatically.
+3. Send the single JSON report. Expected: `vault-recovery-passed`, `combinedState: no-test`, all stages passed, `recovery.scope: public-synthetic-kdbx`, two entries and one historical version. Source must be `9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae`.
+
+No account switching, file transport, password entry, manual key deletion or restart is needed. Your active vault and OS Hello enrollment are not changed. A failure/cancellation report is useful; **Remove test and temporary keys** remains available if cleanup is incomplete. No previous standalone/restart/copy/key-loss probe needs repeating. [Protocol and limits](../../docs/windows/HELLO_VAULT_RECOVERY.md).
+
+This is real KDBX/native-key integration for a public synthetic fixture. Production enrollment of your own vault remains disabled and the full physical integration result is pending your report. The [one-account acceptance plan](../../docs/windows/HELLO_OWNER_ACCEPTANCE.md) excludes a second-account manual test and leaves that isolation unverified.
 
 ## Completed two-computer result and next procedure
 
@@ -88,10 +98,10 @@ production lifecycle acceptance remain open under the revised one-account plan.
 
 ## Validation
 
-[General CI 37783742796](https://github.com/kurasis/passkeylocal/actions/runs/37783742796) and Windows CI passed all 11 exact-head checks. Windows: 147 routine native tests, including 25 portable combined/copy cases and four Windows context/command cases; independent MSVC/header ABI and 5 GiB resource tests executed separately. TypeScript: 161 tests; desktop UI: 37 scenarios; production PWA: eight scenarios; Linux: 115 routine native tests. Recovery OS/version matrix, offline kit and fresh native/Python parity passed.
+[General CI 37795750725](https://github.com/kurasis/passkeylocal/actions/runs/37795750725) and Windows CI passed all 11 exact-head checks. Windows: 154 routine native tests, including 32 portable combined/copy/recovery cases and four Windows context/command cases; independent MSVC/header ABI and 5 GiB resource tests executed separately. TypeScript: 168 tests; desktop/browser-worker UI: 43 scenarios; production PWA: eight scenarios; Linux: 122 routine native tests. Recovery OS/version matrix, offline kit and fresh native/Python parity passed. The new Python interop check independently rejects a wrong password and recovers all content/history from the actual component-opened/re-saved test KDBX.
 
-Actual NSIS installation, binary equality, packaged UI/IPC/lock and source correlation passed. Fourteen source-matched diagnostic reports preserve false eligibility/enrollment/unlock. The new installed copy-export command reports `no-test` without opening a dialog or creating keys. The destination-check control remains available without Hello. Hosted Windows has no usable Hello/TPM; native-dialog orchestration is unit-tested, while actual cross-computer hardware behavior awaits owner reports.
+Actual NSIS installation, binary equality, packaged UI/IPC/lock and source correlation passed. Recovery IPC returns no credential for no-record revoke or an existing saved test. Hosted Windows has no usable Hello/TPM; these blocked/no-op paths and browser tests with explicit synthetic IPC do not establish physical recovery success. Eligibility/enrollment/unlock stay false.
 
-10,000-file restore: 108.959 seconds. Hosted 5 GiB primitive: 44.633 seconds; sampled peak working set 10,604,544 bytes. These are hosted observations, not target guarantees.
+10,000-file restore: 136.150 seconds. Hosted 5 GiB primitive: 45.269 seconds; sampled peak working set 10,616,832 bytes. These are hosted observations, not target guarantees.
 
-[Release evidence](../../docs/RELEASE_EVIDENCE.md) records the scoped copy result, excluded account test, and outstanding password-fallback, authorization and production integration work. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.
+[Release evidence](../../docs/RELEASE_EVIDENCE.md) records pending production enrollment/lifecycle work and the new physical synthetic-KDBX observation. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.

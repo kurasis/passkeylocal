@@ -1,0 +1,44 @@
+{
+  "limits": "Hosted runner; no physical Windows/TPM or stalled-I/O measurement; working set includes executable/runtime, not just crypto buffers",
+  "sampledPeakWorkingSetBytes": 10616832,
+  "sourceCommit": "9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae",
+  "architecture": "x64",
+  "seconds": 45.2693242,
+  "native": {
+    "encryption_seconds": 25.9898753,
+    "frame_bytes": 1048576,
+    "plaintext_bytes": "5368709120",
+    "status": "PASS",
+    "total_seconds": 44.56396,
+    "verification_seconds": 18.5740021
+  },
+  "fixture": "5 GiB synthetic repeated canary",
+  "status": "PASS",
+  "machine": {
+    "runnerImage": "20260925.250.1",
+    "cpu": [
+      {
+        "Name": "AMD EPYC 9V74 80-Core Processor                ",
+        "NumberOfCores": 2,
+        "NumberOfLogicalProcessors": 4
+      }
+    ],
+    "tpmAndReader": "Physical TPM/Kensington authorization NOT TESTED; hosted virtual machine",
+    "physicalMemoryBytes": 17174360064,
+    "disks": [
+      {
+        "DeviceID": "C:",
+        "FileSystem": "NTFS",
+        "Size": 160467759104,
+        "FreeSpace": 32997650432
+      },
+      {
+        "DeviceID": "D:",
+        "FileSystem": "NTFS",
+        "Size": 161059172352,
+        "FreeSpace": 152366583808
+      }
+    ]
+  },
+  "os": "Microsoft Windows NT 10.0.26100.0"
+}

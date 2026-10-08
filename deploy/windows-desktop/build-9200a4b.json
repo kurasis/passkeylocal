@@ -1,0 +1,18 @@
+{
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "fileSafePreview": "unavailable: AppContainer/LPAC isolation proof BLOCKED",
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "signing": "unsigned",
+  "cargoLock": "909e76f511545395d5efc6674e5cb4c24bc437c422aca80faf032ce8b61910c9",
+  "node": "v22.23.3",
+  "windowsHello": "vault unlock unavailable: protected-key provider and physical TPM proof BLOCKED",
+  "architecture": "x86_64-pc-windows-msvc",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "sha256": "d92b83420c8b2e0d6110a1e998effdef00dd255472db1f5c41331532293ac13a",
+  "sourceCommit": "9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae",
+  "version": "0.1.0",
+  "product": "PassKey Local"
+}
