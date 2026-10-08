@@ -235,6 +235,12 @@ pub enum Action {
     Prepare,
     Resume,
     Cleanup,
+    KeyLoss,
+}
+impl Action {
+    fn creates_test(self) -> bool {
+        matches!(self, Self::Prepare | Self::KeyLoss)
+    }
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -297,7 +303,12 @@ trait Backend {
     fn initialize(&mut self) -> ProofResult<()>;
     fn create_tpm(&mut self) -> ProofResult<(Vec<u8>, Vec<u8>)>;
     fn create_prf(&mut self) -> ProofResult<(Vec<u8>, Zeroizing<[u8; 32]>)>;
-    fn reopen(&mut self, h: &Header) -> ProofResult<()>;
+    fn reopen_tpm(&mut self, h: &Header) -> ProofResult<()>;
+    fn reopen_prf(&mut self, h: &Header) -> ProofResult<()>;
+    fn reopen(&mut self, h: &Header) -> ProofResult<()> {
+        self.reopen_tpm(h)?;
+        self.reopen_prf(h)
+    }
     fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>>;
     fn authorize(&mut self) -> ProofResult<Zeroizing<[u8; 32]>>;
     fn unwrap(&mut self, cipher: &[u8]) -> ProofResult<Zeroizing<Vec<u8>>>;
@@ -347,6 +358,67 @@ fn cleanup(j: &Journal, b: &mut impl Backend, report: &mut Report) -> ProofResul
     report.stage("combined-journal-delete", j.remove())?;
     report.combined_state = "no-test";
     Ok(())
+}
+// An expected absence is narrowly classified. Cancellation, policy errors and
+// provider failures are not evidence that a deleted key is inaccessible.
+fn expect_missing(
+    report: &mut Report,
+    stage: &'static str,
+    result: ProofResult<()>,
+    operation: &'static str,
+    code: Option<u32>,
+) -> ProofResult<()> {
+    match result {
+        Err(e)
+            if e.status == Outcome::Failed && e.operation == Some(operation) && e.code == code =>
+        {
+            let mut observed = check(stage, Err(e));
+            observed.status = Outcome::Passed;
+            report.checks.push(observed);
+            Ok(())
+        }
+        Err(e) => report.stage(stage, Err(e)),
+        Ok(()) => report.stage(stage, Err(invalid("combined-deleted-object-reopened"))),
+    }
+}
+fn key_loss(
+    j: &Journal,
+    r: &mut Record,
+    b: &mut impl Backend,
+    current: &dyn Fn() -> bool,
+    report: &mut Report,
+) -> ProofResult<()> {
+    // The successful prepare round trip is the positive control for these exact
+    // identities. Persist nonresumability before intentionally losing a key.
+    active(current)?;
+    r.ready = false;
+    report.stage("loss-journal-invalidate", j.save(r))?;
+    report.combined_state = "cleanup-required";
+    active(current)?;
+    report.stage("loss-passkey-delete", b.cleanup_prf())?;
+    active(current)?;
+    expect_missing(
+        report,
+        "loss-passkey-reopen",
+        b.reopen_prf(&r.header),
+        "combined-credential-missing",
+        None,
+    )?;
+    active(current)?;
+    // Reopening the still-existing TPM key is an independent positive control:
+    // missing PRF must not be mistaken for missing TPM or a broken provider.
+    report.stage("loss-tpm-positive-control", b.reopen_tpm(&r.header))?;
+    active(current)?;
+    report.stage("loss-tpm-delete", b.cleanup_tpm())?;
+    active(current)?;
+    expect_missing(
+        report,
+        "loss-tpm-reopen",
+        b.reopen_tpm(&r.header),
+        "tpm-reopen-exact-test-key",
+        Some(0x80090016),
+    )?; // NTE_BAD_KEYSET only
+    active(current)
 }
 fn prepare(
     j: &Journal,
@@ -416,7 +488,47 @@ fn execute(
     current: &dyn Fn() -> bool,
 ) -> Report {
     let mut report = Report::new(state(Some(r), process));
+    if matches!(action, Action::KeyLoss) {
+        report.purpose = "synthetic-combined-key-loss";
+        // This action owns only objects it creates in this invocation. It must
+        // never reuse or overwrite a saved restart/cancellation experiment.
+        match j.read() {
+            Ok(None) => {}
+            Ok(Some(existing)) => {
+                return Report {
+                    purpose: report.purpose,
+                    ..Report::new(state(Some(&existing), process))
+                }
+            }
+            Err(_) => {
+                let _ = report.stage::<()>(
+                    "combined-journal-create",
+                    Err(invalid("combined-existing-journal-unreadable")),
+                );
+                return report;
+            }
+        }
+    }
     match action {
+        Action::KeyLoss => {
+            let result = prepare(j, r, b, current, &mut report)
+                .and_then(|()| key_loss(j, r, b, current, &mut report));
+            if let Err(e) = result {
+                if report.checks.iter().all(|c| c.status == Outcome::Passed) {
+                    let _ = report.stage::<()>("combined-session", Err(e));
+                }
+            }
+            let outcome = report.outcome;
+            if j.path.exists() && cleanup(j, b, &mut report).is_ok() {
+                if result.is_ok() {
+                    if report.stage("loss-session-final", active(current)).is_ok() {
+                        report.outcome = "combined-key-loss-passed";
+                    }
+                } else {
+                    report.outcome = outcome;
+                }
+            }
+        }
         Action::Prepare => {
             if let Err(e) = prepare(j, r, b, current, &mut report) {
                 // Also record a boundary interruption that occurred between stages.

@@ -40,6 +40,7 @@ fn main() {
             "hello_combined_prepare",
             "hello_combined_resume",
             "hello_combined_cleanup",
+            "hello_combined_key_loss",
             "hello_settings",
             "hello_unlock",
             "hello_revoke",

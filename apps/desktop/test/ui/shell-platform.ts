@@ -191,7 +191,19 @@ export async function cleanupNativeCombinedHello(): Promise<HelloKeyProof> {
   combinedState = proofCleanupFailed ? 'cleanup-required' : 'no-test';
   return combinedReport(proofCleanupFailed ? 'blocked' : 'combined-cleaned');
 }
+let keyLossCalls = 0;
+export async function testNativeCombinedKeyLoss(): Promise<HelloKeyProof> {
+  keyLossCalls++;
+  if (defer) await new Promise<void>((resolve) => { release = resolve; });
+  combinedState = proofCleanupFailed ? 'cleanup-required' : 'no-test';
+  return { ...combinedReport(proofCleanupFailed ? 'blocked' : proofOutcome === 'cancelled' ? 'cancelled' : 'combined-key-loss-passed'),
+    purpose: 'synthetic-combined-key-loss', processScope: 'same-process',
+    checks: [{ test: 'loss-passkey-reopen', status: 'passed', operation: 'combined-credential-missing' },
+      { test: 'loss-tpm-reopen', status: 'passed', operation: 'tpm-reopen-exact-test-key', nativeCode: '0x80090016' },
+      { test: 'test-key-delete', status: proofCleanupFailed ? 'failed' : 'passed' }] };
+}
 Object.assign((window as any).helloTest, {
+  keyLossCalls() { return keyLossCalls; },
   combinedState(value: typeof combinedState) { combinedState = value; },
   combinedCounts() { return { combinedPrepares, combinedResumes, combinedCleanups }; },
 });

@@ -5,6 +5,9 @@ Windows 11 Pro 25H2/Kensington computer. It uses a new synthetic secret and neve
 reads, enrolls, or unlocks either real vault. The successful standalone reports
 remain valid; they need not be repeated.
 
+The next implementation is the [separate temporary key-loss test](HELLO_KEY_LOSS.md).
+It does not require repeating this restart procedure.
+
 ## Completed owner measurements
 
 [Preparation](../../deploy/windows-desktop/hello-target-a7f56d8-combined-prepare.json)
@@ -61,8 +64,9 @@ and operation; do not repeat the older export or direct-attestation experiments.
 ## Protocol and persistence
 
 The native host derives the directory from the app-local managed root; IPC
-accepts no paths, key names, salts, credential IDs, ciphertext, or secrets. Four
-fixed commands offer status, prepare, resume, and cleanup. The existing managed
+accepts no paths, key names, salts, credential IDs, ciphertext, or secrets. Five
+fixed commands offer status, prepare, resume, cleanup, and the separate key-loss
+experiment. The existing managed
 Store process lock and global native authentication single-flight guard serialize
 access. Session generation and active-vault identity cancel stale work; raw
 secrets never cross IPC. A process-random UUID held in native `OnceLock` prevents

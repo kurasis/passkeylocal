@@ -1,5 +1,23 @@
 # Release evidence and gate status
 
+## Temporary key-loss implementation (2026-10-08)
+
+The [next synthetic experiment](windows/HELLO_KEY_LOSS.md) adds one fixed native
+command and RU/EN button. It creates its own PRF/TPM pair, verifies decryption,
+then deliberately deletes and reopens each identity with strict absence checks.
+Nonresumability is journaled before deletion; failures retain cleanup recovery.
+It refuses to reuse an existing restart experiment. Real vault enrollment and
+unlock remain disabled. Physical key-loss, account/machine copy, password
+fallback and remaining authorization/production gates are not marked passed.
+
+Local validation: TypeScript typechecks and all 161 package tests PASS; 105
+routine native tests PASS (one resource test remains ignored in the routine
+suite); 33 desktop UI scenarios PASS, then all three key-loss scenarios PASS
+including the added late-result/Lock All case. Native clippy, both production
+frontend builds and bundle isolation PASS. Windows CI, the packaged command and
+the owner-facing installer are pending publication. The earlier owner reports
+below remain intact and need no repeated measurement.
+
 ## Completed owner cancellation/cleanup sequence (2026-10-08)
 
 After the [cancelled first assertion](../deploy/windows-desktop/hello-target-a7f56d8-combined-cancel.json),

@@ -6,6 +6,16 @@
 import { createContext, useContext } from 'react';
 
 const en = {
+  "desktopHello_proof_loss-session-final": "Check session after cleanup",
+  "desktopHelloKeyLoss": "Test temporary key loss",
+  "desktopHelloKeyLossExplain": "This separate test creates temporary Hello and TPM keys, verifies decryption, then deletes each key and checks that it cannot be reopened. Allow the two Windows prompts. No restart is needed. Only its new test keys are removed; your vault and Windows sign-in settings are unchanged.",
+  "desktopHello_proofResult_combined-key-loss-passed": "Decryption passed before deletion. The deleted test passkey and TPM key could not be reopened, and cleanup completed. Vault unlock and password recovery after key loss are not enabled or proven by this test.",
+  "desktopHello_proof_loss-journal-invalidate": "Mark the test nonresumable before key deletion",
+  "desktopHello_proof_loss-passkey-delete": "Delete only the new temporary passkey",
+  "desktopHello_proof_loss-passkey-reopen": "Confirm the deleted passkey is absent on reopening",
+  "desktopHello_proof_loss-tpm-positive-control": "Reopen and verify the still-existing TPM key",
+  "desktopHello_proof_loss-tpm-delete": "Delete only the new temporary TPM key",
+  "desktopHello_proof_loss-tpm-reopen": "Require key-not-found when reopening the deleted TPM key",
   desktopStorageExplain: "Your encrypted vault is stored in your Windows user data folder, independently of browser storage. Keep a verified backup on another device.",
   desktopDiscardClose: "Discard and close",
   desktopCloseTitle: "Save changes before closing?",
@@ -434,6 +444,16 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const ru: Record<MessageKey, string> = {
+  "desktopHello_proof_loss-session-final": "Проверить актуальность сессии после очистки",
+  "desktopHelloKeyLoss": "Проверить потерю временных ключей",
+  "desktopHelloKeyLossExplain": "Этот отдельный тест создаст временные ключи Hello и TPM, проверит расшифровку, затем удалит каждый ключ и проверит, что открыть его больше нельзя. Подтвердите два запроса Windows. Перезапуск не нужен. Удаляются только новые тестовые ключи; хранилище и настройки входа Windows не меняются.",
+  "desktopHello_proofResult_combined-key-loss-passed": "До удаления расшифровка прошла. Удалённые тестовые passkey и TPM-ключ больше не открываются, очистка завершена. Этот тест не включает вход в хранилище и не проверяет восстановление мастер-паролем после потери ключей.",
+  "desktopHello_proof_loss-journal-invalidate": "Запретить продолжение теста до удаления ключей",
+  "desktopHello_proof_loss-passkey-delete": "Удалить только новый временный passkey",
+  "desktopHello_proof_loss-passkey-reopen": "Проверить отсутствие удалённого passkey при открытии",
+  "desktopHello_proof_loss-tpm-positive-control": "Открыть и проверить ещё существующий TPM-ключ",
+  "desktopHello_proof_loss-tpm-delete": "Удалить только новый временный TPM-ключ",
+  "desktopHello_proof_loss-tpm-reopen": "Получить ответ «ключ отсутствует» при открытии удалённого TPM-ключа",
   desktopStorageExplain: "Зашифрованное хранилище сохранено в папке данных пользователя Windows, независимо от браузера. Храните проверенную копию на другом устройстве.",
   desktopDiscardClose: "Отбросить и закрыть",
   desktopCloseTitle: "Сохранить изменения перед закрытием?",

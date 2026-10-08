@@ -15,8 +15,10 @@ impl Backend for Native<'_> {
     fn create_prf(&mut self) -> ProofResult<(Vec<u8>, Zeroizing<[u8; 32]>)> {
         self.credential.create()
     }
-    fn reopen(&mut self, h: &Header) -> ProofResult<()> {
-        self.key.reopen(&h.public, &h.name)?;
+    fn reopen_tpm(&mut self, h: &Header) -> ProofResult<()> {
+        self.key.reopen(&h.public, &h.name)
+    }
+    fn reopen_prf(&mut self, h: &Header) -> ProofResult<()> {
         self.credential.reopen(&h.credential)
     }
     fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>> {
@@ -49,10 +51,14 @@ pub fn run(
     let record = j.read()?;
     let observed = state(record.as_ref(), process);
     if matches!(action, Action::Status)
-        || (record.is_some() && matches!(action, Action::Prepare))
-        || (record.is_none() && !matches!(action, Action::Prepare))
+        || (record.is_some() && action.creates_test())
+        || (record.is_none() && !action.creates_test())
     {
-        return Ok(Report::new(observed));
+        let mut report = Report::new(observed);
+        if matches!(action, Action::KeyLoss) {
+            report.purpose = "synthetic-combined-key-loss";
+        }
+        return Ok(report);
     }
     if !current() && !matches!(action, Action::Cleanup) {
         return Err(Error::new("STALE"));

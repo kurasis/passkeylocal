@@ -9,7 +9,10 @@ struct Fake<'a> {
     prf_deletes: usize,
     tpm_deletes: usize,
     fail: Option<&'static str>,
+    prf_missing: bool,
+    tpm_missing: bool,
     stale_after_auth: Option<&'a Cell<bool>>,
+    stale_after_delete: Option<&'a Cell<bool>>,
 }
 impl<'a> Fake<'a> {
     fn new(journal: &'a Journal) -> Self {
@@ -22,7 +25,10 @@ impl<'a> Fake<'a> {
             prf_deletes: 0,
             tpm_deletes: 0,
             fail: None,
+            prf_missing: false,
+            tpm_missing: false,
             stale_after_auth: None,
+            stale_after_delete: None,
         }
     }
     fn result(&self, step: &'static str) -> ProofResult<()> {
@@ -47,8 +53,24 @@ impl Backend for Fake<'_> {
         self.result("prf-create")?;
         Ok((vec![4; 32], Zeroizing::new(self.key)))
     }
-    fn reopen(&mut self, _: &Header) -> ProofResult<()> {
-        self.result("reopen")
+    fn reopen_tpm(&mut self, _: &Header) -> ProofResult<()> {
+        self.result("reopen")?;
+        self.result("tpm-reopen")?;
+        if self.tpm_missing {
+            return Err(Failure {
+                status: Outcome::Failed,
+                code: Some(0x80090016),
+                operation: Some("tpm-reopen-exact-test-key"),
+            });
+        }
+        Ok(())
+    }
+    fn reopen_prf(&mut self, _: &Header) -> ProofResult<()> {
+        self.result("prf-reopen")?;
+        if self.prf_missing {
+            return Err(invalid("combined-credential-missing"));
+        }
+        Ok(())
     }
     fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>> {
         self.secret = *secret;
@@ -79,12 +101,21 @@ impl Backend for Fake<'_> {
         Ok(Zeroizing::new(self.secret.to_vec()))
     }
     fn cleanup_prf(&mut self) -> ProofResult<()> {
+        assert!(!self.journal.read().unwrap().unwrap().ready);
         self.prf_deletes += 1;
-        self.result("delete-prf")
+        self.result("delete-prf")?;
+        self.prf_missing = true;
+        if let Some(current) = self.stale_after_delete {
+            current.set(false);
+        }
+        Ok(())
     }
     fn cleanup_tpm(&mut self) -> ProofResult<()> {
+        assert!(!self.journal.read().unwrap().unwrap().ready);
         self.tpm_deletes += 1;
-        self.result("delete-tpm")
+        self.result("delete-tpm")?;
+        self.tpm_missing = true;
+        Ok(())
     }
 }
 fn initialized() {
@@ -358,4 +389,203 @@ fn unreadable_cleanup_journal_reports_failure_before_touching_native_objects() {
     assert_eq!(report.combined_state, "cleanup-required");
     assert_eq!((b.prf_deletes, b.tpm_deletes), (0, 0));
     assert_eq!(report.checks.last().unwrap().status, Outcome::Failed);
+}
+
+#[test]
+fn key_loss_uses_a_positive_roundtrip_then_exact_absence_and_finishes_cleanup() {
+    initialized();
+    let dir = tempfile::tempdir().unwrap();
+    let j = Journal::open(dir.path()).unwrap();
+    let p = process();
+    let mut r = Record::new(&p);
+    let mut b = Fake::new(&j);
+    assert!(Action::KeyLoss.creates_test());
+    assert!(!Action::Resume.creates_test());
+    let report = execute(&j, &mut r, &mut b, Action::KeyLoss, &p, &|| true);
+    assert_eq!(report.outcome, "combined-key-loss-passed");
+    assert_eq!(report.purpose, "synthetic-combined-key-loss");
+    assert_eq!(report.process_scope, "same-process");
+    assert_eq!(report.combined_state, "no-test");
+    assert_eq!((b.authorizations, b.decryptions), (1, 1));
+    assert_eq!((b.prf_deletes, b.tpm_deletes), (2, 2));
+    assert!(j.read().unwrap().is_none());
+    assert!(report.checks.iter().all(|c| c.status == Outcome::Passed));
+    let tpm = report
+        .checks
+        .iter()
+        .find(|c| c.test == "loss-tpm-reopen")
+        .unwrap();
+    assert_eq!(tpm.native_code.as_deref(), Some("0x80090016"));
+    assert_eq!(tpm.operation, Some("tpm-reopen-exact-test-key"));
+    assert!(!report.eligible && !report.enrolled && !report.unlocked);
+}
+
+#[test]
+fn expected_absence_never_accepts_success_cancellation_other_codes_or_other_operations() {
+    let exact = Failure {
+        status: Outcome::Failed,
+        code: Some(0x80090016),
+        operation: Some("tpm-reopen-exact-test-key"),
+    };
+    for result in [
+        Ok(()),
+        Err(Failure {
+            code: Some(0x8009000a),
+            ..exact
+        }),
+        Err(Failure {
+            code: Some(0x80090010),
+            ..exact
+        }),
+        Err(Failure {
+            code: Some(0x80090036),
+            status: Outcome::Cancelled,
+            ..exact
+        }),
+        Err(Failure {
+            status: Outcome::Interrupted,
+            ..exact
+        }),
+        Err(Failure {
+            operation: Some("tpm-provider-open"),
+            ..exact
+        }),
+        Err(Failure {
+            code: None,
+            ..exact
+        }),
+    ] {
+        let mut report = Report::new("cleanup-required");
+        assert!(expect_missing(
+            &mut report,
+            "loss-tpm-reopen",
+            result,
+            "tpm-reopen-exact-test-key",
+            Some(0x80090016)
+        )
+        .is_err());
+        assert_ne!(report.checks[0].status, Outcome::Passed);
+    }
+    let mut report = Report::new("cleanup-required");
+    assert!(expect_missing(
+        &mut report,
+        "loss-passkey-reopen",
+        Err(invalid("combined-credential-identity-mismatch")),
+        "combined-credential-missing",
+        None
+    )
+    .is_err());
+}
+
+#[test]
+fn key_loss_preserves_existing_or_unreadable_journal_without_native_work() {
+    initialized();
+    for malformed in [false, true] {
+        let dir = tempfile::tempdir().unwrap();
+        let j = Journal::open(dir.path()).unwrap();
+        let p = process();
+        let mut r = Record::new(&p);
+        j.save(&r).unwrap();
+        if malformed {
+            fs::write(&j.path, b"{").unwrap();
+        }
+        let before = fs::read(&j.path).unwrap();
+        let mut b = Fake::new(&j);
+        let report = execute(&j, &mut r, &mut b, Action::KeyLoss, &p, &|| true);
+        assert_ne!(report.outcome, "combined-key-loss-passed");
+        assert_eq!(
+            (
+                b.authorizations,
+                b.decryptions,
+                b.prf_deletes,
+                b.tpm_deletes
+            ),
+            (0, 0, 0, 0)
+        );
+        assert_eq!(fs::read(&j.path).unwrap(), before);
+    }
+}
+
+#[test]
+fn key_loss_cancellation_and_reopen_failures_cleanup_without_claiming_success() {
+    initialized();
+    for fault in ["cancel", "prf-reopen", "tpm-reopen"] {
+        let dir = tempfile::tempdir().unwrap();
+        let j = Journal::open(dir.path()).unwrap();
+        let p = process();
+        let mut r = Record::new(&p);
+        let mut b = Fake::new(&j);
+        b.fail = Some(fault);
+        let report = execute(&j, &mut r, &mut b, Action::KeyLoss, &p, &|| true);
+        assert_eq!(
+            report.outcome,
+            if fault == "cancel" {
+                "cancelled"
+            } else {
+                "blocked"
+            }
+        );
+        assert_eq!(report.combined_state, "no-test");
+        assert!(j.read().unwrap().is_none());
+        assert!(b.prf_missing && b.tpm_missing);
+        assert!(!report.checks.iter().any(|c| c.test == "loss-tpm-reopen"));
+        if fault == "cancel" {
+            assert_eq!(b.decryptions, 0);
+        }
+    }
+}
+
+#[test]
+fn key_loss_partial_deletion_is_nonresumable_and_cleanup_is_retryable() {
+    initialized();
+    for fault in ["delete-prf", "delete-tpm"] {
+        let dir = tempfile::tempdir().unwrap();
+        let j = Journal::open(dir.path()).unwrap();
+        let p = process();
+        let mut r = Record::new(&p);
+        let mut b = Fake::new(&j);
+        b.fail = Some(fault);
+        let report = execute(&j, &mut r, &mut b, Action::KeyLoss, &p, &|| true);
+        assert_eq!(report.outcome, "blocked");
+        assert_eq!(report.combined_state, "cleanup-required");
+        let mut persisted = j.read().unwrap().unwrap();
+        assert!(!persisted.ready);
+        assert!(b.prf_deletes > 0 && b.tpm_deletes > 0);
+        b.fail = None;
+        let resumed = execute(
+            &j,
+            &mut persisted,
+            &mut b,
+            Action::Resume,
+            &process(),
+            &|| true,
+        );
+        assert_eq!(resumed.outcome, "cleanup-required");
+        assert_eq!(b.authorizations, 1);
+        let cleaned = execute(&j, &mut persisted, &mut b, Action::Cleanup, &p, &|| false);
+        assert_eq!(cleaned.outcome, "combined-cleaned");
+        assert!(j.read().unwrap().is_none());
+    }
+}
+
+#[test]
+fn key_loss_stale_session_stops_measurements_but_completes_owned_cleanup() {
+    initialized();
+    let dir = tempfile::tempdir().unwrap();
+    let j = Journal::open(dir.path()).unwrap();
+    let p = process();
+    let mut r = Record::new(&p);
+    let mut b = Fake::new(&j);
+    let current = Cell::new(true);
+    b.stale_after_delete = Some(&current);
+    let report = execute(&j, &mut r, &mut b, Action::KeyLoss, &p, &|| current.get());
+    assert_eq!(report.outcome, "interrupted");
+    assert_eq!(report.combined_state, "no-test");
+    assert!(b.prf_missing && b.tpm_missing);
+    assert!(j.read().unwrap().is_none());
+    assert!(!report
+        .checks
+        .iter()
+        .any(|c| c.test == "loss-passkey-reopen"));
+    assert_eq!(b.authorizations, 1);
 }
