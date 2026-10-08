@@ -1,5 +1,31 @@
 # Release evidence and gate status
 
+## Owner cancellation measurement (2026-10-08)
+
+The [owner cancellation report](../deploy/windows-desktop/hello-target-a7f56d8-combined-cancel.json)
+matches installed source `a7f56d80d6029bcd4185ca6d3ad22d08f957561a`.
+In a fresh process, exact-object reopening/binding passed, then the first
+WebAuthn assertion returned `0x80090036` (`NTE_USER_CANCELLED`). The combined
+unwrap stage and overall outcome are `cancelled`; no successful unwrap or
+later operation is reported. Eligibility, enrollment and unlock remain false.
+
+`ready-to-resume` is the expected retained test state after cancellation. It
+indicates availability for retry/cleanup, not a measured successful retry.
+This completes the requested first-assertion cancellation observation. It does
+not establish silent-access denial, cancellation of every other stage or cleanup
+of this new test. The earlier successful run's cleanup belongs to that earlier
+run and must not be substituted for the cancelled test's cleanup.
+
+Next: in the same installed app, choose **Remove test and temporary keys** and
+supply its report. Expected: `combined-cleaned`, `no-test`, both native deletions
+and journal deletion passed. No new test, restart, installer or repeat of the
+completed cancellation is needed. Account/machine copies, key-loss/password
+fallback and production lifecycle acceptance remain open.
+
+The original report and static `remaining` array are preserved. This evidence
+update checks source/stage/flag consistency, links and documentation-only scope;
+it does not change application code or claim a new cloud test/build/deployment.
+
 ## Completed owner combined/restart measurement (2026-10-08)
 
 The owner supplied [preparation](../deploy/windows-desktop/hello-target-a7f56d8-combined-prepare.json)
@@ -20,18 +46,16 @@ not contain a new OS build, device or driver observation.
 
 The successful combined, fresh-process and per-operation fingerprint measurement
 is complete. Do not ask for that successful run or the standalone component
-probes again. Cancellation/silent-access negatives, account/machine copies,
+probes again. First-assertion cancellation is now recorded above; silent-access
+negatives, account/machine copies,
 key-loss/password fallback and production enrollment/lifecycle acceptance remain
 open. Keep both original three-item `remaining` arrays and false eligibility,
 enrollment and unlock flags intact: they are static release-state metadata,
 not three failed measurements. No real vault was enrolled or unlocked.
 
-Next target action uses the **same installed build**: create a new synthetic
-test, fully exit/relaunch, choose Continue after restart and cancel the first
-Windows verification. Collect the cancelled report, then remove the test and
-collect the cleanup report. Expected: cancellation before a successful unwrap,
-retryable saved state, then both exact native deletions and journal deletion.
-No new installer or successful-path repeat is needed to record these negatives.
+The subsequently supplied cancellation report above completes the next requested
+negative observation. Only cleanup of that cancelled test is currently requested;
+do not repeat the successful path or cancellation.
 
 This update records owner evidence and updates current guidance only. Report
 source/stages/flags, relative links and documentation-only scope were checked.

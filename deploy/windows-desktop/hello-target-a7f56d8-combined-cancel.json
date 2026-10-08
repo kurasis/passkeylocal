@@ -1,0 +1,30 @@
+{
+  "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+  "authorization": "os-required-user-verification",
+  "checks": [
+    {
+      "status": "passed",
+      "test": "combined-reopen-binding"
+    },
+    {
+      "nativeCode": "0x80090036",
+      "operation": "webauthn-prf-assertion",
+      "status": "cancelled",
+      "test": "combined-unwrap-first"
+    }
+  ],
+  "combinedState": "ready-to-resume",
+  "eligible": false,
+  "enrolled": false,
+  "outcome": "cancelled",
+  "processScope": "fresh-process",
+  "purpose": "synthetic-combined-restart",
+  "remaining": [
+    "fresh-authorization-proof",
+    "fresh-process-proof",
+    "account-machine-copy-proof"
+  ],
+  "sourceCommit": "a7f56d80d6029bcd4185ca6d3ad22d08f957561a",
+  "unlocked": false,
+  "version": 1
+}

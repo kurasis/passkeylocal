@@ -14,13 +14,18 @@ The owner confirmed two fingerprint verifications for each button: creation and
 first unwrap, then both unwraps in the new process. Both native objects and the
 journal were removed. The successful combined/restart path is complete.
 
-The next measurement is cancellation using the same build: create another test,
-fully quit/relaunch, select Continue after restart and **cancel the first Windows
-verification**. Copy the cancellation report, then select Remove test and temporary
-keys and copy its cleanup report. Expect no successful unwrap after cancellation,
-a retained retryable test, then removal of both native objects and the journal.
-This is a negative-path measurement, not a request to repeat the completed success.
-The report's static `remaining` list does not negate the successful owner result.
+[First-assertion cancellation](../../deploy/windows-desktop/hello-target-a7f56d8-combined-cancel.json)
+is now owner-observed in a fresh process: reopening/binding passed, then
+`webauthn-prf-assertion` returned `0x80090036` (`NTE_USER_CANCELLED`) and the first
+unwrap was cancelled. No successful unwrap or later operation is reported.
+`ready-to-resume` retains the test for retry/cleanup; a retry has not been measured.
+
+The next action is **Remove test and temporary keys** on this existing cancelled
+test, followed by copying the cleanup JSON. Expect `combined-cleaned`, `no-test`,
+both native deletions and journal deletion passed. Do not create another test or
+repeat the completed successful/cancellation measurements. Cleanup of the earlier
+successful run does not establish cleanup of this new cancelled run.
+The report's static `remaining` list does not negate the completed observations.
 
 ## Reference procedure (successful path already completed)
 
@@ -127,7 +132,9 @@ not assert that the PRF secret itself has a remotely attested TPM binding.
 
 The exposed WebAuthn API has no implemented silent-PRF experiment here: required
 UV is requested on every assertion. Actual fresh prompting on the successful
-path is owner-confirmed; cancellation and silent-access negatives remain open.
+path is owner-confirmed, as is cancellation of the first assertion after restart.
+Cleanup after that cancellation, other cancellation points and silent-access
+negatives remain open.
 No simulated silent failure is reported as proof.
 Account/machine copying, native-object loss/password fallback, complete production
 lifecycle and independent review remain acceptance work. Reports always keep
