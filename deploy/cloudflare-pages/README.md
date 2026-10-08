@@ -1,37 +1,21 @@
 # Cloudflare Pages upload archives
 
-Download [passkeylocal-cloudflare-pages-dcd058a.zip](passkeylocal-cloudflare-pages-dcd058a.zip)
-by opening the file on GitHub and choosing **Download raw file** (the download
-icon), then upload the ZIP through Cloudflare Pages **Direct Upload**.
+Download [passkeylocal-cloudflare-pages-536e5f7.zip](passkeylocal-cloudflare-pages-536e5f7.zip) by opening the file on GitHub and choosing **Download raw file**, then upload the ZIP through Cloudflare Pages **Direct Upload**.
 
-This production build comes from source commit
-[`dcd058a`](https://github.com/kurasis/passkeylocal/commit/dcd058a)
-and retains the responsive navigation/layout fix, restore completion, 6 / 12 / 24 hour inactivity choices,
-continued auto-lock after changing language, Colorful / Light / Dark themes and
-Face ID / passkey unlock. See [design previews](../../docs/DESIGN.md). The archive has `index.html`, `_headers`,
-`sw.js`, the manifest, icons and compiled assets at the site root. No build
-command or Node.js runtime is needed on the server.
+This production build comes from merged source [`536e5f7d0be4de4d27a8f2066b1a9db17fbad05a`](https://github.com/kurasis/passkeylocal/commit/536e5f7d0be4de4d27a8f2066b1a9db17fbad05a), whose application tree equals tested PR source `bdb2a034e15f483dcbaadb29781234248a26dfed`. It retains responsive navigation, restore completion, 6 / 12 / 24 hour inactivity choices, language-change auto-lock, Colorful / Light / Dark themes and Face ID / passkey unlock. See [design previews](../../docs/DESIGN.md). The latest change adds shared translations for the desktop-only Windows Hello attestation action; native IPC and File Safe remain absent from this web bundle.
 
-All ten archive files match the current production output byte for byte.
-Archive size: 209,726 bytes; SHA-256:
-`95d9307e130143f55e2571ab8abfbeaf5cb885785a2a1882d42b0469881f7452`.
-The eight production PWA e2e scenarios passed for this source, including
-passkeys, backup replacement and the 6 / 12 / 24 hour inactivity choices.
+All ten archive files match the freshly rebuilt production output byte for byte. The archive contains `index.html`, `_headers`, `sw.js`, manifest, icons and compiled assets at the site root. No build command or Node.js runtime is needed on the server.
 
-The adjacent `.zip.sha256` file contains the archive checksum. To verify a
-download with a SHA-256 tool:
+Archive size: 210,033 bytes; SHA-256: `2ec7eada082d614c6d9c11e33d004cfb0a98061e137644efe28202da899cc627`. All eight production PWA scenarios passed in [CI 37745006594](https://github.com/kurasis/passkeylocal/actions/runs/37745006594).
+
+The adjacent `.zip.sha256` file contains the checksum:
 
 ```sh
-sha256sum -c passkeylocal-cloudflare-pages-dcd058a.zip.sha256
+sha256sum -c passkeylocal-cloudflare-pages-536e5f7.zip.sha256
 ```
 
-Use HTTPS and a stable hostname; passkeys and local vault data belong to that
-origin. Turn off Cloudflare Web Analytics and Rocket Loader, and enable
-**Always Use HTTPS**. See [deployment instructions](../../docs/DEPLOYMENT.md)
-for security headers, updates and domain migration.
+Use HTTPS and a stable hostname; passkeys and local vault data belong to that origin. Turn off Cloudflare Web Analytics and Rocket Loader, and enable **Always Use HTTPS**. See [deployment instructions](../../docs/DEPLOYMENT.md) for security headers, updates and domain migration. No direct server deployment was performed.
 
-Native Windows Hello PRF/protected-key diagnostics and the encrypted File Safe are Windows desktop features; they are not loaded by this web build. Its storage/recovery documentation is in [the operating guide](../../docs/file-safe/OPERATING_GUIDE.md). The Windows installer is distributed separately through the Windows Actions workflow; do not upload an `.exe` to Cloudflare Pages.
+The [Windows installer](../windows-desktop/) is distributed separately through Actions. Do not upload an `.exe` to Cloudflare Pages. [File Safe operating guide](../../docs/file-safe/OPERATING_GUIDE.md).
 
-These are versioned build artifacts. After changing application code, build
-again and add a new archive named for its source commit; an older archive does
-not automatically include later changes.
+[Previous dcd058a archive](passkeylocal-cloudflare-pages-dcd058a.zip) remains historical. These versioned artifacts do not automatically include later application changes; rebuild and publish a new source-named archive after future code changes.

@@ -23,17 +23,44 @@ cleanup to reject a late successful observation. [Contract and next owner proced
 Local native 81 tests PASS (one explicit resource ignored), focused PRF tests,
 Windows GNU production/all-target Clippy, typecheck, all 26 isolated UI scenarios,
 both production builds and target-isolation check PASS. Pinned binding regeneration
-is byte-identical. New Windows pointer-shape/ABI execution, complete hosted CI,
-installation and target hardware measurement remain pending. The new target action must use the next
-source-correlated installer after CI; do not repeat existing diagnostics.
+is byte-identical. [PR #24](https://github.com/kurasis/passkeylocal/pull/24) merged automatically as
+`536e5f7d0be4de4d27a8f2066b1a9db17fbad05a`; its tree equals tested source `bdb2a034e15f483dcbaadb29781234248a26dfed`
+(code head `99b8ff20ea9cac364963e659e71d340be5b7906b`). [General CI 37745006594](https://github.com/kurasis/passkeylocal/actions/runs/37745006594)
+and [Windows CI 37745006593](https://github.com/kurasis/passkeylocal/actions/runs/37745006593)
+completed all 11 exact-head checks successfully. Hosted Windows confirms 108
+routine native tests, including six new direct-attestation shape controls; the
+two ignored ABI/resource gates were separately executed and passed. Independent
+official-header/MSVC ABI, binding regeneration, public fixtures, 161 TypeScript
+tests, 26 UI/eight PWA scenarios, Python OS/version matrix/offline kit,
+KDBX parity, fresh bidirectional encrypted-file recovery and 10,000-file restore PASS.
+Restore: 83.317 s; 5 GiB process: 43.236 s,
+sampled peak working set 10,588,160 bytes.
 
-The initial installed-app smoke for tested source
+Actual NSIS install, installed/built binary equality, packaged UI/IPC/storage/lock
+and ten source-matched diagnostic reports PASS. Hosted Hello/Platform KSP is
+unavailable, so creation/PRF/TPM operations do not run there. Downloaded original
+installer checksum matches metadata/sidecar: `1d64c660da0909911f9688f62af3071595258594adc7e9a9ebc48c54e54fd3d2`,
+217,901,754 bytes. [Windows download evidence](../deploy/windows-desktop/)
+retains original metadata/screenshots and source-correlated artifact link.
+The new target action remains pending the owner's measurement; no old PRF/provider/
+inner/export rerun is needed. No physical TPM/fingerprint or attestation trust is
+inferred from hosted/software checks. All four gates remain open.
+
+Shared desktop translations changed web assets, so [Cloudflare downloads](../deploy/cloudflare-pages/)
+now include `passkeylocal-cloudflare-pages-536e5f7.zip` from the merged source: 210,033 bytes,
+SHA-256 `2ec7eada082d614c6d9c11e33d004cfb0a98061e137644efe28202da899cc627`. All ten archived files equal freshly rebuilt production output;
+native IPC remains absent. No direct server deployment occurred. This final
+publication changes documentation and deployment artifacts only; tested
+application, test, dependency and workflow bytes are retained.
+
+The [initial installed-app smoke](https://github.com/kurasis/passkeylocal/actions/runs/37743378217) for tested source
 `ef0da0ae9bb4c5514bedcdf62b1a1414fa55b89e` failed before executing the new
 command: Tauri correctly denied it because the main-window capability omitted
 `allow-hello-webauthn-attestation`. The correction adds only that generated
 permission to the existing local `main` capability, retaining its window/origin
-scope and every native session/HWND guard. No failed installer is published;
-the corrected exact-head hosted and installed-app checks must pass first.
+scope and every native session/HWND guard. The corrected hosted and installed-app
+checks passed before publishing the source-correlated installer above. The
+failed installer was not published.
 
 ## PCP certification framing and completed target measurement (2026-10-08)
 
