@@ -97,7 +97,7 @@ remain unchanged.
 Automated native tests cover memory-only session envelopes, remembered restart,
 fresh authorization calls, expiry/rollback, head/epoch/vault mismatch, tampered
 metadata/ciphertext, cancellation, stale enrollment/unwrap, failed creation and
-cleanup, key revocation/replay and storage-invalidation classification. Windows
+cleanup, key revocation/replay and storage-invalidation classification. Portable
 tests also reject arbitrary action/target fields and unbounded mode choices.
 These backend doubles test state logic, not physical OS behavior.
 

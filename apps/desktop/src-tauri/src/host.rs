@@ -146,7 +146,7 @@ async fn storage(
                 0,
                 &|| true,
                 &|| Err(Error::new("INVALID_STATE")),
-                &hello::enrollment::windows::Action::Revoke,
+                &hello::enrollment::Action::Revoke {},
             );
             // The envelope is already durably nonresumable when only native
             // object deletion failed. Password recovery must remain possible;
@@ -674,10 +674,10 @@ async fn hello_enrollment(
     window: WebviewWindow,
     app: tauri::AppHandle,
     token: String,
-    request: hello::enrollment::windows::Action,
+    request: hello::enrollment::Action,
 ) -> Result<Value> {
-    use hello::enrollment::windows::Action;
-    if matches!(request, Action::Enroll { .. } | Action::Unlock) {
+    use hello::enrollment::Action;
+    if matches!(request, Action::Enroll { .. } | Action::Unlock {}) {
         focused(&window)?;
     } else {
         trusted(&window)?;
@@ -691,7 +691,7 @@ async fn hello_enrollment(
         .app_local_data_dir()
         .map_err(|_| Error::new("UNAVAILABLE"))?;
     let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
-    if matches!(request, Action::Revoke) {
+    if matches!(request, Action::Revoke {}) {
         app.state::<NativeState>()
             .hello_serial
             .fetch_add(1, Ordering::SeqCst);
@@ -719,7 +719,7 @@ async fn hello_enrollment(
             let binding = store(&state)?.hello_binding()?;
             Ok((binding, chrono::Utc::now().timestamp_millis()))
         };
-        let result = if matches!(request, Action::Revoke) {
+        let result = if matches!(request, Action::Revoke {}) {
             state
                 .hello
                 .lock()

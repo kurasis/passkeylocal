@@ -48,6 +48,27 @@ impl Mode {
         }) * 3_600_000
     }
 }
+#[derive(Deserialize)]
+#[serde(tag = "operation", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum Action {
+    Status {},
+    Enroll {
+        mode: Mode,
+        generation: u64,
+        sha256: String,
+        component: [u8; 32],
+    },
+    Unlock {},
+    Revoke {},
+}
+impl Drop for Action {
+    fn drop(&mut self) {
+        if let Self::Enroll { component, .. } = self {
+            use zeroize::Zeroize;
+            component.zeroize()
+        }
+    }
+}
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Header {

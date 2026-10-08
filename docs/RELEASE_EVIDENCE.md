@@ -10,7 +10,7 @@ the old enrollment before the write. Disable revokes only app-owned keys;
 deferred deletion remains visible, and password-based recovery is preserved.
 No master-password string or new password verifier is stored in the envelope.
 
-Local checks passed: 134 routine native tests (12 new enrollment lifecycle
+Local checks passed: 135 routine native tests (13 new enrollment/input
 cases; one resource test excluded from the routine run), 174 TypeScript tests
 (including six new real KDBX worker cases), 46 desktop/browser scenarios and
 eight production PWA scenarios. The actual vault worker/native bridge was

@@ -92,27 +92,6 @@ impl Protection for Native<'_> {
         b
     }
 }
-#[derive(Deserialize)]
-#[serde(tag = "operation", rename_all = "kebab-case", deny_unknown_fields)]
-pub enum Action {
-    Status,
-    Enroll {
-        mode: Mode,
-        generation: u64,
-        sha256: String,
-        component: [u8; 32],
-    },
-    Unlock,
-    Revoke,
-}
-impl Drop for Action {
-    fn drop(&mut self) {
-        if let Self::Enroll { component, .. } = self {
-            use zeroize::Zeroize;
-            component.zeroize()
-        }
-    }
-}
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Reply {
@@ -148,7 +127,7 @@ impl Manager {
             credential: None,
             key: None,
         };
-        if matches!(action, Action::Revoke) {
+        if matches!(action, Action::Revoke {}) {
             if let Some(r) = self.read(&j)? {
                 b.configure(&r.header);
                 self.revoke(&j, &mut b, r)?;
@@ -166,8 +145,8 @@ impl Manager {
             binding: None,
         };
         match action {
-            Action::Status => {}
-            Action::Revoke => unreachable!(),
+            Action::Status {} => {}
+            Action::Revoke {} => unreachable!(),
             Action::Enroll {
                 mode,
                 generation,
@@ -181,29 +160,11 @@ impl Manager {
                 secret.copy_from_slice(component);
                 reply.status = self.enroll(&j, &mut b, &binding, *mode, &secret, context)?;
             }
-            Action::Unlock => {
+            Action::Unlock {} => {
                 reply.component = Some(self.unlock(&j, &mut b, &binding, context)?.to_vec());
                 reply.binding = Some(binding);
             }
         }
         Ok(reply)
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn ipc_accepts_only_fixed_actions_and_bounded_mode_choices() {
-        for json in [
-            r#"{"operation":"decrypt","ciphertext":[1]}"#,
-            r#"{"operation":"unlock","key":"arbitrary"}"#,
-            r#"{"operation":"enroll","mode":"forever","generation":1,"sha256":"a","component":[]}"#,
-        ] {
-            assert!(serde_json::from_str::<Action>(json).is_err());
-        }
-        for mode in ["session", "remember6", "remember12", "remember24"] {
-            let input = serde_json::json!({"operation":"enroll","mode":mode,"generation":1,"sha256":"a".repeat(64),"component":vec![0;32]});
-            assert!(serde_json::from_value::<Action>(input).is_ok());
-        }
     }
 }

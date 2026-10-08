@@ -290,3 +290,27 @@ fn credential_changing_storage_operations_require_prior_invalidation() {
     assert!(credential_write("restoreBlob", &json!({"blobId":"opaque"})));
     assert!(!credential_write("readBlob", &json!({})));
 }
+
+#[test]
+fn ipc_accepts_only_fixed_actions_and_bounded_mode_choices() {
+    for json in [
+        r#"{"operation":"decrypt","ciphertext":[1]}"#,
+        r#"{"operation":"unlock","key":"arbitrary"}"#,
+        r#"{"operation":"enroll","mode":"forever","generation":1,"sha256":"a","component":[]}"#,
+    ] {
+        assert!(
+            serde_json::from_str::<Action>(json).is_err(),
+            "accepted {json}"
+        );
+    }
+    for operation in ["status", "unlock", "revoke"] {
+        let valid = serde_json::json!({"operation":operation});
+        assert!(serde_json::from_value::<Action>(valid).is_ok());
+        let extra = serde_json::json!({"operation":operation,"component":vec![0;32]});
+        assert!(serde_json::from_value::<Action>(extra).is_err());
+    }
+    for mode in ["session", "remember6", "remember12", "remember24"] {
+        let input = serde_json::json!({"operation":"enroll","mode":mode,"generation":1,"sha256":"a".repeat(64),"component":vec![0;32]});
+        assert!(serde_json::from_value::<Action>(input).is_ok());
+    }
+}
