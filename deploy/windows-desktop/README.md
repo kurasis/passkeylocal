@@ -1,10 +1,25 @@
 # Windows desktop test installers
 
-Latest: **one-account KDBX recovery after temporary Hello key removal** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37795750712/artifacts/11559517802), [successful Windows run 37795750712](https://github.com/kurasis/passkeylocal/actions/runs/37795750712). [PR #30](https://github.com/kurasis/passkeylocal/pull/30) merged as `8d2d95b4d074cb37fd6f7c0f78cfa9468a9e9a47`. Code head `c1d55c3f7a3a54b818bce8bfb3a0324c49935d5b`; installed/tested source `9200a4b0bb3d4fc33b9e50fc356cc355b3ff51ae`. The merged application tree equals the tested PR tree.
+Latest: **opt-in Windows Hello for the active password vault** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37815672528/artifacts/11567523288), [successful Windows run 37815672528](https://github.com/kurasis/passkeylocal/actions/runs/37815672528). [PR #32](https://github.com/kurasis/passkeylocal/pull/32) merged as `6185e8008c8f1b943cb61de61ac2e7c8875d2523`. Code head `977fe6a4bab63992868dbb2462fddb786e2e8107`; installed/tested source `c18894e210a07546ba66cf178b8048ae5c40ac61`. The merged application tree equals the tested PR tree.
 
 Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`. This is an unsigned experimental installer; Microsoft's signed x64 WebView2 offline installer is included. Node/Python are not required. Artifact retention is 30 days; after expiry run the [Windows workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml) on main.
 
-Installer: 218,094,016 bytes; SHA-256 `d92b83420c8b2e0d6110a1e998effdef00dd255472db1f5c41331532293ac13a`, matched to original metadata and checksum sidecar. Original evidence: [build](build-9200a4b.json), [installed-app smoke](smoke-9200a4b.json), [5 GiB resource measurement](file-safe-resource-9200a4b.json), [signed WebView2](webview2-download-9200a4b.json), [Russian settings](windows-settings-9200a4b.png), [locked window](windows-locked-9200a4b.png). The unversioned sidecar matches this installer.
+Installer: 218,130,545 bytes; SHA-256 `cde3091431697da7b8d958c271dc91f6d67186bc266b9b4f120723cf7d537642`, matched to original metadata and checksum sidecar. Original evidence: [build](build-c18894e.json), [installed-app smoke](smoke-c18894e.json), [5 GiB resource measurement](file-safe-resource-c18894e.json), [signed WebView2](webview2-download-c18894e.json), [Russian Hello controls](windows-hello-c18894e.png), [settings](windows-settings-c18894e.png), [locked window](windows-locked-c18894e.png). The unversioned sidecar matches this installer.
+
+## Connect the vault
+
+1. Close the previous app and install this build. Open the vault with its master password; keep a verified password backup.
+2. Open Settings → **Вход через Windows Hello / Unlock with Windows Hello**. The default is until the app closes, for at most 24 hours. Remembering this computer for 6, 12 or 24 hours is a separate explicit choice.
+3. Re-enter the master password and select **Подключить Windows Hello / Connect Windows Hello**. Windows performs credential creation and a separate protected round trip. The setting becomes enabled only on success.
+4. Lock the app and select **Войти через Windows Hello / Unlock with Windows Hello**. Windows may accept fingerprint, face or PIN. Cancellation leaves the password form available. **Отключить Hello и удалить его ключи / Disable Hello and remove its keys** removes the local connection.
+
+Password change, vault replacement/restore, expiry and detected clock rollback disable the old connection. Session mode requires a password after app exit; remove its old objects before reconnecting. Failed deletion remains visible as cleanup-required, with a retry action. The master-password KDBX format and independent recovery stay unchanged.
+
+[Design, boundaries and remaining acceptance](../../docs/windows/HELLO_VAULT_ENROLLMENT.md). This is experimental opt-in, off by default. The new packaged application lifecycle still needs physical owner acceptance; prior synthetic passes do not constitute that result. Same-PC/other-account manual testing remains excluded and unverified. Earlier diagnostic buttons are under **Диагностика Windows Hello / Windows Hello diagnostics**; no completed diagnostic needs repeating.
+
+## Prior owner measurements
+
+The following reports predate active-vault enrollment and preserve their original scope/flags. Their references to unavailable production enrollment describe those earlier builds; the new implementation and remaining physical acceptance are described above.
 
 ## Completed single-button KDBX recovery
 
@@ -107,12 +122,12 @@ production lifecycle acceptance remain open under the revised one-account plan.
 - [Local TPM binding bbead07](hello-target-bbead07-tpm-local-binding.json): all 12 stages passed, including exact public key/Name/duplication restrictions before and after reopening, OAEP negative controls and deletion. This is accepted local evidence under trusted Windows/KSP/TBS, not a remote signed attestation.
 - [TPM inner c83ce3f](hello-target-c83ce3f-tpm-inner.json): raw private exports returned NTE_BAD_TYPE (unsupported format), not explicit permission denial. [Direct attestation bdb2a03](hello-target-bdb2a03-direct-attestation.json) returned `none`. Neither result is relabeled or repeated.
 
-## Validation
+## Validation of this installer
 
-[General CI 37795750725](https://github.com/kurasis/passkeylocal/actions/runs/37795750725) and Windows CI passed all 11 exact-head checks. Windows: 154 routine native tests, including 32 portable combined/copy/recovery cases and four Windows context/command cases; independent MSVC/header ABI and 5 GiB resource tests executed separately. TypeScript: 168 tests; desktop/browser-worker UI: 43 scenarios; production PWA: eight scenarios; Linux: 122 routine native tests. Recovery OS/version matrix, offline kit and fresh native/Python parity passed. The new Python interop check independently rejects a wrong password and recovers all content/history from the actual component-opened/re-saved test KDBX.
+[General CI 37815672521](https://github.com/kurasis/passkeylocal/actions/runs/37815672521) and Windows CI passed all 11 checks on code head `977fe6a4bab63992868dbb2462fddb786e2e8107`. Windows: 167 routine native tests, including 12 enrollment lifecycle cases and one fixed-command input test; independent MSVC/header ABI and 5 GiB resource checks executed separately. Linux: 135 routine native tests; TypeScript: 174; desktop/browser UI: 46; production PWA: eight. Recovery OS/version matrix, offline kit and independent Python interop passed.
 
-Actual NSIS installation, binary equality, packaged UI/IPC/lock and source correlation passed. Recovery IPC returns no credential for no-record revoke or an existing saved test. Hosted Windows has no usable Hello/TPM; these blocked/no-op paths and browser tests with explicit synthetic IPC do not establish physical recovery success. Eligibility/enrollment/unlock stay false.
+The installed NSIS app passed binary equality, UI/IPC/lock checks and source correlation. The new enrollment command returned off/no-record revoke without a component, refused malformed actions and stale sessions, and populated the actual worker-backed connection form with session mode as default. Hosted Windows lacks usable Hello/TPM; no physical enrollment success is claimed from those paths or synthetic browser IPC.
 
-10,000-file restore: 136.150 seconds. Hosted 5 GiB primitive: 45.269 seconds; sampled peak working set 10,616,832 bytes. These are hosted observations, not target guarantees.
+10,000-file restore: 78.239 seconds. Hosted 5 GiB primitive: 50.399 seconds; sampled peak working set 10,551,296 bytes. These are hosted observations, not target guarantees.
 
-[Release evidence](../../docs/RELEASE_EVIDENCE.md) records pending production enrollment/lifecycle work and the new physical synthetic-KDBX observation. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.
+[Release evidence](../../docs/RELEASE_EVIDENCE.md) records the remaining physical lifecycle acceptance. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.

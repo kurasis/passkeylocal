@@ -1,5 +1,40 @@
 # Release evidence and gate status
 
+## Windows Hello enrollment publication (2026-10-08)
+
+[PR #32](https://github.com/kurasis/passkeylocal/pull/32) merged as `6185e8008c8f1b943cb61de61ac2e7c8875d2523`;
+application tree equals tested source `c18894e210a07546ba66cf178b8048ae5c40ac61` (head `977fe6a4bab63992868dbb2462fddb786e2e8107`).
+[General CI 37815672521](https://github.com/kurasis/passkeylocal/actions/runs/37815672521) and
+[Windows CI 37815672528](https://github.com/kurasis/passkeylocal/actions/runs/37815672528)
+passed all 11 checks. Logs confirm 167 Windows routine native tests, 135 Linux
+routine native tests, 174 TypeScript tests, 46 desktop/browser scenarios and
+eight production PWA scenarios. MSVC/header ABI, 5 GiB resource, OS/version
+recovery matrix, offline kit and independent native/Python parity passed.
+
+Original artifact ZIP matches GitHub digest `sha256:8582406d26631b43b6df6240ea1d3d577c5be2367933059e71f107602dfdf960`.
+Installer: 218,130,545 bytes; SHA-256 `cde3091431697da7b8d958c271dc91f6d67186bc266b9b4f120723cf7d537642`,
+matching original build metadata and checksum sidecar. Actual installation,
+binary equality, UI/IPC/lock and provenance checks passed. The new fixed command
+returned off/no-record revoke without a component, refused malformed actions and
+stale sessions, and populated the installed worker-backed connection form.
+The original Russian screenshot shows the lifetime/password/connect controls.
+Hosted Windows has no usable Hello/TPM; this is not a physical enrollment pass.
+
+[Installer/evidence](../deploy/windows-desktop/) and
+[connection procedure](windows/HELLO_VAULT_ENROLLMENT.md) are published.
+Experimental explicit opt-in is available; physical application-lifecycle,
+standard-user and remaining OS-negative acceptance are pending. The owner's
+completed synthetic evidence is unchanged. Other-account manual testing remains
+excluded and unverified; no previous diagnostic repeat is requested.
+
+10,000-file restore: 78.239 s. Hosted 5 GiB process:
+50.399 s; sampled peak working set 10,551,296 bytes.
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-6185e80.zip): 217,566 bytes;
+SHA-256 `7a5f9614dfca533d83d121a7103f52a6aa9e5c211dcca59220dd61b63fe05365`. All ten files match a fresh production build;
+native enrollment IPC and the desktop worker are absent. No server deployment
+occurred. Publication changes only documentation/artifacts; application/test/
+dependency/workflow bytes remain the tested version.
+
 ## Experimental active-vault Hello integration (2026-10-08)
 
 [Vault enrollment](windows/HELLO_VAULT_ENROLLMENT.md) now connects native PRF/TPM
