@@ -34,3 +34,9 @@ export async function resumeNativeCombinedHello(): Promise<import('./hello-proto
 export async function cleanupNativeCombinedHello(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native combined Hello proof is not available in browsers'); }
 
 export async function testNativeCombinedKeyLoss(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native combined Hello proof is not available in browsers'); }
+
+export async function prepareNativeHelloCopy(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello copy tests are unavailable in browsers'); }
+
+export async function exportNativeHelloCopy(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello copy tests are unavailable in browsers'); }
+
+export async function checkNativeHelloCopy(): Promise<import('./hello-protocol.ts').HelloKeyProof> { throw new Error('Native Hello copy tests are unavailable in browsers'); }

@@ -67,6 +67,18 @@ impl<'a> Credential<'a> {
         self.0.credential = Some(id.to_vec());
         Ok(())
     }
+    pub(crate) fn reopen_for_copy(&mut self, id: &[u8]) -> std::result::Result<(), Failure> {
+        self.0.credential = None;
+        self.0.created = None;
+        let ids = self.ids()?;
+        if ids.is_empty() {
+            return Err(invalid("combined-credential-missing"));
+        }
+        if ids != [id.to_vec()] {
+            return Err(invalid("combined-credential-identity-mismatch"));
+        }
+        self.reopen(id)
+    }
     pub(crate) fn create(
         &mut self,
     ) -> std::result::Result<(Vec<u8>, Zeroizing<[u8; 32]>), Failure> {

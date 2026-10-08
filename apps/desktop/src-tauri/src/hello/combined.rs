@@ -16,10 +16,11 @@ use std::{
 };
 use zeroize::Zeroizing;
 
+pub mod copy;
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
-pub use windows::run;
+pub use windows::{run, run_copy};
 
 #[cfg(test)]
 const RP: &str = "combined.passkey-local.desktop.invalid";
@@ -40,6 +41,8 @@ struct Header {
     public: Vec<u8>,
     name: Vec<u8>,
     expected: [u8; 32],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    copy_context: Option<copy::Context>,
 }
 impl Header {
     fn key_name(&self) -> String {
@@ -78,6 +81,7 @@ impl Record {
                 public: vec![],
                 name: vec![],
                 expected: [0; 32],
+                copy_context: None,
             },
             ready: false,
             nonce: [0; 12],
@@ -253,11 +257,17 @@ pub struct Report {
     enrolled: bool,
     unlocked: bool,
     pub outcome: &'static str,
+    #[serde(skip_serializing_if = "empty_state")]
     pub combined_state: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    copy_evidence: Option<copy::Evidence>,
     process_scope: &'static str,
     authorization: &'static str,
     pub checks: Vec<PrfCheck>,
     remaining: [&'static str; 3],
+}
+fn empty_state(s: &&str) -> bool {
+    s.is_empty()
 }
 impl Report {
     fn new(state: &'static str) -> Self {
@@ -271,6 +281,7 @@ impl Report {
             unlocked: false,
             outcome: state,
             combined_state: state,
+            copy_evidence: None,
             process_scope: "same-process",
             authorization: "os-required-user-verification",
             checks: vec![],
@@ -299,19 +310,22 @@ impl Report {
         }
     }
 }
-trait Backend {
-    fn initialize(&mut self) -> ProofResult<()>;
-    fn create_tpm(&mut self) -> ProofResult<(Vec<u8>, Vec<u8>)>;
-    fn create_prf(&mut self) -> ProofResult<(Vec<u8>, Zeroizing<[u8; 32]>)>;
+// Imported files can use this interface only; it cannot create or delete keys.
+trait Reader {
     fn reopen_tpm(&mut self, h: &Header) -> ProofResult<()>;
     fn reopen_prf(&mut self, h: &Header) -> ProofResult<()>;
     fn reopen(&mut self, h: &Header) -> ProofResult<()> {
         self.reopen_tpm(h)?;
         self.reopen_prf(h)
     }
-    fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>>;
     fn authorize(&mut self) -> ProofResult<Zeroizing<[u8; 32]>>;
     fn unwrap(&mut self, cipher: &[u8]) -> ProofResult<Zeroizing<Vec<u8>>>;
+}
+trait Backend: Reader {
+    fn initialize(&mut self) -> ProofResult<()>;
+    fn create_tpm(&mut self) -> ProofResult<(Vec<u8>, Vec<u8>)>;
+    fn create_prf(&mut self) -> ProofResult<(Vec<u8>, Zeroizing<[u8; 32]>)>;
+    fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>>;
     fn cleanup_prf(&mut self) -> ProofResult<()>;
     fn cleanup_tpm(&mut self) -> ProofResult<()>;
 }
@@ -322,7 +336,7 @@ fn active(current: &dyn Fn() -> bool) -> ProofResult<()> {
         Err(interrupted("combined-session-invalidated"))
     }
 }
-fn verify(r: &Record, b: &mut impl Backend, current: &dyn Fn() -> bool) -> ProofResult<()> {
+fn verify(r: &Record, b: &mut impl Reader, current: &dyn Fn() -> bool) -> ProofResult<()> {
     active(current)?;
     let prf = b.authorize()?;
     active(current)?;
@@ -475,6 +489,7 @@ fn state(r: Option<&Record>, process: &str) -> &'static str {
     match r {
         None => "no-test",
         Some(r) if !r.ready => "cleanup-required",
+        Some(r) if r.header.copy_context.is_some() => "copy-ready",
         Some(r) if r.header.creator == process => "restart-required",
         Some(_) => "ready-to-resume",
     }
@@ -548,7 +563,7 @@ fn execute(
             }
         }
         Action::Resume => {
-            if !r.ready || r.header.creator == process {
+            if !r.ready || r.header.copy_context.is_some() || r.header.creator == process {
                 return report;
             }
             report.process_scope = "fresh-process";

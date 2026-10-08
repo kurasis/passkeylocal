@@ -1,5 +1,26 @@
 # Release evidence and gate status
 
+## Synthetic copy-file implementation (2026-10-08)
+
+The [copy-file experiment](windows/HELLO_COPY_TEST.md) adds source export/re-export
+and a read-only destination/source check through fixed native commands. Source
+context labels are authenticated with the encrypted record; foreign observations
+require full-file digest correlation with export and subsequent source decryption.
+The import adapter cannot create/delete keys or persist an imported journal.
+Only exact missing-key observations count; provider errors and unexpected foreign
+decryption fail. Old restart/key-loss measurements remain completed and unchanged.
+
+The owner has a second Windows computer. The documented next measurement is
+source export → destination observation → source positive control → cleanup.
+Real cross-computer/account-copy results, password fallback and production
+integration remain pending; enrollment and unlock remain disabled.
+
+Local validation: 26 combined/copy tests, all 115 routine native tests (one
+resource test ignored in the routine run), 161 TypeScript tests and 37 desktop
+UI scenarios passed. Linux and Windows GNU Clippy, both production frontends
+and target isolation passed. MSVC CI, installed-app smoke and installer
+publication are pending final validation for this increment.
+
 ## Completed owner temporary key-loss measurement (2026-10-08)
 
 The [owner report](../deploy/windows-desktop/hello-target-4b3ba34-key-loss.json)

@@ -393,6 +393,70 @@ async fn hello_combined_experiment(
     serde_json::to_value(report).map_err(|_| Error::new("UNAVAILABLE"))
 }
 
+#[tauri::command]
+async fn hello_copy_prepare(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_copy_experiment(window, app, hello::combined::copy::Action::PrepareExport).await
+}
+#[tauri::command]
+async fn hello_copy_export(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_copy_experiment(window, app, hello::combined::copy::Action::Export).await
+}
+#[tauri::command]
+async fn hello_copy_check(window: WebviewWindow, app: tauri::AppHandle) -> Result<Value> {
+    hello_copy_experiment(window, app, hello::combined::copy::Action::Check).await
+}
+async fn hello_copy_experiment(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    action: hello::combined::copy::Action,
+) -> Result<Value> {
+    focused(&window)?;
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    let root = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|_| Error::new("UNAVAILABLE"))?;
+    let serial = app.state::<NativeState>().serial.load(Ordering::SeqCst);
+    let session = app
+        .state::<NativeState>()
+        .active
+        .lock()
+        .map_err(|_| Error::new("UNAVAILABLE"))?
+        .clone();
+    let report = tauri::async_runtime::spawn_blocking(move || {
+        hello::combined::run_copy(
+            &root,
+            hwnd,
+            || {
+                let state = app.state::<NativeState>();
+                state.serial.load(Ordering::SeqCst) == serial
+                    && state.active.lock().is_ok_and(|active| *active == session)
+            },
+            action,
+            |save| {
+                let parent = WindowParent(hwnd);
+                let dialog = rfd::FileDialog::new()
+                    .set_parent(&parent)
+                    .add_filter("Synthetic Hello copy test", &["hello-test"]);
+                if save {
+                    dialog
+                        .set_title("Save a new synthetic Hello copy test")
+                        .set_file_name("PassKeyLocal-copy.hello-test")
+                        .save_file()
+                } else {
+                    dialog
+                        .set_title("Check a synthetic Hello copy test (read only)")
+                        .pick_file()
+                }
+            },
+        )
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))??;
+    trusted(&window)?;
+    serde_json::to_value(report).map_err(|_| Error::new("UNAVAILABLE"))
+}
+
 async fn hello_tpm_experiment(
     window: WebviewWindow,
     app: tauri::AppHandle,
@@ -689,6 +753,9 @@ pub fn run() {
             hello_combined_resume,
             hello_combined_cleanup,
             hello_combined_key_loss,
+            hello_copy_prepare,
+            hello_copy_export,
+            hello_copy_check,
             hello_settings,
             hello_unlock,
             hello_revoke,

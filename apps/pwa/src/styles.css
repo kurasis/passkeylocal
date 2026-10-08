@@ -242,3 +242,5 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 .hello-proof-checks li { margin: .5rem 0; overflow-wrap: anywhere; }
 .hello-proof-checks li span { display: block; }
 .hello-proof-report { max-height: 22rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.hello-copy-fingerprint { overflow-wrap: anywhere; user-select: all; }

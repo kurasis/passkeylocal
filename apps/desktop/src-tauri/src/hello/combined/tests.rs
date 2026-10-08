@@ -1,6 +1,6 @@
 use super::*;
 use std::cell::Cell;
-struct Fake<'a> {
+pub(super) struct Fake<'a> {
     journal: &'a Journal,
     secret: [u8; 32],
     key: [u8; 32],
@@ -15,7 +15,7 @@ struct Fake<'a> {
     stale_after_delete: Option<&'a Cell<bool>>,
 }
 impl<'a> Fake<'a> {
-    fn new(journal: &'a Journal) -> Self {
+    pub(super) fn new(journal: &'a Journal) -> Self {
         Self {
             journal,
             secret: [0; 32],
@@ -39,20 +39,7 @@ impl<'a> Fake<'a> {
         }
     }
 }
-impl Backend for Fake<'_> {
-    fn initialize(&mut self) -> ProofResult<()> {
-        self.result("preflight")
-    }
-    fn create_tpm(&mut self) -> ProofResult<(Vec<u8>, Vec<u8>)> {
-        assert!(self.journal.read().unwrap().is_some());
-        self.result("tpm-create")?;
-        Ok((vec![2; 256], vec![3; 34]))
-    }
-    fn create_prf(&mut self) -> ProofResult<(Vec<u8>, Zeroizing<[u8; 32]>)> {
-        assert!(self.journal.read().unwrap().is_some());
-        self.result("prf-create")?;
-        Ok((vec![4; 32], Zeroizing::new(self.key)))
-    }
+impl Reader for Fake<'_> {
     fn reopen_tpm(&mut self, _: &Header) -> ProofResult<()> {
         self.result("reopen")?;
         self.result("tpm-reopen")?;
@@ -71,11 +58,6 @@ impl Backend for Fake<'_> {
             return Err(invalid("combined-credential-missing"));
         }
         Ok(())
-    }
-    fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>> {
-        self.secret = *secret;
-        self.result("wrap")?;
-        Ok(vec![5; 256])
     }
     fn authorize(&mut self) -> ProofResult<Zeroizing<[u8; 32]>> {
         self.authorizations += 1;
@@ -100,6 +82,28 @@ impl Backend for Fake<'_> {
         }
         Ok(Zeroizing::new(self.secret.to_vec()))
     }
+}
+impl Backend for Fake<'_> {
+    fn initialize(&mut self) -> ProofResult<()> {
+        self.result("preflight")
+    }
+    fn create_tpm(&mut self) -> ProofResult<(Vec<u8>, Vec<u8>)> {
+        assert!(self.journal.read().unwrap().is_some());
+        self.result("tpm-create")?;
+        Ok((vec![2; 256], vec![3; 34]))
+    }
+    fn create_prf(&mut self) -> ProofResult<(Vec<u8>, Zeroizing<[u8; 32]>)> {
+        assert!(self.journal.read().unwrap().is_some());
+        self.result("prf-create")?;
+        Ok((vec![4; 32], Zeroizing::new(self.key)))
+    }
+
+    fn wrap(&mut self, secret: &[u8; 32]) -> ProofResult<Vec<u8>> {
+        self.secret = *secret;
+        self.result("wrap")?;
+        Ok(vec![5; 256])
+    }
+
     fn cleanup_prf(&mut self) -> ProofResult<()> {
         assert!(!self.journal.read().unwrap().unwrap().ready);
         self.prf_deletes += 1;
