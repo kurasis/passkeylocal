@@ -3,7 +3,7 @@ test('Hello opt-in defaults to session, offers bounded remembered modes and unlo
   await page.goto('/shell.html');
   await page.getByRole('button', { name: 'Настройки', exact: true }).click();
   await expect(page.getByText('Windows Hello для этого хранилища отключён.', { exact: true })).toBeVisible();
-  const mode = page.getByLabel('Срок действия привязки');
+  const mode = page.getByLabel('Срок действия привязки', { exact: true });
   await expect(mode).toHaveValue('session');
   await expect(mode.locator('option')).toHaveCount(4);
   await mode.selectOption('remember6');

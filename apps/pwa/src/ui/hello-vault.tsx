@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { desktop } from '@platform';
 import { useT } from '../i18n.ts';
 import type { HelloMode, HelloVaultStatus } from '../hello-vault-protocol.ts';
@@ -15,6 +15,7 @@ function message(e: unknown, t: ReturnType<typeof useT>) {
 export function HelloVaultSettings() {
   const { client } = useApp();
   const t = useT();
+  const modeId = useId();
   const [status, setStatus] = useState<HelloVaultStatus | null>(null);
   const [mode, setMode] = useState<HelloMode>('session');
   const [password, setPassword] = useState('');
@@ -50,9 +51,10 @@ export function HelloVaultSettings() {
     <p role="status">{t(status?.state === 'enabled' ? 'helloVaultEnabled' : status?.state === 'cleanup-required' ? 'helloVaultCleanup' : 'helloVaultOff')}</p>
     {status?.state === 'enabled' && <p>{t(`helloVaultMode_${status.mode ?? 'session'}`)}{status.expiresAt ? ` · ${new Date(status.expiresAt).toLocaleString()}` : ''}</p>}
     {status?.state === 'off' && <form className="stack" onSubmit={(e) => { e.preventDefault(); void action(true); }}>
-      <label>{t('helloVaultMode')}<select style={{ minWidth: 0, maxWidth: '100%', width: '100%' }} value={mode} disabled={busy} onChange={(e) => setMode(e.target.value as HelloMode)}>
+      <label htmlFor={modeId}>{t('helloVaultMode')}</label>
+      <select id={modeId} style={{ minWidth: 0, maxWidth: '100%', width: '100%' }} value={mode} disabled={busy} onChange={(e) => setMode(e.target.value as HelloMode)}>
         {(['session', 'remember6', 'remember12', 'remember24'] as const).map((m) => <option key={m} value={m}>{t(`helloVaultMode_${m}`)}</option>)}
-      </select></label>
+      </select>
       <PasswordInput label={t('masterPassword')} value={password} onChange={setPassword} autoComplete="current-password" name="hello-master-password" />
       <button type="submit" disabled={busy || !password}>{t('helloVaultEnable')}</button>
     </form>}

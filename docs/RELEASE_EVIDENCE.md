@@ -22,6 +22,11 @@ nonsensitive off/revoke, malformed input and stale-session behavior, plus the
 real worker-populated connection form and its default lifetime on the hosted
 runner. Physical acceptance of this new opt-in lifecycle remains pending.
 
+The initial installed-form check caught the lifetime label including nested
+option text in exact label queries. An explicit label/control association fixes
+that boundary; the same exact-label regression is covered by the local UI test.
+The failed installer was not published; final packaging must pass this check.
+
 The completed owner recovery/copy/restart reports retain their original flags
 and scope. Second-account manual testing stays excluded and unverified. No new
 hardware success or repetition of completed diagnostic procedures is requested.
