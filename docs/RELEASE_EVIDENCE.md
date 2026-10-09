@@ -1,5 +1,26 @@
 # Release evidence and gate status
 
+## Windows Hello developer handoff and owner feedback (2026-10-09)
+
+The owner replied “works” after delivery of the PR #32 installer. This records
+basic owner-reported application-flow success, not a new source-stamped hardware
+report or a complete lifetime/restart/revocation/negative-case matrix. The reply
+did not specify a mode or new prompt count. Earlier raw diagnostic reports and
+their flags remain unchanged; other-account manual testing stays excluded and
+unverified. This scoped feedback updates the earlier blanket pending-flow notes.
+
+The standalone [developer handoff](windows/WINDOWS_HELLO_DEVELOPER_HANDOFF.md)
+documents the actual PRF/TPM envelope, code/IPC boundaries, fixed namespaces,
+lifetimes, ownership/cleanup, unsuccessful candidates, native ABI/parser pitfalls,
+test requirements, evidence limits and a reusable development-agent brief.
+README and the enrollment guide link it. Its baseline is published source
+`c18894e210a07546ba66cf178b8048ae5c40ac61`, not a new installer.
+
+Documentation-only validation checks relative links, source symbols/constants,
+preserved raw owner reports, whitespace and unchanged application/test/workflow/
+artifact bytes. No new runtime tests, hardware run, build or deployment are
+claimed for this documentation change.
+
 ## Windows Hello enrollment publication (2026-10-08)
 
 [PR #32](https://github.com/kurasis/passkeylocal/pull/32) merged as `6185e8008c8f1b943cb61de61ac2e7c8875d2523`;
