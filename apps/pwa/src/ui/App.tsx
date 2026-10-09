@@ -257,7 +257,7 @@ export function App() {
           </div>}
               <span className="privacy-chip"><Icon name="shield" />{t('localOnly')}</span>
               <ThemeMenu value={prefs.theme} onChange={(value) => setPref('theme', value)} />
-            {phase === 'unlocked' && (
+            {module === 'passwords' && phase === 'unlocked' && (
               <button type="button" className="secondary" aria-label={t('lock')} title={t('lock')} onClick={lockNow}>
                 <Icon name="lock" /><span className="lock-label">{t('lock')}</span>
               </button>
