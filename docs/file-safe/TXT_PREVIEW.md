@@ -31,7 +31,9 @@ variables and TEMP/TMP point to a
 nonexistent inaccessible child. Normal runtime DLL reads remain OS-controlled.
 
 An explicit handle list contains only a frozen read-only anonymous input section
-and a bounded output section. The host closes its writable input handle/view before
+and a bounded output section. Both anonymous sections use an empty object DACL
+to refuse access escalation through handle duplication; the creator retains
+initial rights and passes only the exact read/write subsets. The host closes its writable input handle/view before
 launch. The process belongs to a kill-on-close job **at creation**, starts suspended
 and resumes only after actual AppContainer/zero-capability token readback and a behavioral LPAC AccessCheck.
 The latter must grant the restricted-packages bit and deny the ordinary

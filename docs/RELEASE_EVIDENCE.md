@@ -77,6 +77,14 @@ layout and requires both inherited sections as positive controls before assertin
 that the nonlisted canary handle is absent. It no longer dereferences an invalid
 handle; unavailable enumeration remains a failed test. Production code is unchanged.
 
+The completed handle-table control exposed a genuine input-write escalation:
+DuplicateHandle could gain SECTION_MAP_WRITE from the attenuated read handle
+against the default object DACL. Anonymous input/output sections now use an empty
+DACL, following Chromium's Windows shared-memory design; the trusted creator
+retains initial rights, and the child receives only subsets. The hostile test
+retains write escalation and additionally attempts WRITE_DAC/WRITE_OWNER escalation.
+No failed write test is relabeled as passed.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

@@ -139,7 +139,27 @@ fn main() {
             }
         }
         stage(114);
-        let process = unsafe { OpenProcess(PROCESS_VM_READ, 0, parent) };
+        for right in [0x00040000u32, 0x00080000u32] {
+            let mut privileged = std::ptr::null_mut();
+            if unsafe {
+                DuplicateHandle(
+                    GetCurrentProcess(),
+                    input_handle,
+                    GetCurrentProcess(),
+                    &mut privileged,
+                    right,
+                    0,
+                    0,
+                )
+            } != 0
+            {
+                unsafe {
+                    CloseHandle(privileged);
+                }
+                return Ok("FAIL: input security-descriptor escalation".to_owned());
+            }
+        }
+        let process = unsafe { OpenProcess(PROCESS_VM_READ | PROCESS_DUP_HANDLE, 0, parent) };
         if !process.is_null() {
             unsafe {
                 CloseHandle(process);

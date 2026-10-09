@@ -13,8 +13,12 @@ use windows_sys::Win32::{
     Security::{Authorization::*, Isolation::*, *},
     Storage::FileSystem::{FILE_GENERIC_EXECUTE, FILE_GENERIC_READ},
     System::{
-        JobObjects::*, LibraryLoader::*, Memory::*, SystemInformation::GetSystemDirectoryW,
-        SystemServices::MAXIMUM_ALLOWED, Threading::*,
+        JobObjects::*,
+        LibraryLoader::*,
+        Memory::*,
+        SystemInformation::GetSystemDirectoryW,
+        SystemServices::{MAXIMUM_ALLOWED, SECURITY_DESCRIPTOR_REVISION},
+        Threading::*,
     },
 };
 use zeroize::{Zeroize, Zeroizing};
@@ -226,10 +230,38 @@ impl Drop for Grant<'_> {
     }
 }
 fn section(len: usize) -> Result<Handle> {
+    // Empty DACL is essential: attenuating a handle alone permits later
+    // DuplicateHandle access escalation against a permissive default DACL.
+    // The creator receives the original rights and may duplicate subsets.
+    let mut acl: ACL = unsafe { zeroed() };
+    let mut descriptor: SECURITY_DESCRIPTOR = unsafe { zeroed() };
+    if unsafe { InitializeAcl(&mut acl, size_of::<ACL>() as u32, ACL_REVISION) } == 0
+        || unsafe {
+            InitializeSecurityDescriptor(
+                (&mut descriptor as *mut SECURITY_DESCRIPTOR).cast(),
+                SECURITY_DESCRIPTOR_REVISION,
+            )
+        } == 0
+        || unsafe {
+            SetSecurityDescriptorDacl(
+                (&mut descriptor as *mut SECURITY_DESCRIPTOR).cast(),
+                1,
+                &acl,
+                0,
+            )
+        } == 0
+    {
+        return Err(failed("empty-section-dacl"));
+    }
+    let security = SECURITY_ATTRIBUTES {
+        nLength: size_of::<SECURITY_ATTRIBUTES>() as u32,
+        lpSecurityDescriptor: (&mut descriptor as *mut SECURITY_DESCRIPTOR).cast(),
+        bInheritHandle: 0,
+    };
     Handle::new(unsafe {
         CreateFileMappingW(
             INVALID_HANDLE_VALUE,
-            null(),
+            &security,
             PAGE_READWRITE,
             0,
             len as u32,
