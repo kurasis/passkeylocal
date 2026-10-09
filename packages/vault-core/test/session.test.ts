@@ -274,7 +274,27 @@ describe('VaultController backups and restore', () => {
     expect(status.changesSinceVerified).toBe(1);
     expect(status.escalate).toBe(false);
     r.clock.t += 24 * 60 * 60 * 1000;
+    expect((await r.controller.backupStatus()).escalate).toBe(false);
+    r.clock.t += 29 * 24 * 60 * 60 * 1000;
     expect((await r.controller.backupStatus()).escalate).toBe(true);
+  });
+
+  it('reminds after exactly 30 days without changes and only verification resets the deadline', async () => {
+    const r = await rig();
+    const { session } = await r.controller.create(PW);
+    const file = await session.prepareExport();
+    await r.controller.verifyBackup(file.bytes, PW);
+    const verifiedAt = r.clock.t;
+    r.clock.t = verifiedAt + 30 * 24 * 60 * 60 * 1000 - 1;
+    expect(await r.controller.backupStatus()).toMatchObject({ changesSinceVerified: 0, escalate: false });
+    r.clock.t++;
+    expect(await r.controller.backupStatus()).toMatchObject({ changesSinceVerified: 0, escalate: true });
+    await r.controller.recordExportOutcome('export-offered', file.sha256);
+    expect((await r.controller.backupStatus()).escalate).toBe(true);
+    await r.controller.verifyBackup(file.bytes, PW);
+    expect(await r.controller.backupStatus()).toMatchObject({ changesSinceVerified: 0, escalate: false });
+    r.clock.t += 24 * 60 * 60 * 1000;
+    expect((await r.controller.backupStatus()).escalate).toBe(false);
   });
 
   it('BAK-01/02: cancelled or merely offered exports never count as verified', async () => {

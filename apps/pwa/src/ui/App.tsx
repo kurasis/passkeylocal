@@ -189,6 +189,21 @@ export function App() {
   }, [refresh]);
 
   useEffect(() => {
+    if (phase !== 'unlocked') return;
+    let active = true;
+    const epoch = client.epoch;
+    const check = async () => {
+      try {
+        const next = await client.call('backupStatus');
+        if (active && client.epoch === epoch) setStatus(next);
+      } catch { /* Lock and the ordinary refresh own lifecycle errors. */ }
+    };
+    const interval = setInterval(() => void check(), 60000);
+    window.addEventListener('focus', check);
+    return () => { active = false; clearInterval(interval); window.removeEventListener('focus', check); };
+  }, [phase, client]);
+
+  useEffect(() => {
     if (!notice) return;
     const id = setTimeout(() => setNotice(null), 6000);
     return () => clearTimeout(id);
@@ -302,7 +317,7 @@ export function App() {
             </div>
           )}
           {unlocked && (
-            <nav className="tabbar" aria-label="Main">
+            <nav className="tabbar workspace-navigation" aria-label="Main">
               <span className="nav-heading">{t('workspaceLabel')}</span>
               {(
                 [

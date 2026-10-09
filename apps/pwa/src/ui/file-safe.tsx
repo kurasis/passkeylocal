@@ -486,6 +486,11 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   useEffect(() => {
     void reload();
   }, [token, reload]);
+  useEffect(() => {
+    if (!message) return;
+    const timeout = setTimeout(() => setMessage(""), 6000);
+    return () => clearTimeout(timeout);
+  }, [message]);
   const run = async (action: () => Promise<unknown>, success = w.saved) => {
     if (working) return;
     const epoch = generation.current;
@@ -518,6 +523,11 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     if (tokenRef.current) api.activity(tokenRef.current);
   };
   const busy = working || Boolean(status?.busy) || pageLoading;
+  const actionBusy = working || Boolean(status?.busy);
+  const feedback = actionBusy
+    ? `${w.working}${status?.progress.total ? ` ${status.progress.done} / ${status.progress.total}` : ""}`
+    : message;
+  const notification = feedback && <div className="file-safe-feedback"><Banner kind="info">{feedback}</Banner></div>;
   const showView = (next: "files" | "settings") => {
     setView(next);
     setSelected([]);
@@ -648,7 +658,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const recovery = (
     <details className="card stack">
       <summary>{w.recoverTitle}</summary>
-      <label>
+      <label className="field">
         {w.recoveryPassword}
         <input
           type="password"
@@ -676,7 +686,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       >
         {w.verify}
       </button>
-      <label className="checkbox">
+      <label className="check">
         <input
           type="checkbox"
           checked={replaceAck}
@@ -701,9 +711,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   if (!token)
     return (
       <section className="stack file-safe-access">
-        <div className="page-heading">
-          <span className="eyebrow">Windows</span>
-          <h1>{w.title}</h1>
+        <div className="screen-heading file-safe-heading">
+          <div className="file-safe-title-line"><h1>{w.title}</h1>{notification}</div>
+        </div>
+        <div>
           <p>{w.independent}</p>
         </div>
         <form
@@ -721,10 +732,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             setRepeat("");
             void run(async () => {
               await api.access(pw, !status.exists, expectedGeneration);
-            });
+            }, status.exists ? "" : w.saved);
           }}
         >
-          <label>
+          <label className="field">
             {w.password}
             <input
               type="password"
@@ -737,7 +748,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             />
           </label>
           {status && !status.exists && (
-            <label>
+            <label className="field">
               {w.repeat}
               <input
                 type="password"
@@ -758,13 +769,12 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           </button>
           {hello?.state === 'enabled' && <button type="button" className="secondary"
             disabled={busy || !status || !admissionReady}
-            onClick={() => status && void run(() => api.hello({ operation: 'unlock', expected_generation: status.generation }), w.ready)}>
+            onClick={() => status && void run(() => api.hello({ operation: 'unlock', expected_generation: status.generation }), "")}>
               {w.hello}
           </button>}
           {hello?.state === 'cleanup-required' && <p className="muted">{t('helloVaultExpired')}</p>}
         </form>
         {recovery}
-        {message && <Banner kind="info">{message}</Banner>}
       </section>
     );
   return (
@@ -773,9 +783,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       onPointerDown={activity}
       onKeyDown={activity}
     >
-      <div className="page-heading file-safe-heading">
-        <div>
+      <div className="screen-heading file-safe-heading">
+        <div className="file-safe-title-line">
           <h1>{view === "settings" ? w.settings : w.title}</h1>
+          {notification}
         </div>
         <div className="input-row">
           <button type="button" className="secondary" onClick={() => showView(view === "files" ? "settings" : "files")}><Icon name={view === "files" ? "settings" : "folder"} />{view === "files" ? w.settings : w.filesView}</button>
@@ -799,27 +810,16 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         void change(d.operation === "create" ? { kind: "folder", parent_id: d.folder.id, name: d.name } : d.operation === "rename" ? { kind: "folder_edit", folder_id: d.folder.id, name: d.name } : { kind: "folder_remove", folder_id: d.folder.id, confirm: true });
       }}>
         <h2>{folderDialog.folder.name}</h2>
-        {folderDialog.operation === "remove" ? <p>{w.removeFolderExplain}</p> : <label>{w.folderName}<input autoFocus required maxLength={255} value={folderDialog.name} onChange={(e) => setFolderDialog({ ...folderDialog, name: e.target.value })} /></label>}
+        {folderDialog.operation === "remove" ? <p>{w.removeFolderExplain}</p> : <label className="field">{w.folderName}<input autoFocus required maxLength={255} value={folderDialog.name} onChange={(e) => setFolderDialog({ ...folderDialog, name: e.target.value })} /></label>}
         <div className="input-row"><button type="submit" disabled={busy} className={folderDialog.operation === "remove" ? "danger" : ""}>{folderDialog.operation === "create" ? w.folder : folderDialog.operation === "remove" ? w.removeFolder : w.rename}</button><button type="button" className="secondary" onClick={() => setFolderDialog(null)}>{w.closeDialog}</button></div>
       </form></div>}
       {view === "files" && <>
 
 
-      {busy && (
-        <Banner kind="info">
-          <span role="status">
-            {w.working}{" "}
-            {status?.progress.total
-              ? `${status.progress.done} / ${status.progress.total}`
-              : ""}
-          </span>
-        </Banner>
-      )}
-      {message && <Banner kind="info">{message}</Banner>}
       <div className="file-safe-layout">
         <aside className="stack file-safe-sidebar" aria-label={w.title}>
-          <nav className="card stack file-safe-places">
-          {(["files", "favorites", "trash"] as const).map((mode) => <button type="button" className="secondary" key={mode} aria-current={query.mode === mode ? "page" : undefined} disabled={busy} onClick={() => navigate(null, mode)}><Icon name={mode === "files" ? "folder" : mode === "favorites" ? "star" : "trash"} />{w[mode]}</button>)}
+          <nav className="workspace-navigation file-safe-places">
+          {(["files", "favorites", "trash"] as const).map((mode) => <button type="button" key={mode} aria-current={query.mode === mode ? "page" : undefined} disabled={busy} onClick={() => navigate(null, mode)}><Icon name={mode === "files" ? "folder" : mode === "favorites" ? "star" : "trash"} />{w[mode]}</button>)}
           </nav>
       <div className="file-safe-toolbar">
         <button
@@ -827,7 +827,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           disabled={busy || !page}
           onClick={() => importFiles(false)}
         >
-          {w.import}
+          <Icon name="file" />{w.import}
         </button>
         <button
           type="button"
@@ -835,7 +835,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           disabled={busy || !page}
           onClick={() => importFiles(true)}
         >
-          {w.importFolder}
+          <Icon name="folder" />{w.importFolder}
         </button>
           <form
             className="file-safe-create-folder"
@@ -847,7 +847,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               void change({ kind: "folder", parent_id: page.folder_id, name });
             }}
           >
-            <label>
+            <label className="field">
               {w.folderName}
               <input
                 maxLength={255}
@@ -860,7 +860,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               className="secondary"
               disabled={busy || !folderName || !page}
             >
-              {w.folder}
+              <Icon name="plus" />{w.folder}
             </button>
           </form>
         {working && (
@@ -891,10 +891,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             </nav>
           </div>
           <div className="file-safe-filters">
-            <label>{w.search}<input type="search" value={query.search} maxLength={256} onChange={(e) => {
+            <label className="field">{w.search}<span className="search-field"><Icon name="search" /><input type="search" value={query.search} maxLength={256} onChange={(e) => {
               setSelected([]); setDetail(null);
               setQuery((q) => ({ ...q, search: e.target.value, offset: 0 }));
-            }} /></label>
+            }} /></span></label>
             <div className="file-safe-mobile-sort"><label htmlFor={sortId}>{w.sortBy}</label><select id={sortId} value={query.sort} onChange={(e) => { setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort: e.target.value as SafeQuery["sort"], offset: 0 })); }}><option value="name">{w.name}</option><option value="modified">{w.modified}</option><option value="size">{w.size}</option></select></div>
           </div>
           {page && (
@@ -969,7 +969,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               {query.mode === "trash" && (
                 <>
                   <p>{w.permanentExplain}</p>
-                  <label className="checkbox">
+                  <label className="check">
                     <input
                       type="checkbox"
                       checked={removeAck}
@@ -1054,7 +1054,6 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
 
       </>}
       {view === "settings" && <section className="stack file-safe-settings" aria-label={w.settings}>
-        {message && <Banner kind="info">{message}</Banner>}
       <details className="card stack">
         <summary>{w.backup}</summary>
         <p>{w.backupNote}</p>
@@ -1074,7 +1073,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
                     ? w.ready
                     : w.backupUnavailable}
         </p>
-        <label>
+        <label className="field">
           {w.retention}
           <input
             type="number"
@@ -1151,7 +1150,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             void run(() => api.rotate(token, page.snapshot_id, current, next));
           }}
         >
-          <label>
+          <label className="field">
             {w.oldPassword}
             <input
               type="password"
@@ -1161,7 +1160,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               maxLength={1024}
             />
           </label>
-          <label>
+          <label className="field">
             {w.newPassword}
             <input
               type="password"
@@ -1253,7 +1252,7 @@ function FileDetails({
           });
         }}
       >
-        <label>
+        <label className="field">
           {w.name}
           <input
             data-action="rename"
@@ -1263,7 +1262,7 @@ function FileDetails({
             required
           />
         </label>
-        <label>
+        <label className="field">
           {w.move}
           <select data-action="move" value={folder} onChange={(e) => setFolder(e.target.value)}>
             {folders
@@ -1275,7 +1274,7 @@ function FileDetails({
               ))}
           </select>
         </label>
-        <label>
+        <label className="field">
           {w.tags}
           <input
             value={tags}
@@ -1283,7 +1282,7 @@ function FileDetails({
             onChange={(e) => setTags(e.target.value)}
           />
         </label>
-        <label>
+        <label className="field">
           {w.notes}
           <textarea
             value={notes}
@@ -1291,7 +1290,7 @@ function FileDetails({
             onChange={(e) => setNotes(e.target.value)}
           />
         </label>
-        <label className="checkbox">
+        <label className="check">
           <input
             type="checkbox"
             checked={favorite}
@@ -1314,7 +1313,7 @@ function FileDetails({
         {w.replace}
       </button>
       <p>{w.exportExplain}</p>
-      <label className="checkbox">
+      <label className="check">
         <input
           type="checkbox"
           data-action="export"

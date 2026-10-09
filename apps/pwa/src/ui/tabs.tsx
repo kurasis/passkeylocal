@@ -15,7 +15,7 @@ import { Banner, Busy, PasswordInput, errorText, newPasswordProblem, useApp, use
 export function BackupStatusBanner(props: { status: BackupStatus | null }) {
   const t = useT();
   const s = props.status;
-  if (!s || !s.savedLocally || s.changesSinceVerified === 0) return null;
+  if (!s || !s.savedLocally || (s.changesSinceVerified === 0 && !s.escalate)) return null;
   return s.escalate ? <Banner kind="warn">{t('backupUrgent')}</Banner> : <p className="reminder">{t('backupReminder')}</p>;
 }
 
