@@ -50,6 +50,10 @@ profile variable names with nonexistent inaccessible system-directory children;
 it still inherits no user environment, source/vault paths or secrets. The profile
 write probes remain mandatory.
 
+The hostile probe additionally attempts writes using its actual TEMP/TMP and
+profile environment variables, including any Windows-adjusted profile path;
+parent-supplied canary paths alone are insufficient evidence of diskless operation.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

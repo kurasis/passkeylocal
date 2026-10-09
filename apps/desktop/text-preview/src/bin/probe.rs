@@ -89,6 +89,20 @@ fn main() {
         }
         // Registration must not grant a writable own storage profile. Try
         // creating all missing directories, not just opening a missing leaf.
+        for variable in ["TEMP", "TMP", "APPDATA", "LOCALAPPDATA", "USERPROFILE"] {
+            if let Some(path) = std::env::var_os(variable) {
+                let path = std::path::PathBuf::from(path);
+                let _ = std::fs::create_dir_all(&path);
+                if std::fs::write(
+                    path.join("selected-document-probe.txt"),
+                    b"synthetic persistence canary",
+                )
+                .is_ok()
+                {
+                    return Ok("FAIL: actual worker TEMP/profile persistence".to_owned());
+                }
+            }
+        }
         let own_profile = std::path::Path::new(lines.last().unwrap())
             .parent()
             .unwrap();
