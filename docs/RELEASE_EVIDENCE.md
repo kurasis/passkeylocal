@@ -1,5 +1,32 @@
 # Release evidence and gate status
 
+## File Safe explorer and separate settings (2026-10-09)
+
+The [explorer interface](file-safe/EXPLORER.md) now displays folders before files
+in one virtualized column list, with native name/date/size sorting, exact integer
+size labels, parent row, logical breadcrumbs and bounded Back/Forward history.
+New folders and imports target the current native folder. Native file/folder
+pagination limits are preserved. Folder navigation clears stale selection/search
+and paging offsets; lock clears both metadata and navigation history and rejects
+late folder replies. Settings (Hello, backups/recovery, password, inactivity) are
+a separate view that returns to the same location and clears unsubmitted secrets.
+
+Local type checks, both frontends and target isolation passed. All 174 TypeScript
+tests, 55 desktop/browser UI scenarios and eight production PWA scenarios passed.
+Six new synthetic scenarios cover nesting/history/parent/breadcrumbs, correct
+parent creation, separate settings and password clearing, late folder reply at
+lock, 205-folder bounded paging, Russian responsive layouts in all three themes,
+sort requests and large exact sizes. Existing Hello and session tests remain.
+One initial new check exposed the inactivity select's ambiguous implicit label;
+an explicit label/control association corrected it and the full suite passed.
+
+Installed Windows smoke is extended to create actual native nested folders,
+traverse the parent row/history/breadcrumb path and verify the separate Hello
+settings screen. Final Windows/MSVC artifact provenance and original screenshot
+are recorded at publication. Native storage/crypto/IPC permissions, portable
+format and Python recovery bytes are unchanged. No new biometric, preview or
+physical reader result is claimed; their existing evidence limits remain.
+
 ## File Safe Windows Hello publication (2026-10-09)
 
 [PR #34](https://github.com/kurasis/passkeylocal/pull/34) merged as `58084c47377d17e634a0d1839baf7cff24a96d46`;

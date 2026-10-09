@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('File Safe connects independently, defaults to session and retains explicit password fallback', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'File-safe settings', exact: true }).click();
   const settings = page.getByTestId('file-safe-hello');
   await settings.locator('summary').click();
   const mode = settings.getByLabel('Keep this connection', { exact: true });
@@ -27,6 +28,7 @@ test('File Safe connects independently, defaults to session and retains explicit
   expect((await page.evaluate(() => (window as any).uiTest.helloCalls())).filter((r: any) => r.operation === 'unlock')).toHaveLength(1);
   await unlock.click();
   await expect(page.getByRole('button', { name: 'Synthetic private canary 00000', exact: false })).toBeVisible();
+  await page.getByRole('button', { name: 'File-safe settings', exact: true }).click();
   await page.getByTestId('file-safe-hello').locator('summary').click();
   await page.getByRole('button', { name: 'Disable Hello and remove its keys', exact: true }).click();
   await expect(page.getByLabel('Confirm file-safe master password', { exact: true })).toBeVisible();
@@ -37,6 +39,7 @@ test('File Safe connects independently, defaults to session and retains explicit
 
 test('a late Hello reply cannot repopulate the file-safe screen after Lock All', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'File-safe settings', exact: true }).click();
   await page.getByTestId('file-safe-hello').locator('summary').click();
   await page.getByLabel('Confirm file-safe master password', { exact: true }).fill('synthetic password');
   await page.getByRole('button', { name: 'Connect file safe to Windows Hello', exact: true }).click();
@@ -54,6 +57,7 @@ test('a late Hello reply cannot repopulate the file-safe screen after Lock All',
 
 test('Russian file-safe Hello controls fit mobile and desktop widths with exact labels', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button', { name: 'File-safe settings', exact: true }).click();
   await page.evaluate(() => (window as any).uiTest.russian());
   const settings = page.getByTestId('file-safe-hello');
   await settings.locator('summary').click();

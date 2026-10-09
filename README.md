@@ -14,7 +14,7 @@ compatible KeePass reader.
 
 ## Experimental Windows file safe
 
-The same Windows application now includes an independently locked encrypted file safe: native streaming import/export, virtual folders, search, versions, recycle bin and complete encrypted backups. Its portable v1 format uses libsodium secretstream; it is separate from the existing KDBX password database. Independent recovery lives in `vault_recovery.file_safe` and can run without Windows/TPM/the app. The PWA remains a password manager.
+The same Windows application now includes an independently locked encrypted file safe: native streaming import/export, virtual folders, search, versions, recycle bin and complete encrypted backups. Its [explorer interface](docs/file-safe/EXPLORER.md) supports nested folders, breadcrumb/parent/history navigation and a separate settings screen. Its portable v1 format uses libsodium secretstream; it is separate from the existing KDBX password database. Independent recovery lives in `vault_recovery.file_safe` and can run without Windows/TPM/the app. The PWA remains a password manager.
 
 [File-safe Windows Hello](docs/file-safe/WINDOWS_HELLO.md) now has an independent experimental opt-in with native PRF/TPM root protection and password recovery; its new physical application acceptance is pending. Preview remains unavailable pending its OS isolation proofs. This is an unsigned experimental implementation, not full feature acceptance. Start with the [operating guide](docs/file-safe/OPERATING_GUIDE.md), [independent recovery](docs/file-safe/RECOVERY.md), [format](docs/file-safe/FORMAT.md) and [acceptance evidence](docs/file-safe/ACCEPTANCE.md). The original uploaded handoff is preserved in [docs/file-safe/spec/README.md](docs/file-safe/spec/README.md).
 

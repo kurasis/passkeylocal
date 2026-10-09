@@ -13,6 +13,7 @@ import type {
 } from "../file-safe-protocol.ts";
 import { Banner } from "./common.tsx";
 import { Icon } from "./icons.tsx";
+import { FileSafeExplorer } from "./file-safe-explorer.tsx";
 
 const words = {
   en: {
@@ -30,6 +31,22 @@ const words = {
     helloExplain: "Connect this safe separately after confirming its master password. Windows verifies your fingerprint, face or PIN. Password changes and restoring a backup disable the connection.",
     helloEnable: "Connect file safe to Windows Hello",
     helloPassword: "Confirm file-safe master password",
+    settings: "File-safe settings",
+    filesView: "Back to files",
+    root: "File Safe",
+    path: "Current folder",
+    back: "Back",
+    forward: "Forward",
+    up: "Parent folder",
+    openFolder: "Open folder",
+    ext: "Type",
+    sortBy: "Sort files",
+    sortName: "Sort by name",
+    sortDate: "Sort by date",
+    sortSize: "Sort by size",
+    previousFolders: "Previous folders",
+    nextFolders: "Next folders",
+    loading: "Opening folder…",
     preview:
       "Preview is unavailable in this build. You can store files or explicitly export a copy.",
     files: "Files",
@@ -135,6 +152,22 @@ const words = {
     helloExplain: "Подключите этот сейф отдельно, подтвердив его мастер-пароль. Windows проверяет отпечаток, лицо или PIN. Смена пароля и восстановление резервной копии отключают привязку.",
     helloEnable: "Подключить файловый сейф к Windows Hello",
     helloPassword: "Подтвердите мастер-пароль файлового сейфа",
+    settings: "Настройки сейфа",
+    filesView: "К файлам",
+    root: "Файловый сейф",
+    path: "Текущая папка",
+    back: "Назад",
+    forward: "Вперёд",
+    up: "Родительская папка",
+    openFolder: "Открыть папку",
+    ext: "Тип",
+    sortBy: "Сортировать файлы",
+    sortName: "Сортировать по имени",
+    sortDate: "Сортировать по дате",
+    sortSize: "Сортировать по размеру",
+    previousFolders: "Предыдущие папки",
+    nextFolders: "Следующие папки",
+    loading: "Открываем папку…",
     preview:
       "Предпросмотр недоступен в этой сборке. Можно хранить файлы или явно экспортировать копию.",
     files: "Файлы",
@@ -232,12 +265,19 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const t = useT();
   const helloModeId = useId();
   const helloPasswordId = useId();
+  const intervalId = useId();
+  const sortId = useId();
   const [hello, setHello] = useState<HelloVaultStatus | null>(null);
   const [helloMode, setHelloMode] = useState<HelloMode>('session');
   const [helloPassword, setHelloPassword] = useState('');
   const languageRef = useRef(lang);
   languageRef.current = lang;
   const w = words[lang];
+  const [view, setView] = useState<"files" | "settings">("files");
+  const [pageLoading, setPageLoading] = useState(false);
+  type Location = Pick<SafeQuery, "folder_id" | "mode">;
+  const navigation = useRef<{ entries: Location[]; position: number }>({ entries: [{ folder_id: null, mode: "files" }], position: 0 });
+  const [, redrawNavigation] = useState(0);
   const [status, setStatus] = useState<SafeStatus | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [page, setPage] = useState<SafePage | null>(null);
@@ -274,6 +314,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const tokenRef = useRef<string | null>(null);
   const redact = useCallback(() => {
     generation.current++;
+    navigation.current = { entries: [{ folder_id: null, mode: "files" }], position: 0 };
+    redrawNavigation((value) => value + 1);
+    setView("files");
+    setPageLoading(false);
     pageQueue.current = Promise.resolve();
     // The old status cannot authorize a new password after native revocation.
     setAdmissionReady(false);
@@ -374,6 +418,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     const epoch = generation.current;
     const current = tokenRef.current;
     if (!current) return;
+    setPageLoading(true);
     const isCurrent = () =>
       live.current &&
       epoch === generation.current &&
@@ -391,6 +436,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         if (isCurrent()) setPage(result);
       } catch (error) {
         if (isCurrent()) fail(error);
+      } finally {
+        if (isCurrent()) setPageLoading(false);
       }
     })();
     pageQueue.current = pending;
@@ -444,7 +491,49 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const activity = () => {
     if (tokenRef.current) api.activity(tokenRef.current);
   };
-  const busy = working || Boolean(status?.busy);
+  const busy = working || Boolean(status?.busy) || pageLoading;
+  const showView = (next: "files" | "settings") => {
+    setView(next);
+    setSelected([]);
+    setDetail(null);
+    setHelloPassword("");
+    setOldPassword("");
+    setNewPassword("");
+    setBackupPassword("");
+    setCandidate(null);
+    setReplaceAck(false);
+    setMessage("");
+  };
+  const showLocation = (location: Location) => {
+    pageRequest.current++;
+    setPage(null);
+    setPageLoading(true);
+    setSelected([]);
+    setDetail(null);
+    setRemoveAck(false);
+    setQuery((q) => ({ ...q, ...location, search: "", offset: 0, folder_offset: 0 }));
+    redrawNavigation((value) => value + 1);
+  };
+  const navigate = (folder_id: string | null, mode: SafeQuery["mode"] = "files") => {
+    if (busy) return;
+    if (folder_id === page?.root_id) folder_id = null;
+    const history = navigation.current;
+    const current = history.entries[history.position];
+    if (current && current.folder_id === folder_id && current.mode === mode) return;
+    const entries = [...history.entries.slice(0, history.position + 1), { folder_id, mode }].slice(-100);
+    navigation.current = { entries, position: entries.length - 1 };
+    showLocation({ folder_id, mode });
+  };
+  const travel = (step: number) => {
+    const history = navigation.current;
+    const position = history.position + step;
+    if (busy || position < 0 || position >= history.entries.length) return;
+    const entry = history.entries[position];
+    if (!entry) return;
+    history.position = position;
+    showLocation(entry);
+  };
+  const parent = query.mode === "files" && page && page.ancestors.length > 1 ? page.ancestors[page.ancestors.length - 2]?.id ?? null : null;
   const current = page?.files.find((f) => f.id === detail);
   const importFiles = (recursive: boolean, replace: string | null = null) => {
     if (!token || !page) return;
@@ -634,8 +723,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       <div className="page-heading file-safe-heading">
         <div>
           <span className="eyebrow">{w.subtitle}</span>
-          <h1>{w.title}</h1>
+          <h1>{view === "settings" ? w.settings : w.title}</h1>
         </div>
+        <div className="input-row">
+          <button type="button" className="secondary" onClick={() => showView(view === "files" ? "settings" : "files")}><Icon name={view === "files" ? "settings" : "folder"} />{view === "files" ? w.settings : w.filesView}</button>
         <button
           type="button"
           className="secondary"
@@ -647,8 +738,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           <Icon name="lock" />
           {w.lock}
         </button>
+        </div>
       </div>
-      <p className="muted">{w.originals}</p>
+      {view === "files" && <>
+      <p className="muted file-safe-import-note">{w.originals}</p>
       <div className="file-safe-toolbar">
         <button
           type="button"
@@ -665,116 +758,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         >
           {w.importFolder}
         </button>
-        {busy && (
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => void api.cancel(token)}
-          >
-            {w.cancel}
-          </button>
-        )}
-      </div>
-      {busy && (
-        <Banner kind="info">
-          <span role="status">
-            {w.working}{" "}
-            {status?.progress.total
-              ? `${status.progress.done} / ${status.progress.total}`
-              : ""}
-          </span>
-        </Banner>
-      )}
-      {message && <Banner kind="info">{message}</Banner>}
-      <div className="file-safe-layout">
-        <aside className="card stack file-safe-sidebar" aria-label={w.folder}>
-          {(["files", "favorites", "trash"] as const).map((mode) => (
-            <button
-              type="button"
-              className="secondary"
-              key={mode}
-              aria-current={query.mode === mode ? "page" : undefined}
-              onClick={() => {
-                setSelected([]);
-                setDetail(null);
-                setQuery((q) => ({ ...q, mode, offset: 0 }));
-              }}
-            >
-              {w[mode]}
-            </button>
-          ))}
-          {page?.ancestors.map((f, i) => (
-            <button
-              type="button"
-              className="secondary"
-              key={f.id}
-              onClick={() => {
-                setSelected([]);
-                setDetail(null);
-                setQuery((q) => ({
-                  ...q,
-                  folder_id: f.id,
-                  folder_offset: 0,
-                  offset: 0,
-                  mode: "files",
-                }));
-              }}
-            >
-              {i === 0 ? w.files : f.name}
-            </button>
-          ))}
-          {page?.folders.map((f) => (
-            <button
-              type="button"
-              className="secondary"
-              key={f.id}
-              onClick={() => {
-                setSelected([]);
-                setDetail(null);
-                setQuery((q) => ({
-                  ...q,
-                  folder_id: f.id,
-                  folder_offset: 0,
-                  offset: 0,
-                  mode: "files",
-                }));
-              }}
-            >
-              ▸ {f.name}
-            </button>
-          ))}
-          {page && page.folders_total > 200 && (
-            <div className="input-row">
-              <button
-                type="button"
-                className="secondary"
-                disabled={!query.folder_offset}
-                onClick={() =>
-                  setQuery((q) => ({
-                    ...q,
-                    folder_offset: Math.max(0, q.folder_offset - 200),
-                  }))
-                }
-              >
-                {w.previous}
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                disabled={query.folder_offset + 200 >= page.folders_total}
-                onClick={() =>
-                  setQuery((q) => ({
-                    ...q,
-                    folder_offset: q.folder_offset + 200,
-                  }))
-                }
-              >
-                {w.next}
-              </button>
-            </div>
-          )}
           <form
-            className="stack"
+            className="file-safe-create-folder"
             onSubmit={(e) => {
               e.preventDefault();
               if (!page) return;
@@ -799,56 +784,66 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               {w.folder}
             </button>
           </form>
+        {working && (
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => void api.cancel(token)}
+          >
+            {w.cancel}
+          </button>
+        )}
+      </div>
+      {busy && (
+        <Banner kind="info">
+          <span role="status">
+            {w.working}{" "}
+            {status?.progress.total
+              ? `${status.progress.done} / ${status.progress.total}`
+              : ""}
+          </span>
+        </Banner>
+      )}
+      {message && <Banner kind="info">{message}</Banner>}
+      <div className="file-safe-layout">
+        <aside className="card stack file-safe-sidebar" aria-label={w.title}>
+          {(["files", "favorites", "trash"] as const).map((mode) => <button type="button" className="secondary" key={mode} aria-current={query.mode === mode ? "page" : undefined} disabled={busy} onClick={() => navigate(null, mode)}><Icon name={mode === "files" ? "folder" : mode === "favorites" ? "star" : "trash"} />{w[mode]}</button>)}
         </aside>
         <div className="stack file-safe-content">
+          <div className="file-safe-pathbar">
+            <div className="file-safe-history">
+              <button type="button" className="secondary icon-button" aria-label={w.back} disabled={busy || navigation.current.position === 0} onClick={() => travel(-1)}><Icon name="arrowLeft" /></button>
+              <button type="button" className="secondary icon-button" aria-label={w.forward} disabled={busy || navigation.current.position + 1 >= navigation.current.entries.length} onClick={() => travel(1)}><Icon name="arrowRight" /></button>
+              <button type="button" className="secondary icon-button" aria-label={w.up} disabled={busy || !parent} onClick={() => parent && navigate(parent)}><Icon name="arrowUp" /></button>
+            </div>
+            <nav className="file-safe-breadcrumbs" aria-label={w.path}>
+              {query.mode === "files" ? page?.ancestors.map((folder, index) => <span key={folder.id}>
+                {index > 0 && <Icon name="chevron" />}
+                <button type="button" className="secondary" disabled={busy || index === page.ancestors.length - 1} aria-current={index === page.ancestors.length - 1 ? "location" : undefined} onClick={() => navigate(index === 0 ? null : folder.id)} title={folder.name || w.root}>{folder.name || w.root}</button>
+              </span>) : <span aria-current="location">{w[query.mode]}</span>}
+              {pageLoading && <span role="status">{w.loading}</span>}
+            </nav>
+          </div>
           <div className="file-safe-filters">
-            <label>
-              {w.search}
-              <input
-                type="search"
-                value={query.search}
-                maxLength={256}
-                onChange={(e) => {
-                  setSelected([]);
-                  setQuery((q) => ({
-                    ...q,
-                    search: e.target.value,
-                    offset: 0,
-                  }));
-                }}
-              />
-            </label>
-            <label>
-              {w.modified}
-              <select
-                value={query.sort}
-                onChange={(e) =>
-                  setQuery((q) => ({
-                    ...q,
-                    sort: e.target.value as SafeQuery["sort"],
-                    offset: 0,
-                  }))
-                }
-              >
-                <option value="name">{w.name}</option>
-                <option value="modified">{w.modified}</option>
-                <option value="size">{w.size}</option>
-              </select>
-            </label>
+            <label>{w.search}<input type="search" value={query.search} maxLength={256} onChange={(e) => {
+              setSelected([]); setDetail(null);
+              setQuery((q) => ({ ...q, search: e.target.value, offset: 0 }));
+            }} /></label>
+            <div className="file-safe-mobile-sort"><label htmlFor={sortId}>{w.sortBy}</label><select id={sortId} value={query.sort} onChange={(e) => { setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort: e.target.value as SafeQuery["sort"], offset: 0 })); }}><option value="name">{w.name}</option><option value="modified">{w.modified}</option><option value="size">{w.size}</option></select></div>
           </div>
           {page && (
             <>
-              <VirtualFiles
-                files={page.files}
-                selected={selected}
-                select={(id, checked) =>
-                  setSelected((ids) =>
-                    checked ? [...ids, id] : ids.filter((x) => x !== id),
-                  )
-                }
-                detail={setDetail}
-                labels={{ select: w.select, empty: w.empty }}
+              <FileSafeExplorer
+                files={page.files} folders={query.mode === "files" ? page.folders : []} parent={parent}
+                selected={selected} select={(id, checked) => setSelected((ids) => checked ? [...ids, id] : ids.filter((x) => x !== id))}
+                detail={setDetail} openFolder={navigate} sort={query.sort} busy={busy} lang={lang} labels={w}
+                setSort={(sort) => { setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort, offset: 0 })); }}
               />
+              {query.mode === "files" && page.folders_total > 200 && <div className="input-row file-safe-folder-pages">
+                <button type="button" className="secondary" disabled={busy || !query.folder_offset} onClick={() => setQuery((q) => ({ ...q, folder_offset: Math.max(0, q.folder_offset - 200) }))}>{w.previousFolders}</button>
+                <span>{query.folder_offset + 1}–{Math.min(query.folder_offset + 200, page.folders_total)} / {page.folders_total}</span>
+                <button type="button" className="secondary" disabled={busy || query.folder_offset + 200 >= page.folders_total} onClick={() => setQuery((q) => ({ ...q, folder_offset: q.folder_offset + 200 }))}>{w.nextFolders}</button>
+              </div>}
               <div className="input-row">
                 <button
                   type="button"
@@ -987,6 +982,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           </div>
         </details>
       )}
+
+      </>}
+      {view === "settings" && <section className="stack file-safe-settings" aria-label={w.settings}>
+        {message && <Banner kind="info">{message}</Banner>}
       <details className="card stack">
         <summary>{w.backup}</summary>
         <p>{w.backupNote}</p>
@@ -1108,9 +1107,9 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           </button>
         </form>
       </details>
-      <label>
-        {w.interval}
+      <label htmlFor={intervalId}>{w.interval}</label>
         <select
+          id={intervalId}
           value={status?.interval_ms ?? 120000}
           onChange={(e) =>
             void run(() => api.interval(token, Number(e.target.value)))
@@ -1121,91 +1120,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           <option value={120000}>2 min</option>
           <option value={300000}>5 min</option>
         </select>
-      </label>
+      </section>}
     </section>
-  );
-}
-
-function VirtualFiles({
-  files,
-  selected,
-  select,
-  detail,
-  labels,
-}: {
-  files: SafeFile[];
-  selected: string[];
-  select: (id: string, checked: boolean) => void;
-  detail: (id: string) => void;
-  labels: { select: string; empty: string };
-}) {
-  const [scroll, setScroll] = useState(0);
-  const viewport = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (viewport.current) viewport.current.scrollTop = 0;
-    setScroll(0);
-  }, [files]);
-  const height = 76;
-  const start = Math.max(0, Math.floor(scroll / height) - 2);
-  const end = Math.min(files.length, start + 12);
-  if (!files.length) return <div className="card">{labels.empty}</div>;
-  return (
-    <div
-      className="card file-safe-viewport"
-      ref={viewport}
-      onScroll={(e) => setScroll(e.currentTarget.scrollTop)}
-      role="list"
-      aria-label="Files"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
-        e.preventDefault();
-        const target = e.currentTarget;
-        target.scrollTop =
-          e.key === "Home"
-            ? 0
-            : e.key === "End"
-              ? files.length * height
-              : target.scrollTop + (e.key === "ArrowDown" ? height : -height);
-      }}
-    >
-      <div style={{ height: files.length * height, position: "relative" }}>
-        {files.slice(start, end).map((file, index) => (
-          <div
-            className="file-safe-row"
-            role="listitem"
-            key={file.id}
-            style={{
-              position: "absolute",
-              height,
-              top: (start + index) * height,
-              left: 0,
-              right: 0,
-            }}
-          >
-            <input
-              type="checkbox"
-              aria-label={`${labels.select}: ${file.name}`}
-              checked={selected.includes(file.id)}
-              onChange={(e) => select(file.id, e.target.checked)}
-            />
-            <button
-              type="button"
-              className="file-safe-file secondary"
-              onClick={() => detail(file.id)}
-            >
-              <strong>
-                {file.favorite ? "★ " : ""}
-                {file.name}
-              </strong>
-              <span>
-                {file.size} B · {file.tags.join(", ")}
-              </span>
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 

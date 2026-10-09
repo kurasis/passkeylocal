@@ -365,6 +365,7 @@ try {
   await page.getByLabel('Repeat password', { exact: true }).fill(safePassword);
   await page.getByRole('button', { name: 'Create file safe', exact: true }).click();
   await page.getByRole('button', { name: 'Lock file safe', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'File-safe settings', exact: true }).click();
   const safeHelloSettings = page.getByTestId('file-safe-hello');
   await safeHelloSettings.locator('summary').click();
   await expect(safeHelloSettings.getByLabel('Keep this connection', { exact: true })).toHaveValue('session');
@@ -387,20 +388,36 @@ try {
   assert(fileSafeHelloBoundary.malformedRejected && fileSafeHelloBoundary.staleRejected && fileSafeHelloBoundary.passwordRejected);
   await mkdir('apps/desktop/artifacts', { recursive: true });
   await safeHelloSettings.screenshot({ path: 'apps/desktop/artifacts/windows-file-safe-hello-smoke.png' });
-  await safeHelloSettings.locator('summary').click();
+  await page.getByRole('button', { name: 'Back to files', exact: true }).click();
+  await expect(safeHelloSettings).toHaveCount(0);
   await page.getByLabel('Folder name', { exact: true }).fill('Synthetic file-safe folder');
   await page.getByRole('button', { name: 'New folder', exact: true }).click();
-  await page.getByRole('button', { name: '▸ Synthetic file-safe folder', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true }).click();
+  const safePath = page.getByRole('navigation', { name: 'Current folder', exact: true });
+  await expect(safePath.getByRole('button', { name: 'Synthetic file-safe folder', exact: true })).toBeDisabled();
+  await page.getByLabel('Folder name', { exact: true }).fill('Synthetic nested folder');
+  await page.getByRole('button', { name: 'New folder', exact: true }).click();
+  await page.getByRole('button', { name: 'Open folder: Synthetic nested folder', exact: true }).click();
+  await expect(safePath.getByRole('button', { name: 'Synthetic nested folder', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Parent folder', exact: true })).toHaveCount(2);
+  await page.getByRole('button', { name: 'Parent folder', exact: true }).last().click();
+  await expect(page.getByRole('button', { name: 'Open folder: Synthetic nested folder', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(safePath.getByRole('button', { name: 'Synthetic nested folder', exact: true })).toBeDisabled();
+  await safePath.getByRole('button', { name: 'File Safe', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true })).toBeVisible();
+  await page.screenshot({ path: 'apps/desktop/artifacts/windows-file-safe-explorer-smoke.png' });
   await page.getByRole('button', { name: 'Passwords', exact: true }).click();
   await page.getByLabel('Master password', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'File Safe', exact: true }).click();
   await page.getByRole('button', { name: 'Lock file safe', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Lock all', exact: true }).click();
   await page.getByLabel('File-safe master password', { exact: true }).waitFor();
-  assert(!await page.getByRole('button', { name: '▸ Synthetic file-safe folder', exact: true }).count());
+  assert(!await page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true }).count());
   await page.getByLabel('File-safe master password', { exact: true }).fill(safePassword);
   await page.getByRole('button', { name: 'Unlock file safe', exact: true }).click();
-  await page.getByRole('button', { name: '▸ Synthetic file-safe folder', exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Lock file safe', exact: true }).click();
   await page.getByLabel('File-safe master password', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Passwords', exact: true }).click();
@@ -417,7 +434,7 @@ try {
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
     helloEnrollmentBoundary, fileSafeHelloBoundary, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
-    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
+    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'native nested folder creation, parent row, history and breadcrumb navigation', 'file-safe Hello settings are a separate view', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');
   console.log('PASS: packaged Windows assets, real IPC/worker/Argon2, verified native save and lock; Hello remains unavailable.');
