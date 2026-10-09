@@ -81,12 +81,12 @@ export interface BackupStatus {
   /** Commits since the last verified backup of exactly that revision. */
   changesSinceVerified: number;
   unbackedSince: string | null;
-  /** Show the visible banner: 10 commits or 24 hours of unbacked changes. */
+  /** Show the visible banner: 10 unbacked commits or 30 days since verification. */
   escalate: boolean;
 }
 
 export const BACKUP_ESCALATE_COMMITS = 10;
-export const BACKUP_ESCALATE_MS = 24 * 60 * 60 * 1000;
+export const BACKUP_ESCALATE_MS = 30 * 24 * 60 * 60 * 1000;
 
 function locked(): StorageError {
   return new StorageError('INVALID_STATE', 'locked');
@@ -300,7 +300,7 @@ export class VaultController {
     }
     const verifiedGeneration = head.verifiedGeneration;
     const changesSinceVerified = head.generation - (verifiedGeneration ?? 0);
-    const since = head.unbackedSince ? Date.parse(head.unbackedSince) : NaN;
+    const since = latestVerified ? Date.parse(latestVerified.at) : NaN;
     const escalate =
       changesSinceVerified >= BACKUP_ESCALATE_COMMITS ||
       (Number.isFinite(since) && this.now().getTime() - since >= BACKUP_ESCALATE_MS);

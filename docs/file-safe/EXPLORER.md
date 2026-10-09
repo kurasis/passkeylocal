@@ -57,3 +57,7 @@ with the installer after CI passes.
 
 The new text-only worker has separate [TXT isolation evidence](TXT_PREVIEW.md); the earlier navigation checks do not establish that boundary or new biometric acceptance. See
 [release evidence](../RELEASE_EVIDENCE.md) and [the operating guide](OPERATING_GUIDE.md).
+
+## Shared appearance and action feedback
+
+The safe uses the password module's navigation, heading, form and button styles in all three themes. Imports and new folders remain on the left; safe settings remain separate. Generic action success, progress and errors appear beside the heading, with wrapping on narrow screens. Successful password/Hello admission and ordinary metadata loading show no save notice. Explicit creation or changes may show a result for six seconds; locking clears it immediately.

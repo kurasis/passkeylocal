@@ -52,7 +52,7 @@ Operational backup receipts live outside the vault and contain no record data. V
 
 Track preparation, OS handoff and re-open verification separately even if hiding for a picker locks the app. Discard keys and plaintext on hide; only the encrypted file and non-secret receipt state may remain available for completing the handoff. A cancelled verification does not cancel or damage the already-exported file.
 
-Show a persistent, unobtrusive reminder when there are changes since the last verified backup. Escalate to a visible banner after 10 commits or 24 hours with unbacked changes, whichever is observed first while the app is open. These are product thresholds. Do not rely on background notifications, background sync, or precise iOS scheduling. During initial onboarding, require one export-and-verify drill before inviting the user to enter real credentials.
+Show a persistent, unobtrusive reminder when there are changes since the last verified backup. Owner policy update (2026-10-09): escalate to a visible banner after 10 unbacked commits or 30 days since the last successful backup verification, including unchanged vaults. Rechecking the current backup resets the deadline; exporting alone does not. These are product thresholds. Do not rely on background notifications, background sync, or precise iOS scheduling. During initial onboarding, require one export-and-verify drill before inviting the user to enter real credentials.
 
 ## 4. Restore and replacement
 

@@ -397,6 +397,11 @@ try {
   await page.getByLabel('Folder name', { exact: true }).fill('Synthetic file-safe folder');
   await page.getByRole('button', { name: 'New folder', exact: true }).click();
   await page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true }).waitFor();
+  const actionNotice = page.locator('.file-safe-title-line').getByRole('status');
+  await expect(actionNotice).toHaveText('Verified and saved');
+  const actionTitleBox = await page.getByRole('heading', { name: 'File Safe', exact: true }).boundingBox();
+  const actionNoticeBox = await actionNotice.boundingBox();
+  assert(actionNoticeBox.x >= actionTitleBox.x + actionTitleBox.width, 'Action notice follows the title');
   await page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true }).click();
   const safePath = page.getByRole('navigation', { name: 'Current folder', exact: true });
   await expect(safePath.getByRole('button', { name: 'Synthetic file-safe folder', exact: true })).toBeDisabled();
@@ -444,6 +449,8 @@ try {
   const workerHash = digest(await readFile(installedWorker));
   const sandboxProof = JSON.parse((await readFile('apps/desktop/artifacts/text-preview-sandbox.json', 'utf8')).replace(/^\uFEFF/, ''));
   assert.equal(workerHash, sandboxProof.workerSha256, 'Installed TXT worker must match the exact proved release binary');
+  await expect(page.getByRole('button', { name: 'Synthetic preview.txt', exact: true })).toBeVisible();
+  await expect(page.locator('.file-safe-feedback')).toHaveCount(0);
   await page.getByRole('button', { name: 'Synthetic preview.txt', exact: true }).click();
   const previewDialog = page.getByRole('dialog', { name: 'TXT preview', exact: true });
   await expect(previewDialog.getByText('Synthetic inert <script>alert(1)</script>', { exact: true })).toBeVisible();
@@ -463,6 +470,7 @@ try {
   await page.getByRole('button', { name: 'Close details', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Renamed synthetic preview.txt', exact: true })).toBeVisible();
   const fileSafeTextPreview = { status: 'PASS', workerSha256: workerHash, scope: 'actual installed native selected-version authentication, LPAC UTF-8/BOM-free inert UI and lock redaction; context-menu rename', input: 'public synthetic UTF-8 canary', noActiveElements: true };
+  const fileSafeFeedback = { status: 'PASS', scope: 'installed password admission shows no saved notice; native folder action places saved feedback beside the safe title' };
 
   await page.getByRole('button', { name: 'Passwords', exact: true }).click();
   await page.getByLabel('Master password', { exact: true }).waitFor();
@@ -489,7 +497,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloEnrollmentBoundary, fileSafeHelloBoundary, fileSafeTextPreview, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
+    helloEnrollmentBoundary, fileSafeHelloBoundary, fileSafeTextPreview, fileSafeFeedback, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'native nested folder creation, parent row, history and breadcrumb navigation', 'file-safe Hello settings are a separate view', 'installed isolated TXT preview, inert UTF-8 rendering and lock redaction', 'installed file context-menu rename', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

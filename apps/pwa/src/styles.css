@@ -146,6 +146,8 @@ input[type='checkbox'] { width: 20px; min-height: 20px; height: 20px; flex: none
 .actions .input-row { width: 100%; }
 .toolbar { display: flex; justify-content: space-between; }
 .toast { position: fixed; left: 16px; right: 16px; bottom: calc(106px + env(safe-area-inset-bottom)); max-width: 560px; margin: 0 auto; padding: 16px 20px; border-radius: 16px; background: var(--text); color: var(--bg); z-index: 6; box-shadow: var(--shadow); font-size: 14px; }
+.workspace-navigation button { background: none; border-color: transparent; color: var(--muted); flex-direction: row; justify-content: flex-start; padding: 14px 16px; gap: 12px; font-size: 14px; font-weight: 550; min-height: 50px; border-radius: 14px; text-align: left; overflow-wrap: anywhere; }
+.workspace-navigation button[aria-current='page'] { color: var(--info-text); background: var(--nav-bg); font-weight: 650; }
 .tabbar { position: fixed; left: calc(12px + env(safe-area-inset-left)); right: calc(12px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 4; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; max-width: 540px; margin: auto; padding: 7px; background: var(--surface); border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow); }
 .tabbar button { background: none; color: var(--muted); flex-direction: column; gap: 4px; font-size: 11px; font-weight: 550; padding: 9px 3px; min-width: 0; min-height: 60px; border-radius: 17px; }
 .tabbar button[aria-current='page'] { color: var(--info-text); background: var(--nav-bg); font-weight: 650; }
@@ -176,7 +178,7 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
   .workspace > .topbar, .workspace > .module-navigation { grid-column: 1 / -1; }
   .workspace > main { grid-column: 2; grid-row: 3; min-width: 0; max-width: none; width: 100%; margin: 0; padding: 38px 32px; }
   .workspace > .tabbar { position: static; grid-column: 1; grid-row: 3; align-self: start; width: auto; margin: 38px 0 0 24px; padding: 0; display: flex; flex-direction: column; gap: 8px; background: none; border: none; box-shadow: none; border-radius: 0; }
-  .tabbar button { flex-direction: row; justify-content: flex-start; padding: 14px 16px; gap: 12px; font-size: 14px; min-height: 50px; border-radius: 14px; }
+  .workspace-navigation button { flex-direction: row; justify-content: flex-start; padding: 14px 16px; gap: 12px; font-size: 14px; min-height: 50px; border-radius: 14px; }
   .nav-heading { display: block; color: var(--muted); font-size: 10px; letter-spacing: 1.7px; text-transform: uppercase; padding: 0 16px 10px; font-weight: 700; }
   .nav-note { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; border-top: 1px solid var(--border); margin: 24px 12px 0; padding: 24px 4px; font-size: 12px; color: var(--muted); }
   .nav-note > .icon { color: var(--accent); }
@@ -220,20 +222,22 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 /* The desktop file safe shares the existing three themes and form styles. */
 .module-navigation { display: flex; flex-wrap: wrap; gap: .6rem; padding: .8rem 1.2rem; min-width: 0; }
 .module-navigation button { max-width: 100%; overflow-wrap: anywhere; }
-.module-navigation button[aria-current="page"], .file-safe-sidebar button[aria-current="page"] { outline: 2px solid var(--accent); }
+.module-navigation button[aria-current="page"] { outline: 2px solid var(--accent); }
 .file-safe-workspace { max-width: 1200px; margin: auto; }
 .file-safe-access { max-width: 650px; margin: auto; }
 .file-safe-heading, .file-safe-toolbar, .file-safe-filters { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
 .file-safe-heading { justify-content: space-between; }
-.file-safe-heading h1 { font-size: clamp(24px, 3vw, 32px); }
+.file-safe-heading > .file-safe-title-line { flex: 1 1 540px; min-width: min(100%, 540px); flex-direction: row; flex-wrap: wrap; align-items: center; gap: 16px; }
+.file-safe-title-line h1 { flex: none; }
+.file-safe-feedback { flex: 1 1 180px; min-width: 0; max-width: 520px; }
+.file-safe-feedback .banner { padding: 10px 16px; }
+.file-safe-heading > .input-row { flex-direction: row; gap: 8px; margin-left: auto; }
 .file-safe-import-note { font-size: .85rem; }
 .file-safe-layout { display: grid; grid-template-columns: minmax(140px, 170px) minmax(0, 1fr); gap: 1rem; }
 .file-safe-sidebar { align-self: start; padding: .6rem; gap: .4rem; }
-.file-safe-sidebar button { justify-content: flex-start; text-align: left; overflow-wrap: anywhere; padding: .6rem; border-color: transparent; }
-.file-safe-sidebar button[aria-current="page"] { outline: none; color: var(--accent); background: var(--nav-bg); }
 .file-safe-content { min-width: 0; gap: .75rem; }
 .file-safe-create-folder { display: flex; align-items: end; gap: .5rem; flex: 1; min-width: 240px; }
-.file-safe-create-folder label { flex: 1; min-width: 0; font-size: .8rem; color: var(--muted); }
+.file-safe-create-folder label { flex: 1; min-width: 0; }
 .file-safe-create-folder input { margin-top: .2rem; }
 .file-safe-pathbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
 .file-safe-history { display: flex; gap: .35rem; }
@@ -244,8 +248,10 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 .file-safe-breadcrumbs button { min-height: 32px; min-width: 0; padding: .25rem .45rem; border: 0; background: none; font-size: .85rem; display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-safe-breadcrumbs button:disabled { opacity: 1; font-weight: 700; }
 .file-safe-mobile-sort { display: none; }
-.file-safe-filters label { flex: 1; min-width: 0; color: var(--muted); font-size: .8rem; }
-.file-safe-table { overflow: hidden; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+.file-safe-filters label { flex: 1; min-width: 0; }
+.file-safe-filters .search-field { display: block; width: 100%; }
+.file-safe-filters .search-field input { padding-left: 47px; height: 56px; box-shadow: var(--shadow); }
+.file-safe-table { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); }
 .file-safe-columns, .file-safe-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 45px 85px 140px; gap: .5rem; align-items: center; padding: 0 .75rem; }
 .file-safe-columns { min-height: 42px; background: var(--surface-soft); border-bottom: 1px solid var(--border); font-size: .8rem; color: var(--muted); }
 .file-safe-columns button { padding: .35rem 0; min-height: 40px; min-width: 0; justify-content: flex-start; border: 0; border-radius: 0; background: none; color: inherit; font-size: inherit; }
@@ -277,7 +283,7 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
   .file-safe-columns, .file-safe-row { grid-template-columns: 24px minmax(0, 1fr) 70px; padding: 0 .5rem; gap: .35rem; }
   .file-safe-extension { display: none; }
   .file-safe-heading > .input-row { width: 100%; }
-  .file-safe-heading > .input-row button { flex: 1; padding: .5rem; font-size: .8rem; }
+  .file-safe-heading > .input-row button { flex: 1; }
 }
 .hello-proof-checks { padding-left: 1.25rem; }
 .hello-proof-checks li { margin: .5rem 0; overflow-wrap: anywhere; }
@@ -291,14 +297,14 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 .file-safe-app { padding-bottom: 0; }
 .desktop-app .topbar .privacy-chip { display: none; }
 .desktop-app .module-navigation { padding: 0; }
-.file-safe-app > main { max-width: none; padding: 18px 24px; }
+.file-safe-app > main { max-width: none; padding: 38px 32px; }
 .file-safe-workspace { max-width: none; }
 .file-safe-heading { margin-bottom: 6px; }
 .file-safe-layout { grid-template-columns: minmax(175px, 220px) minmax(0, 1fr); }
 .file-safe-sidebar { padding: 0; }
-.file-safe-places { padding: .6rem; gap: .4rem; }
+.file-safe-places { display: flex; flex-direction: column; gap: 8px; }
 .file-safe-toolbar { flex-direction: column; align-items: stretch; }
-.file-safe-toolbar > button { width: 100%; justify-content: flex-start; }
+.file-safe-toolbar > button { width: 100%; }
 .file-safe-create-folder { flex-direction: column; align-items: stretch; min-width: 0; }
 .file-safe-create-folder label { width: 100%; }
 .file-safe-import-note { font-size: .75rem; padding: .25rem .4rem; }
@@ -310,6 +316,7 @@ fieldset { border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
 .file-safe-context .file-safe-menu-danger { color: var(--danger); }
 .file-safe-dialog { width: min(520px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; }
 @media (max-width: 760px) {
+  .file-safe-app > main { padding: 24px 16px; }
   .desktop-app .topbar-actions, .desktop-app .module-navigation { width: 100%; }
   .desktop-app .module-navigation { flex: 1; }
   .desktop-app .module-navigation button { flex: 1; min-width: 0; padding: .5rem; font-size: .85rem; }

@@ -1,5 +1,36 @@
 # Release evidence and gate status
 
+## Backup reminder policy and shared safe feedback (2026-10-09)
+
+The first Windows run on head `6576cec` / tested source `0213f3a` passed all
+pre-packaging tests but failed the new installed action-notice assertion. A real
+native folder change returned Rust unit as JSON `null`, while the typed browser
+double returned `undefined`; the generic action runner treated `null` as dialog
+cancellation and suppressed success. The native adapter now normalizes only fixed
+void commands to `undefined`, preserving errors and nullable/false dialog results.
+A regression exercises the actual adapter against native-shaped replies. No
+assertion was weakened. Final installed evidence remains pending until rerun.
+
+Owner policy changes the password backup deadline from 24 hours of unbacked
+changes to 30 days since the last successful matching backup verification.
+Unbacked changes retain the ordinary reminder (ten commits retain escalation);
+an unchanged vault also warns at the 30-day deadline. Exporting alone does not
+reset verification. The initial export-and-verify onboarding remains required.
+The open unlocked app observes the deadline on focus and once a minute without
+changing storage, crypto, receipt formats or lock activity.
+
+File-safe password/Hello admission no longer announces a save. Creation and
+subsequent explicit operations retain feedback next to the heading, including
+progress and errors; ordinary metadata loading is silent. Action feedback expires
+after six seconds, like password notifications. Both modules reuse the same
+navigation styles and shared heading, form, button, search and theme tokens.
+The explorer, isolated TXT worker and native Hello protection remain unchanged.
+
+Local focused validation: 15 session tests, including exact 30-day/no-change
+boundary and verification-only reset; typecheck; 14 relevant browser scenarios,
+including quiet admission, action placement/expiry, identical navigation styles
+in all palettes, and narrow-screen overflow. Full local suites: 175 TypeScript tests and 63 desktop/browser scenarios passed; both production builds and target isolation passed. Final Russian heading placement and all-palette navigation checks passed after the long-label adjustment. Full current-source CI and installed Windows evidence are pending and will be recorded after execution.
+
 ## File Safe context menus and isolated TXT publication (2026-10-09)
 
 [PR #36](https://github.com/kurasis/passkeylocal/pull/36) merged as `5afdfa27839e49a4ba3c9cf7418b45f0251f97ac`;
