@@ -85,6 +85,15 @@ retains initial rights, and the child receives only subsets. The hostile test
 retains write escalation and additionally attempts WRITE_DAC/WRITE_OWNER escalation.
 No failed write test is relabeled as passed.
 
+Empty section DACLs pass write/WRITE_DAC/WRITE_OWNER escalation checks; file,
+actual TEMP/profile, registry, parent and clipboard refusals also pass. The next
+probe stop is Rust std networking panicking during Winsock startup. Tests now
+observe the raw startup result and prove an unrestricted TCP/UDP control using
+the exact same minimal environment. An LPAC access/syscall refusal is recorded
+explicitly as network-stack denial; per-transport attempts are NOT RUN when
+startup is refused. Unexpected startup errors fail the test. No networking
+capability or registry-read grant is added merely to initialize a forbidden stack.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

@@ -64,11 +64,13 @@ command interpreter. Tests use synthetic canaries and a fresh registered SID wit
 
 Hosted proof checks token/capabilities, input write denial, absent nonlisted
 inheritable handle, unrelated file/profile/TEMP/registry/parent-memory/clipboard
-access, TCP/UDP/DNS-port/loopback denial, parent loopback positive controls, child
+access, native network-stack refusal or TCP/UDP/DNS-port/loopback denial,
+unrestricted positive controls using the identical minimal environment, child
 execution, memory allocation and timeout/cancellation. Installed smoke matches the
 worker digest, reads a production-authenticated synthetic file through the actual
 native broker, verifies inert UTF-8 UI, context rename and lock redaction. Original
-metadata/screenshots are published only after that exact source passes CI.
+metadata records the actual Winsock startup code; per-transport attempts are
+not run if LPAC refuses stack initialization. Metadata/screenshots are published only after that exact source passes CI.
 
 This is experimental text-only acceptance. Clean offline standard-user installed
 hostile probing, exhaustive named-pipe/COM/service-broker and WER/paging traces,

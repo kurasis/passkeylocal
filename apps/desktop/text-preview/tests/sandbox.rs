@@ -58,6 +58,22 @@ fn real_lpac_text_and_negative_worker_are_os_enforced() {
     let sender = UdpSocket::bind("127.0.0.1:0").unwrap();
     sender.send_to(b"positive", udpaddr).unwrap();
     udp.recv_from(&mut [0; 16]).unwrap();
+    let positive = std::process::Command::new(env!("CARGO_BIN_EXE_passkey-preview-probe"))
+        .args(["network-positive", &addr.to_string(), &udpaddr.to_string()])
+        .env_clear()
+        .envs(passkey_text_preview::windows::proof_environment().unwrap())
+        .output()
+        .unwrap();
+    assert!(
+        positive.status.success(),
+        "identical minimal environment must support networking without LPAC"
+    );
+    let mut received = [0; 32];
+    udp.set_read_timeout(Some(Duration::from_secs(3))).unwrap();
+    let (length, _) = udp.recv_from(&mut received).unwrap();
+    assert_eq!(&received[..length], b"minimal env positive");
+    tcp.accept().unwrap();
+    println!("PASS: identical minimal environment TCP/UDP positive control");
     let local = std::env::var("LOCALAPPDATA").unwrap();
     let user = std::env::var("USERPROFILE").unwrap();
     let probe_nonce = nonce();

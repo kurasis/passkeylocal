@@ -13,6 +13,27 @@ fn main() {
         System::DataExchange::OpenClipboard,
         System::{Memory::*, Registry::*, Threading::*},
     };
+    // Unbundled positive control: prove the exact minimal environment works
+    // for ordinary networking before attributing LPAC startup refusal to isolation.
+    if std::env::args().nth(1).as_deref() == Some("network-positive") {
+        let tcp = std::env::args()
+            .nth(2)
+            .unwrap()
+            .parse::<SocketAddr>()
+            .unwrap();
+        let udp = std::env::args()
+            .nth(3)
+            .unwrap()
+            .parse::<SocketAddr>()
+            .unwrap();
+        TcpStream::connect_timeout(&tcp, Duration::from_secs(3)).unwrap();
+        UdpSocket::bind("127.0.0.1:0")
+            .unwrap()
+            .send_to(b"minimal env positive", udp)
+            .unwrap();
+        println!("PASS: identical minimal environment TCP/UDP positive control");
+        return;
+    }
     // Public stage numbers only, written to the test protocol status slot.
     // The release parser has no such diagnostic entry point.
     fn stage(value: u32) {
@@ -234,22 +255,33 @@ fn main() {
             return Ok("FAIL: registry write".to_owned());
         }
         stage(105);
-        let targets = [
-            lines[2]
-                .parse::<SocketAddr>()
-                .map_err(|_| Error::Protocol)?,
-            "1.1.1.1:443".parse().unwrap(),
-        ];
-        for target in targets {
-            if TcpStream::connect_timeout(&target, Duration::from_millis(300)).is_ok() {
-                return Ok("FAIL: TCP access".to_owned());
-            }
+        let mut winsock: windows_sys::Win32::Networking::WinSock::WSADATA =
+            unsafe { std::mem::zeroed() };
+        let network_init =
+            unsafe { windows_sys::Win32::Networking::WinSock::WSAStartup(0x0202, &mut winsock) };
+        if network_init != 0 && ![10013, 10107].contains(&network_init) {
+            return Ok(format!(
+                "FAIL: unexpected Winsock startup refusal {network_init}"
+            ));
         }
-        stage(106);
-        for target in [lines[3], "1.1.1.1:53"] {
-            if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
-                if socket.send_to(b"synthetic denial probe", target).is_ok() {
-                    return Ok("FAIL: UDP or DNS-port access".to_owned());
+        if network_init == 0 {
+            let targets = [
+                lines[2]
+                    .parse::<SocketAddr>()
+                    .map_err(|_| Error::Protocol)?,
+                "1.1.1.1:443".parse().unwrap(),
+            ];
+            for target in targets {
+                if TcpStream::connect_timeout(&target, Duration::from_millis(300)).is_ok() {
+                    return Ok("FAIL: TCP access".to_owned());
+                }
+            }
+            stage(106);
+            for target in [lines[3], "1.1.1.1:53"] {
+                if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+                    if socket.send_to(b"synthetic denial probe", target).is_ok() {
+                        return Ok("FAIL: UDP or DNS-port access".to_owned());
+                    }
                 }
             }
         }
@@ -276,7 +308,7 @@ fn main() {
             }
             return Ok("FAIL: memory limit".to_owned());
         }
-        Ok("PASS: LPAC/no capabilities; input read-only; no inherited sentinel; denied vault/temp/profile/files/registry/parent-memory/clipboard; denied TCP/UDP/DNS/loopback; no children; bounded memory".to_owned())
+        Ok(format!("PASS: LPAC/no capabilities; input read-only; no inherited sentinel; denied vault/temp/profile/files/registry/parent-memory/clipboard; native network blocked; network-init={network_init}; no children; bounded memory"))
     });
     std::process::exit(if result.is_ok() { 0 } else { 1 });
 }

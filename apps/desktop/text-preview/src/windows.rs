@@ -287,6 +287,30 @@ fn inherited(handle: HANDLE, access: u32) -> Result<Handle> {
     }
     Handle::new(value)
 }
+fn environment_pairs(system: &str) -> Result<Vec<(String, String)>> {
+    let root = Path::new(system)
+        .parent()
+        .ok_or(Error::Sandbox)?
+        .to_string_lossy();
+    Ok(vec![
+        ("APPDATA".into(), format!("{system}\\PassKeyNoProfile")),
+        ("LOCALAPPDATA".into(), format!("{system}\\PassKeyNoProfile")),
+        ("SystemRoot".into(), root.into_owned()),
+        ("TEMP".into(), format!("{system}\\PassKeyNoTemp")),
+        ("TMP".into(), format!("{system}\\PassKeyNoTemp")),
+        ("USERPROFILE".into(), format!("{system}\\PassKeyNoProfile")),
+    ])
+}
+#[cfg(feature = "proof")]
+pub fn proof_environment() -> Result<Vec<(String, String)>> {
+    let mut directory = vec![0u16; 32768];
+    let size =
+        unsafe { GetSystemDirectoryW(directory.as_mut_ptr(), directory.len() as u32) } as usize;
+    if size == 0 || size >= directory.len() {
+        return Err(failed("proof-system-directory"));
+    }
+    environment_pairs(&String::from_utf16_lossy(&directory[..size]))
+}
 /// Caller supplies a fresh CSPRNG nonce and fully authenticated document bytes.
 pub fn run(
     executable: &Path,
@@ -410,16 +434,14 @@ fn run_with_timeout(
     }
     directory.truncate(size + 1);
     let system = String::from_utf16_lossy(&directory[..size]);
-    let system_root = Path::new(&system)
-        .parent()
-        .ok_or(Error::Sandbox)?
-        .to_string_lossy();
-    // No inherited environment (tokens, vault paths or source identifiers).
-    let environment: Vec<u16> = format!(
-        "APPDATA={system}\\PassKeyNoProfile\0LOCALAPPDATA={system}\\PassKeyNoProfile\0SystemRoot={system_root}\0TEMP={system}\\PassKeyNoTemp\0TMP={system}\\PassKeyNoTemp\0USERPROFILE={system}\\PassKeyNoProfile\0\0"
-    )
-    .encode_utf16()
-    .collect();
+    // Exact same minimal environment is tested in an unrestricted control.
+    let environment: Vec<u16> = (environment_pairs(&system)?
+        .into_iter()
+        .map(|(name, value)| format!("{name}={value}\0"))
+        .collect::<String>()
+        + "\0")
+        .encode_utf16()
+        .collect();
     let command = format!(
         "\"{}\" {} {} {}",
         executable.display(),
