@@ -66,6 +66,11 @@ cancellation also pass. The hostile probe exited before its final report.
 Proof-only public stage numbers and exit-code diagnostics identify that failure
 without installing a debug interpreter or logging document contents.
 
+The hostile probe termination is NTSTATUS `0xc0000008` (invalid handle) in
+the handle/clipboard negative checks. Finer proof-only stages isolate which
+rejection must be observed without stopping the remaining negative checks.
+No failed probe is counted as a successful all-denials result.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

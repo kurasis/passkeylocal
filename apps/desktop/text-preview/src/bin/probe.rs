@@ -41,11 +41,13 @@ fn main() {
         stage(101);
         let parent = lines[0].parse::<u32>().map_err(|_| Error::Protocol)?;
         let sentinel = lines[1].parse::<usize>().map_err(|_| Error::Protocol)? as HANDLE;
+        stage(111);
         let mut flags = 0;
         if unsafe { GetHandleInformation(sentinel, &mut flags) } != 0 {
             return Ok("FAIL: inherited sentinel".to_owned());
         }
         let input_handle = std::env::args().nth(1).unwrap().parse::<usize>().unwrap() as HANDLE;
+        stage(112);
         let writable = unsafe { MapViewOfFile(input_handle, FILE_MAP_WRITE, 0, 0, 0) };
         if !writable.Value.is_null() {
             unsafe {
@@ -55,6 +57,7 @@ fn main() {
         }
         // Do not infer immutability from the first restricted handle: attempt
         // to gain write access through a same-process duplication as well.
+        stage(113);
         let mut escalated = std::ptr::null_mut();
         if unsafe {
             DuplicateHandle(
@@ -79,6 +82,7 @@ fn main() {
                 return Ok("FAIL: input access escalation".to_owned());
             }
         }
+        stage(114);
         let process = unsafe { OpenProcess(PROCESS_VM_READ, 0, parent) };
         if !process.is_null() {
             unsafe {
@@ -86,6 +90,7 @@ fn main() {
             }
             return Ok("FAIL: parent memory".to_owned());
         }
+        stage(115);
         if unsafe { OpenClipboard(std::ptr::null_mut()) } != 0 {
             return Ok("FAIL: clipboard".to_owned());
         }
