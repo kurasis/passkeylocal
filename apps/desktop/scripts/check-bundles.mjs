@@ -11,6 +11,8 @@ assert(!readFileSync(`${desktop}/index.html`, 'utf8').includes('rel="manifest"')
 const bundle = (dir) => readdirSync(`${dir}/assets`).filter((s) => s.endsWith('.js')).map((s) => readFileSync(`${dir}/assets/${s}`, 'utf8')).join('\n');
 assert(!bundle(web).includes('__TAURI_INTERNALS__'));
 assert(!bundle(web).includes('hello_enrollment'));
+assert(!bundle(web).includes('file_safe_hello'));
+assert(bundle(desktop).includes('file_safe_hello'));
 assert(bundle(desktop).includes('hello_enrollment'));
 assert(!bundle(web).includes('Public synthetic Hello recovery fixture'));
 assert(bundle(desktop).includes('Public synthetic Hello recovery fixture'));

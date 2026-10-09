@@ -17,7 +17,7 @@ $metadata = @{
   webview2='Evergreen offline installer bundled; clean-machine runtime test NOT RUN';
   fileSafe='experimental native streaming storage and independent Python recovery';
   fileSafePreview='unavailable: AppContainer/LPAC isolation proof BLOCKED';
-  windowsHello='experimental opt-in PRF/TPM vault unlock; physical application-lifecycle acceptance pending';
+  windowsHello='experimental independent opt-in PRF/TPM password-vault and file-safe unlock; file-safe physical acceptance pending';
   windowsHelloDiagnostics='WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action';
   packagedSmoke='PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits';
   node=(& node --version); rust=(& rustc --version);

@@ -412,6 +412,100 @@ impl SafeStore {
         });
         Ok(())
     }
+    #[cfg(any(windows, test))]
+    pub(super) fn hello_binding(&mut self) -> Result<crate::hello::enrollment::Binding> {
+        use crate::hello::enrollment::{Binding, SafeBinding};
+        self.reload_active()?;
+        let p = self.path()?;
+        let _pins = io::pin_directory(&p)?;
+        let hb = read_small(&p.join("HEAD.json"), 1024)?;
+        let h = Head::parse(&hb)?;
+        let active = self.active.as_ref().ok_or(Error::new("CORRUPT"))?;
+        if h.vault_id != active.vault_id {
+            return Err(Error::new("CORRUPT"));
+        }
+        // Include the exact selected locator and HEAD; this is not a root verifier.
+        let digest = hash(
+            &[
+                self.active_bytes.as_ref().unwrap().as_slice(),
+                hb.as_slice(),
+            ]
+            .concat(),
+        );
+        if read_small(&self.base.join("ACTIVE.json"), 1024)? != *self.active_bytes.as_ref().unwrap()
+        {
+            return Err(Error::new("CONFLICT"));
+        }
+        Ok(Binding {
+            vault: h.vault_id,
+            password_epoch: 0,
+            generation: 0,
+            sha256: digest,
+            safe: Some(SafeBinding {
+                store_id: active.store_id.clone(),
+                key_epoch_id: h.key_epoch_id,
+            }),
+        })
+    }
+    #[cfg(any(windows, test))]
+    pub(super) fn verified_hello_root(
+        &mut self,
+        password: &[u8],
+    ) -> Result<(crate::hello::enrollment::Binding, RootKey)> {
+        let snapshot = self.session()?.catalog.snapshot_id.clone();
+        self.checked(&snapshot)?;
+        let binding = self.hello_binding()?;
+        let p = self.path()?;
+        let h = Head::parse(&self.session()?.head_bytes)?;
+        let root = read_key(
+            &read_small(&p.join("keys").join(format!("{}.key", h.key_epoch_id)), 140)?,
+            &h,
+            password,
+        )?;
+        if !libsodium_rs::utils::memcmp(root.as_ref(), self.session()?.root.as_ref()) {
+            return Err(Error::new("AUTH_FAILED"));
+        }
+        self.checked(&snapshot)?;
+        if self.hello_binding()? != binding {
+            return Err(Error::new("CONFLICT"));
+        }
+        Ok((binding, root))
+    }
+    #[cfg(any(windows, test))]
+    pub(super) fn unlock_with_root(
+        &mut self,
+        root: RootKey,
+        binding: &crate::hello::enrollment::Binding,
+        check: &impl Fn() -> Result<()>,
+    ) -> Result<()> {
+        self.lock();
+        check()?;
+        if &self.hello_binding()? != binding {
+            return Err(Error::new("CONFLICT"));
+        }
+        let p = self.path()?;
+        let pins = Self::pins(&p)?;
+        let hb = read_small(&p.join("HEAD.json"), 1024)?;
+        let h = Head::parse(&hb)?;
+        let cb = read_small(
+            &p.join("catalogs").join(format!("{}.cat", h.snapshot_id)),
+            MAX_CATALOG + 104,
+        )?;
+        let catalog = read_catalog(&cb, &h, &root)?;
+        Self::references(&p, &catalog)?;
+        check()?;
+        if &self.hello_binding()? != binding {
+            return Err(Error::new("CONFLICT"));
+        }
+        self.session = Some(Session {
+            root,
+            catalog,
+            head_bytes: hb,
+            catalog_hash: hash(&cb),
+            _pins: pins,
+        });
+        Ok(())
+    }
     fn session(&self) -> Result<&Session> {
         self.session.as_ref().ok_or(Error::new("LOCKED"))
     }

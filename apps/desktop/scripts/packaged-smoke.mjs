@@ -365,6 +365,29 @@ try {
   await page.getByLabel('Repeat password', { exact: true }).fill(safePassword);
   await page.getByRole('button', { name: 'Create file safe', exact: true }).click();
   await page.getByRole('button', { name: 'Lock file safe', exact: true }).waitFor();
+  const safeHelloSettings = page.getByTestId('file-safe-hello');
+  await safeHelloSettings.locator('summary').click();
+  await expect(safeHelloSettings.getByLabel('Keep this connection', { exact: true })).toHaveValue('session');
+  await expect(safeHelloSettings.getByLabel('Keep this connection', { exact: true }).locator('option')).toHaveCount(4);
+  await expect(safeHelloSettings.getByLabel('Confirm file-safe master password', { exact: true })).toHaveValue('');
+  await expect(safeHelloSettings.getByRole('button', { name: 'Connect file safe to Windows Hello', exact: true })).toBeDisabled();
+  const fileSafeHelloBoundary = await page.evaluate(async () => {
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    const safe = await invoke('file_safe_status');
+    const status = await invoke('file_safe_hello', { request: { operation: 'status' } });
+    let malformedRejected = false, staleRejected = false, passwordRejected = false;
+    try { await invoke('file_safe_hello', { request: { operation: 'status', root: [1] } }); } catch { malformedRejected = true; }
+    try { await invoke('file_safe_hello', { request: { operation: 'unlock', expected_generation: String(BigInt(safe.generation) + 1n) } }); } catch { staleRejected = true; }
+    try { await invoke('file_safe_hello', { request: { operation: 'enroll', token: safe.token, password: 'synthetic-wrong-password', mode: 'session' } }); } catch (e) { passwordRejected = e.code === 'AUTH_FAILED'; }
+    const revoke = await invoke('file_safe_hello', { request: { operation: 'revoke', expected_generation: safe.generation } });
+    return { status, revoke, malformedRejected, staleRejected, passwordRejected };
+  });
+  assert.deepEqual(fileSafeHelloBoundary.status, { status: { state: 'off', mode: null, expiresAt: null } });
+  assert.deepEqual(fileSafeHelloBoundary.revoke, fileSafeHelloBoundary.status);
+  assert(fileSafeHelloBoundary.malformedRejected && fileSafeHelloBoundary.staleRejected && fileSafeHelloBoundary.passwordRejected);
+  await mkdir('apps/desktop/artifacts', { recursive: true });
+  await safeHelloSettings.screenshot({ path: 'apps/desktop/artifacts/windows-file-safe-hello-smoke.png' });
+  await safeHelloSettings.locator('summary').click();
   await page.getByLabel('Folder name', { exact: true }).fill('Synthetic file-safe folder');
   await page.getByRole('button', { name: 'New folder', exact: true }).click();
   await page.getByRole('button', { name: '▸ Synthetic file-safe folder', exact: true }).waitFor();
@@ -393,7 +416,7 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloEnrollmentBoundary, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
+    helloEnrollmentBoundary, fileSafeHelloBoundary, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
     evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');

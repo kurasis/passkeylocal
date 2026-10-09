@@ -1,6 +1,31 @@
 # File-safe acceptance ledger
 
-Baseline `670e41fda3935258dde8dc4f095e666370ad7bfb`; branch `feat/encrypted-file-safe`. Final source/workflow/artifact provenance is recorded below. Synthetic fixtures only. **Full feature release BLOCKED**: no isolated viewer or proved hardware Hello provider. Those capabilities are unavailable in production code, with no fallback. Current storage/recovery is an unsigned experimental increment.
+Baseline `670e41fda3935258dde8dc4f095e666370ad7bfb`; branch `feat/encrypted-file-safe`. Final source/workflow/artifact provenance is recorded below. Synthetic fixtures only. **Full feature release BLOCKED**: isolated preview and remaining physical acceptance are incomplete. The current [Hello increment](WINDOWS_HELLO.md) enables an experimental, independent PRF/TPM root envelope, with new file-safe hardware acceptance pending. Current storage/recovery remains unsigned and experimental. The original matrix below records its earlier baseline; the update supersedes only its unavailable-Hello implementation notes.
+
+## File-safe Hello implementation update (2026-10-09)
+
+Independent native PRF/TPM opt-in is implemented. Root material stays in Rust;
+full safe/store/key-epoch identity and separate RP/key/domain/journal prevent
+cross-module enrollment. Real catalog authentication is required before token
+publication. Password rotation/restore durably invalidate; explicit removal
+retries both owned objects. Portable v1 format, encrypted backups and independent
+password recovery are unchanged. Existing password-vault envelopes preserve their
+exact AAD and namespaces without migration.
+
+Local results: 145 routine native tests (ten new cases: seven safe lifecycle
+and three purpose/compatibility cases), 174 TypeScript tests and 49 desktop/browser
+scenarios, including three new file-safe Hello cases. Type checks, Linux Clippy
+and Windows GNU Clippy passed. Native safe tests authenticate the actual catalog,
+export exact synthetic file bytes, validate password-only backup and reject stale
+roots/sessions. Doubles do not constitute physical Hello/TPM authorization. Final
+Windows/MSVC/installed artifact evidence is recorded at publication.
+
+H-01/H-03 physical file-safe reader, modality, ESS and negative-case acceptance
+remain NOT RUN. H-02/H-04 now have native purpose/key/session checks and automated
+coverage; their complete physical acceptance is NOT RUN. The prior password-vault
+owner “works” result is not a file-safe pass. No completed standalone experiment
+or excluded same-PC second-account procedure is requested. Preview gates remain
+blocked separately; this increment does not complete the full feature matrix.
 
 Local environment: Linux x64, AMD EPYC 9V74 virtual CPU, reported 34,906,040 KiB RAM, overlay filesystem; Node 24, CPython 3.12, Rust 1.90, libsodium 1.0.22 via libsodium-rs 0.2.5/libsodium-sys-stable 1.24.0. Hosted resources are not a physical Windows performance measurement.
 

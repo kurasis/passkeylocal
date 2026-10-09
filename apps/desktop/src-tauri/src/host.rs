@@ -936,6 +936,7 @@ pub fn run() {
             hello_unlock,
             hello_revoke,
             file_safe_status,
+            file_safe_hello,
             file_safe_access,
             file_safe_lock,
             lock_all,

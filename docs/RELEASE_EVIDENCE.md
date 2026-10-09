@@ -1,5 +1,32 @@
 # Release evidence and gate status
 
+## Independent File Safe Hello integration (2026-10-09)
+
+[File-safe Hello](file-safe/WINDOWS_HELLO.md) now protects the safe's random root
+with its own native WebAuthn PRF/TPM envelope. Enrollment confirms the safe password
+again; unlock authenticates the current catalog before publishing its independent
+token. Root/PRF material never reaches the renderer. Separate RP/key/domain/journal
+and authenticated full safe/store/root-epoch binding reject cross-module use.
+Shared-envelope changes preserve existing password-vault serialized AAD/namespaces.
+Session mode is memory-only/default; 6/12/24-hour remembered modes are explicit.
+Rotation/restore durably invalidate before storage writes; exact-object removal
+retains failed cleanup for retry. Portable v1 bytes and Python recovery are unchanged.
+
+Local checks passed: 145 routine native tests (one separate resource test ignored),
+174 TypeScript tests and 49 desktop/browser scenarios. Ten new native tests cover
+actual safe/catalog/file opening, backup/password recovery, fresh password/token
+admission, cancellation/wrong root/late result, restart, rotation/restore, failed
+cleanup, fixed IPC, cross-purpose substitution and legacy AAD compatibility.
+Three new UI cases cover opt-in/modes/cancel/password fallback, late lock replies
+and Russian responsive controls. Type checks and Linux/Windows GNU Clippy pass.
+Final Windows/MSVC, independently recovered format and installed artifact results
+are recorded at publication; GNU cross-checking is not a Windows hardware run.
+
+New file-safe physical acceptance on the owner's Kensington remains pending.
+Existing password-vault owner/synthetic reports retain their original scope and
+bytes. No prior diagnostic repetition or excluded second-account test is requested.
+Preview isolation remains a separate incomplete gate.
+
 ## Windows Hello developer handoff and owner feedback (2026-10-09)
 
 The owner replied “works” after delivery of the PR #32 installer. This records

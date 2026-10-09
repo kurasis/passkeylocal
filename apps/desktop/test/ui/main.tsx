@@ -31,6 +31,11 @@ const files: SafeFile[] = Array.from({ length: 10000 }, (_, i) => ({
   ],
 }));
 let unlocked = true;
+let hello: import('../../../pwa/src/hello-vault-protocol.ts').HelloVaultStatus = { state: 'off', mode: null, expiresAt: null };
+let cancelHello = false;
+let delayHello = false;
+let releaseHello = () => {};
+const helloCalls: Array<{operation: string; mode?: string}> = [];
 let nativeGeneration = 0;
 let deferLockedStatus = false;
 let statusWaiters: Array<() => void> = [];
@@ -44,6 +49,27 @@ let busyReads = 0;
 const token = "a".repeat(32);
 const root = { id: "f".repeat(32), parent_id: null, name: "" };
 const api: FileSafeApi = {
+  async hello(request) {
+    if (request.operation === 'status') return { status: { ...hello } };
+    helloCalls.push({ operation: request.operation, ...('mode' in request ? { mode: request.mode } : {}) });
+    if (request.operation === 'enroll') {
+      if (!unlocked || request.token !== token) throw { code: 'LOCKED' };
+      if (request.password !== 'synthetic password') throw { code: 'AUTH_FAILED' };
+      hello = { state: 'enabled', mode: request.mode, expiresAt: Date.now() + 21600000 };
+    }
+    if (request.operation === 'revoke') hello = { state: 'off', mode: null, expiresAt: null };
+    if (request.operation === 'unlock') {
+      if (cancelHello) { cancelHello = false; throw { code: 'HELLO_CANCELLED' }; }
+      if (delayHello) {
+        await new Promise<void>((resolve) => { releaseHello = resolve; });
+        return { status: { ...hello }, token }; // explicit late-reply double; native state remains locked
+      }
+      if (request.expected_generation !== String(nativeGeneration)) throw { code: 'STALE' };
+      unlocked = true; nativeGeneration++;
+      return { status: { ...hello }, token };
+    }
+    return { status: { ...hello } };
+  },
   async status() {
     if (!unlocked && deferLockedStatus)
       await new Promise<void>((resolve) => statusWaiters.push(resolve));
@@ -63,7 +89,7 @@ const api: FileSafeApi = {
         pending_snapshot: null,
         retained_packages: 0,
       },
-      hello: "unavailable",
+      hello: "independent-opt-in",
       preview: "unavailable",
     } satisfies SafeStatus;
   },
@@ -146,6 +172,10 @@ const api: FileSafeApi = {
 };
 Object.assign(window, {
   uiTest: {
+    helloCalls() { return helloCalls; },
+    cancelHello() { cancelHello = true; },
+    delayHello() { delayHello = true; },
+    releaseHello() { delayHello = false; releaseHello(); },
     setDelay() {
       delay = true;
     },

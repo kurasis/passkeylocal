@@ -374,6 +374,7 @@ impl Store {
             password_epoch: h.password_epoch,
             generation: h.generation,
             sha256: blob.sha256.clone(),
+            safe: None,
         })
     }
     pub fn begin(&mut self) -> String {

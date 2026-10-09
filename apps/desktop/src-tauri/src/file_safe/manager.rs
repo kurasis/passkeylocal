@@ -22,13 +22,13 @@ use std::{
 use zeroize::Zeroizing;
 
 pub struct SafeManager {
-    store: Mutex<SafeStore>,
-    active: Mutex<Option<String>>,
-    epoch: AtomicU64,
+    pub(super) store: Mutex<SafeStore>,
+    pub(super) active: Mutex<Option<String>>,
+    pub(super) epoch: AtomicU64,
     disposed: AtomicU64,
     cancel: AtomicU64,
-    clock: Mutex<Inactivity>,
-    interval: Mutex<Duration>,
+    pub(super) clock: Mutex<Inactivity>,
+    pub(super) interval: Mutex<Duration>,
     busy: AtomicBool,
     exists: AtomicBool,
     pub backups: BackupQueue,
@@ -36,6 +36,12 @@ pub struct SafeManager {
     results: Mutex<Vec<ImportItem>>,
     preference_path: PathBuf,
     candidate: Mutex<Option<Candidate>>,
+    #[cfg(any(windows, test))]
+    pub(super) hello: Mutex<crate::hello::enrollment::Manager>,
+    #[cfg(any(windows, test))]
+    pub(super) hello_serial: AtomicU64,
+    #[cfg(any(windows, test))]
+    pub(super) hello_root: PathBuf,
 }
 struct Candidate {
     id: String,
@@ -145,7 +151,7 @@ pub struct Source {
     pub folders: Vec<String>,
     pub _pins: Vec<File>,
 }
-struct Admission<'a>(&'a AtomicBool);
+pub(super) struct Admission<'a>(&'a AtomicBool);
 impl Drop for Admission<'_> {
     fn drop(&mut self) {
         self.0.store(false, Ordering::Release);
@@ -184,15 +190,21 @@ impl SafeManager {
             results: Mutex::new(vec![]),
             preference_path,
             candidate: Mutex::new(None),
+            #[cfg(any(windows, test))]
+            hello: Mutex::new(crate::hello::enrollment::Manager::file_safe()),
+            #[cfg(any(windows, test))]
+            hello_serial: AtomicU64::new(0),
+            #[cfg(any(windows, test))]
+            hello_root: base.to_owned(),
         })
     }
-    fn admit(&self) -> Result<Admission<'_>> {
+    pub(super) fn admit(&self) -> Result<Admission<'_>> {
         self.busy
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
             .map_err(|_| Error::new("BUSY"))?;
         Ok(Admission(&self.busy))
     }
-    fn begin_revocation(&self, expected: Option<u64>) -> Result<u64> {
+    pub(super) fn begin_revocation(&self, expected: Option<u64>) -> Result<u64> {
         let mut active = self.active.lock().map_err(|_| Error::new("UNAVAILABLE"))?;
         if expected.is_some_and(|e| e != self.epoch.load(Ordering::SeqCst)) {
             return Err(Error::new("CANCELLED"));
@@ -333,11 +345,15 @@ impl SafeManager {
                 Progress::default()
             },
             backup: self.backups.status()?,
-            hello: "unavailable",
+            hello: if cfg!(windows) {
+                "independent-opt-in"
+            } else {
+                "unavailable"
+            },
             preview: "unavailable",
         })
     }
-    fn queue_backup(&self, store: &SafeStore) {
+    pub(super) fn queue_backup(&self, store: &SafeStore) {
         if self.backups.status().is_ok_and(|s| s.configured)
             && store
                 .backup_plan()
@@ -689,6 +705,16 @@ impl SafeManager {
         let current = Zeroizing::new(current);
         let next = Zeroizing::new(next);
         let _admit = self.admit()?;
+        self.check(token)?;
+        #[cfg(any(windows, test))]
+        {
+            self.store
+                .try_lock()
+                .map_err(|_| Error::new("BUSY"))?
+                .verified_hello_root(current.as_bytes())?;
+            self.check(token)?;
+            self.invalidate_hello()?;
+        }
         self.session(token, |s, c| {
             s.rotate(expected, current.as_bytes(), next.as_bytes(), &|| c())?;
             self.queue_backup(s);
@@ -735,6 +761,8 @@ impl SafeManager {
     ) -> Result<()> {
         let password = Zeroizing::new(password);
         let _admit = self.admit()?;
+        #[cfg(any(windows, test))]
+        self.invalidate_hello()?;
         let epoch = self.begin_revocation(Some(expected))?;
         notice();
         self.dispose_locked();
