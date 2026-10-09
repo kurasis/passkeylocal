@@ -40,7 +40,9 @@ is bundled. Timeout is 30 seconds; revocation is checked every 20 ms while waiti
 Output is an exact-length memory protocol with magic, per-launch nonce, status and
 bounded UTF-8. The trusted broker validates every field and accepts no worker HTML,
 paths, URLs or requests. UI renders at most 24 inert text segments, indexing lines
-with bounded typed offsets; long lines are segmented without splitting surrogate
+with bounded typed offsets and explicit 20,000-segment sections, keeping physical
+scroll height below browser limits even for 8 MiB of empty lines. A section number
+can jump to any remaining content; the source is not truncated. Long lines split without splitting surrogate
 pairs. Close/lock/module change discard state and cancel the ticket; late results
 cannot reappear. Plaintext strings/sections may still be retained by OS paging,
 hibernation, GPU, dumps or a compromised host; no forensic erasure is promised.

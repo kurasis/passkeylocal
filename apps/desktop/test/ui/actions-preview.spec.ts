@@ -77,9 +77,10 @@ test("TXT preview renders inert UTF-8, virtualizes long output and closes its re
   await expect(dialog.getByText("Привет 🗂", { exact: true })).toBeVisible();
   await expect(dialog.locator("script,a,iframe,object,img")).toHaveCount(0);
   expect(await dialog.locator("pre").count()).toBeLessThanOrEqual(24);
+  await dialog.getByLabel("Text section", { exact: true }).fill("6");
   const text = dialog.getByRole("region", { name: "TXT preview", exact: true });
   await text.focus(); await page.keyboard.press("End");
-  await expect(dialog.getByText("Synthetic line 9999", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Synthetic line 99999", { exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Larger text", exact: true }).click();
   await page.keyboard.press("Escape"); await expect(dialog).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => (window as any).uiTest.previewCalls().map((r: any) => r.operation))).toEqual(["read", "cancel"]);

@@ -12,7 +12,7 @@ An additive focused-window preview command authenticates one bounded selected TX
 version before launching a fixed separate unprofiled LPAC worker. Read-only input,
 explicit two-handle inheritance, zero-capability token readback, job-at-creation,
 child/clipboard restrictions, 256 MiB memory, timeout/cancel and correlated output
-are implemented. Strict UTF-8/BOM and inert virtualized text are the only supported
+are implemented. Strict UTF-8/BOM and inert virtualized, paged text are the only supported
 parser path; no plaintext file, broad path API or fallback exists.
 
 Local: 148 Linux native tests passed (three new folder/content/ticket tests).
@@ -26,6 +26,14 @@ these local doubles. Initial UI execution needed the supplied Chromium path;
 one new assertion needed scope across the existing version-export buttons. The
 existing header geometry check now verifies that modules are inside the header
 and separate from the brand, rather than requiring their previous lower row.
+
+The first Windows run stopped before application checks because the upstream floating
+libsodium stable archive changed (observed SHA-256 `31d03aa0b2855f431c689518fae44e9f6191aea8bc195c0487d69764189672c9`).
+The original local archive was reverified with the binding's pinned upstream minisign
+public key and retained in the repository with its original signature. The original expected archive
+hash remains unchanged; no dependency upgrade or signature bypass was made.
+TXT paging bounds browser scroll height to 20,000 segments per section; a 100,000-line
+fixture verifies the final line remains reachable. Paging UI and typecheck passed.
 
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,

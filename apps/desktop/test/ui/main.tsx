@@ -85,7 +85,7 @@ const api: FileSafeApi = {
     previewCalls.push({ operation: request.operation, ...(request.operation === "read" ? { file: request.file } : {}) });
     if (request.operation === "cancel") return null;
     if (delayPreview) await new Promise<void>((r) => releasePreview = r);
-    return { request_id: request.request_id, text: "Synthetic inert <script>alert(1)</script>\nПривет 🗂\n" + Array.from({length:10000},(_,i)=>`Synthetic line ${i}`).join("\n") };
+    return { request_id: request.request_id, text: "Synthetic inert <script>alert(1)</script>\nПривет 🗂\n" + Array.from({length:100000},(_,i)=>`Synthetic line ${i}`).join("\n") };
   },
   async hello(request) {
     if (request.operation === 'status') return { status: { ...hello } };
