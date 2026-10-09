@@ -357,6 +357,12 @@ fn run_with_timeout(
     let mut command = wide(std::ffi::OsStr::new(&command));
     let mut startup: STARTUPINFOEXW = unsafe { zeroed() };
     startup.StartupInfo.cb = size_of::<STARTUPINFOEXW>() as u32;
+    // Do not implicitly inherit console/CI pipe handles outside the explicit
+    // section list. The worker has no standard streams.
+    startup.StartupInfo.dwFlags = STARTF_USESTDHANDLES;
+    startup.StartupInfo.hStdInput = null_mut();
+    startup.StartupInfo.hStdOutput = null_mut();
+    startup.StartupInfo.hStdError = null_mut();
     startup.lpAttributeList = attributes.pointer;
     let mut process: PROCESS_INFORMATION = unsafe { zeroed() };
     if unsafe {

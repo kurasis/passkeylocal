@@ -35,6 +35,11 @@ hash remains unchanged; no dependency upgrade or signature bypass was made.
 TXT paging bounds browser scroll height to 20,000 segments per section; a 100,000-line
 fixture verifies the final line remains reachable. Paging UI and typecheck passed.
 
+The first actual LPAC launch refused creation with Win32 2. Startup now explicitly
+sets all standard handles to null, matching the section-only handle list and
+Chromium's process startup practice, rather than inheriting CI/console streams.
+The actual enforcement tests must pass after this correction.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner
