@@ -315,17 +315,21 @@ try {
   // module controls and the sidebar previously occupied the same vertical area.
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
   await expect(page.getByRole('heading', { name: 'Настройки', exact: true })).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   const layout = await page.evaluate(() => {
     const rect = (selector) => {
       const r = document.querySelector(selector).getBoundingClientRect();
       return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
     };
-    return { modules: rect('.module-navigation'), nav: rect('.tabbar'), main: rect('main'), desktop: innerWidth >= 900, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+    return { brand: rect('.brand'), header: rect('.topbar'), modules: rect('.module-navigation'), nav: rect('.tabbar'), main: rect('main'), desktop: innerWidth >= 900, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
   });
   assert.equal(layout.overflow, false, 'Installed Russian layout has no horizontal overflow');
-  assert(layout.main.top >= layout.modules.bottom - 1, 'Main content follows module controls');
+  assert(layout.modules.top >= layout.header.top && layout.modules.bottom <= layout.header.bottom, 'Module controls stay inside the header');
+  assert(layout.main.top >= layout.header.bottom - 1, 'Main content follows the header at scroll origin');
+  if (layout.modules.top < layout.brand.bottom && layout.brand.top < layout.modules.bottom) assert(layout.modules.left >= layout.brand.right, 'Module controls do not overlap the brand');
   if (layout.desktop) {
-    assert(layout.nav.top >= layout.modules.bottom, 'Sidebar follows module controls without overlap');
+    assert(layout.nav.top >= layout.header.bottom, 'Sidebar follows the header without overlap');
     assert(layout.nav.right <= layout.main.left + 1, 'Sidebar and main content occupy separate columns');
   }
   await mkdir('apps/desktop/artifacts', { recursive: true });

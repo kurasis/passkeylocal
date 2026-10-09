@@ -98,6 +98,13 @@ Parent memory and parent handle duplication are probed separately; a combined
 rights request alone could mask partial access. An unrestricted 300 MiB allocation
 positive control distinguishes job memory refusal from host-wide allocation failure.
 
+The first installed smoke failed an outdated geometry assertion after it had
+scrolled deep into Hello diagnostics. Module controls now belong to the sticky
+header, while the content rect moves with scroll. The installed check resets to
+scroll origin and verifies controls inside the header, separate from the brand,
+with content/sidebar below it. It preserves overflow and separate-column checks.
+TXT installed-path acceptance remains pending until this full smoke completes.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner
