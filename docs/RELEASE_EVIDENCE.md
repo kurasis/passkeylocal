@@ -61,6 +61,11 @@ restricted-packages bit, never the ALL_APPLICATION_PACKAGES bit, from a syntheti
 descriptor. AppContainer and zero-capability readback remain mandatory. This
 checks OS enforcement rather than trusting a launch flag.
 
+Actual Windows text round trip and invalid-UTF8 refusal now pass; timeout and
+cancellation also pass. The hostile probe exited before its final report.
+Proof-only public stage numbers and exit-code diagnostics identify that failure
+without installing a debug interpreter or logging document contents.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

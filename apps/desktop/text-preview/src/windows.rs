@@ -454,6 +454,11 @@ fn run_with_timeout(
     }
     let mut exit = 0;
     if unsafe { GetExitCodeProcess(process_handle.0, &mut exit) } == 0 || exit != 0 {
+        #[cfg(feature = "proof")]
+        eprintln!(
+            "Preview worker exit 0x{exit:08x}; public probe stage {}",
+            u32::from_le_bytes(output_view.bytes()[24..28].try_into().unwrap())
+        );
         return Err(failed("worker-exit"));
     }
     if !check() {

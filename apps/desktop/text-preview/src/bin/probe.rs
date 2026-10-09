@@ -13,16 +13,32 @@ fn main() {
         System::DataExchange::OpenClipboard,
         System::{Memory::*, Registry::*, Threading::*},
     };
+    // Public stage numbers only, written to the test protocol status slot.
+    // The release parser has no such diagnostic entry point.
+    fn stage(value: u32) {
+        use windows_sys::Win32::System::Memory::*;
+        let handle = std::env::args().nth(2).unwrap().parse::<usize>().unwrap()
+            as windows_sys::Win32::Foundation::HANDLE;
+        let view = unsafe { MapViewOfFile(handle, FILE_MAP_WRITE, 0, 0, 32) };
+        if !view.Value.is_null() {
+            unsafe {
+                std::ptr::write_volatile((view.Value as *mut u8).add(24).cast::<u32>(), value);
+                UnmapViewOfFile(view);
+            }
+        }
+    }
     let result = passkey_text_preview::worker::serve(|input| -> Result<String> {
         let text = std::str::from_utf8(input).map_err(|_| Error::Protocol)?;
         if text == "hang" {
             std::thread::sleep(Duration::from_secs(60));
             return Ok(String::new());
         }
+        stage(100);
         let lines: Vec<_> = text.lines().collect();
         if lines.len() < 5 {
             return Err(Error::Protocol);
         }
+        stage(101);
         let parent = lines[0].parse::<u32>().map_err(|_| Error::Protocol)?;
         let sentinel = lines[1].parse::<usize>().map_err(|_| Error::Protocol)? as HANDLE;
         let mut flags = 0;
@@ -73,6 +89,7 @@ fn main() {
         if unsafe { OpenClipboard(std::ptr::null_mut()) } != 0 {
             return Ok("FAIL: clipboard".to_owned());
         }
+        stage(102);
         for path in &lines[4..] {
             if std::fs::File::open(path).is_ok() {
                 return Ok("FAIL: unrelated file read".to_owned());
@@ -89,6 +106,7 @@ fn main() {
         }
         // Registration must not grant a writable own storage profile. Try
         // creating all missing directories, not just opening a missing leaf.
+        stage(103);
         for variable in ["TEMP", "TMP", "APPDATA", "LOCALAPPDATA", "USERPROFILE"] {
             if let Some(path) = std::env::var_os(variable) {
                 let path = std::path::PathBuf::from(path);
@@ -109,6 +127,7 @@ fn main() {
         if std::fs::create_dir_all(own_profile).is_ok() {
             return Ok("FAIL: own profile storage".to_owned());
         }
+        stage(104);
         let key: Vec<u16> = "Software\\PassKeyLocalPreviewSyntheticCanary\0"
             .encode_utf16()
             .collect();
@@ -133,6 +152,7 @@ fn main() {
             }
             return Ok("FAIL: registry write".to_owned());
         }
+        stage(105);
         let targets = [
             lines[2]
                 .parse::<SocketAddr>()
@@ -144,6 +164,7 @@ fn main() {
                 return Ok("FAIL: TCP access".to_owned());
             }
         }
+        stage(106);
         for target in [lines[3], "1.1.1.1:53"] {
             if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
                 if socket.send_to(b"synthetic denial probe", target).is_ok() {
@@ -151,6 +172,7 @@ fn main() {
                 }
             }
         }
+        stage(107);
         // Child policy and job active-process limit are enforced before resume.
         if std::process::Command::new(std::env::current_exe().map_err(|_| Error::Sandbox)?)
             .spawn()
@@ -158,6 +180,7 @@ fn main() {
         {
             return Ok("FAIL: child execution".to_owned());
         }
+        stage(108);
         let memory = unsafe {
             VirtualAlloc(
                 std::ptr::null(),
