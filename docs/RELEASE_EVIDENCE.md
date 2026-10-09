@@ -2,6 +2,15 @@
 
 ## Backup reminder policy and shared safe feedback (2026-10-09)
 
+The first Windows run on head `6576cec` / tested source `0213f3a` passed all
+pre-packaging tests but failed the new installed action-notice assertion. A real
+native folder change returned Rust unit as JSON `null`, while the typed browser
+double returned `undefined`; the generic action runner treated `null` as dialog
+cancellation and suppressed success. The native adapter now normalizes only fixed
+void commands to `undefined`, preserving errors and nullable/false dialog results.
+A regression exercises the actual adapter against native-shaped replies. No
+assertion was weakened. Final installed evidence remains pending until rerun.
+
 Owner policy changes the password backup deadline from 24 hours of unbacked
 changes to 30 days since the last successful matching backup verification.
 Unbacked changes retain the ordinary reminder (ten commits retain escalation);
