@@ -1,5 +1,59 @@
 # Release evidence and gate status
 
+## Monthly backup reminders and shared safe feedback publication (2026-10-09)
+
+[PR #37](https://github.com/kurasis/passkeylocal/pull/37) merged as `bd359391d4a42a42fd3b0dbdec8e7af128972522`;
+application tree equals tested source `98a714b4335cb91fed752ad1d4880601f8eb39a5` (head `44095ff65be8b26bdab0d6ec57722a323b823f05`).
+[General CI 37936825771](https://github.com/kurasis/passkeylocal/actions/runs/37936825771) and
+[Windows CI 37936826027](https://github.com/kurasis/passkeylocal/actions/runs/37936826027)
+passed all 11 checks. Logs confirm 180 Windows routine native tests, 148 Linux,
+176 TypeScript, 63 desktop/browser and eight production PWA scenarios. MSVC/header
+ABI, 5 GiB resource, five Python environments, offline recovery kit and fresh
+native/Python parity passed. Encrypted formats and Hello/recovery protection remain
+compatible. Fixed void-command replies are normalized at the adapter; native
+refusals and nullable dialog cancellation retain their existing meaning.
+
+Two worker unit tests and two actual Windows integration tests pass separately.
+The hostile proof checks unrelated file/profile/TEMP/registry, parent memory,
+clipboard, inherited handles, writable input, child launch and allocation limits,
+timeout and cancellation. LPAC refused Winsock startup with 10107; unrestricted TCP/UDP succeeded using the identical minimal environment. Individual transport attempts were NOT RUN after startup refusal. Installed TXT authenticates
+a real native selected version, launches the identical release worker, renders
+inert UTF-8 and clears on lock; context rename also passed. Original
+[proof metadata](../deploy/windows-desktop/text-preview-sandbox-98a714b.json) and
+[installed TXT screenshot](../deploy/windows-desktop/windows-file-safe-txt-98a714b.png)
+are retained byte-for-byte. This does not complete the full standard-user,
+indirect-broker, WER/crash or PDF/image matrix.
+
+Original artifact ZIP matches GitHub digest `sha256:972ec0733baf5fc6d82c95af609cfe7a4ad54dedccd6c9fe77c66720ea80148f`.
+Installer: 219,954,926 bytes; SHA-256 `5ceac8231a208b13699e1ea9acc247501603b7447001bed76d8319621b3da051`,
+matching original build metadata and sidecar. Real per-user installation,
+executable equality, UI/native commands, lock and source correlation passed.
+The installed app created native nested folders and traversed parent row,
+history and breadcrumb paths. Separate settings retain the fixed Hello command,
+password admission and default-session form. An original
+[installed explorer screenshot](../deploy/windows-desktop/windows-file-safe-explorer-98a714b.png)
+and metadata are retained byte-for-byte in the [download folder](../deploy/windows-desktop/).
+Hosted Hello is unavailable; no new physical protected-unlock result is claimed.
+
+The backup reminder now uses 30 days since matching verification, including
+unchanged vaults; exporting alone cannot reset it. Changes still remind immediately
+and ten commits retain escalation. A new session regression checks the exact
+boundary and reset; an actual-adapter regression ensures native JSON unit does not suppress successful action feedback. Two new UI scenarios check reminder rendering, quiet safe
+admission, action feedback beside the heading and expiry, all palettes, matching
+navigation styles and responsive Russian labels. Real installed smoke checks the
+native folder action notice placement and quiet password admission. Existing
+independent Hello and owner reports retain their scope. Physical file-safe biometric, account
+isolation, standard-user and the full multi-format preview matrix remain unverified; no old diagnostic
+repeat is requested. [Explorer guide](file-safe/EXPLORER.md) and
+[acceptance ledger](file-safe/ACCEPTANCE.md) explain remaining limits.
+
+Hosted 10,000-file restore: 177.918 s; 5 GiB process:
+48.963 s, sampled peak working set 10,571,776 bytes.
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-bd35939.zip): 218,995 bytes;
+SHA-256 `309b5dd3d4cd2bf5e1405cf4a97584f447eb46c493c424e1e5f9e2677badf6cc`. All ten files equal a fresh merged-main web build; native IPC
+is absent. No server deployment occurred. Publication changes only docs/artifacts;
+application, tests, dependencies and workflows retain the tested bytes.
+
 ## Backup reminder policy and shared safe feedback (2026-10-09)
 
 The first Windows run on head `6576cec` / tested source `0213f3a` passed all
@@ -9,7 +63,7 @@ double returned `undefined`; the generic action runner treated `null` as dialog
 cancellation and suppressed success. The native adapter now normalizes only fixed
 void commands to `undefined`, preserving errors and nullable/false dialog results.
 A regression exercises the actual adapter against native-shaped replies. No
-assertion was weakened. Final installed evidence remains pending until rerun.
+assertion was weakened. Final installed evidence is recorded in the publication section above.
 
 Owner policy changes the password backup deadline from 24 hours of unbacked
 changes to 30 days since the last successful matching backup verification.
@@ -29,7 +83,7 @@ The explorer, isolated TXT worker and native Hello protection remain unchanged.
 Local focused validation: 15 session tests, including exact 30-day/no-change
 boundary and verification-only reset; typecheck; 14 relevant browser scenarios,
 including quiet admission, action placement/expiry, identical navigation styles
-in all palettes, and narrow-screen overflow. Full local suites: 175 TypeScript tests and 63 desktop/browser scenarios passed; both production builds and target isolation passed. Final Russian heading placement and all-palette navigation checks passed after the long-label adjustment. Full current-source CI and installed Windows evidence are pending and will be recorded after execution.
+in all palettes, and narrow-screen overflow. Full local suites: 175 TypeScript tests and 63 desktop/browser scenarios passed; both production builds and target isolation passed. Final Russian heading placement and all-palette navigation checks passed after the long-label adjustment. Final current-source CI and installed Windows evidence are recorded in the publication section above.
 
 ## File Safe context menus and isolated TXT publication (2026-10-09)
 
