@@ -92,3 +92,7 @@ Optimized native Windows 5 GiB resource gate: encryption 29.301 s; verification 
 Preview/physical Hello, clean offline standard-user Windows 11, exhaustive fault/path-race/lifecycle and installed privacy gates remain open as identified above. **Full feature release remains BLOCKED.**
 
 Final hosted 10,000-file restore: 181.867 s; native search: 0.225 s (one matched row). The full restore verifies all referenced encrypted objects; this is not a catalog-only unlock measurement. All four metadata UI scenarios pass, including held-status admission after lock.
+
+## File-safe Hello hosted publication — 2026-10-09
+
+PR #34 code `93821b69e978f9f75a7862cccb397b6eecc73dfb`, tested source `5369fadd0dc35c03cb568125cae7c444ec9e8472`, merge `58084c47377d17e634a0d1839baf7cff24a96d46` passed all eleven checks. Windows 177 routine native tests, Linux 145, TypeScript 174, UI 49 and production PWA eight passed. Ten new native cases and three UI cases cover the independent root lifecycle and old-vault/purpose boundaries. Actual installed command/form smoke rejected stale/malformed/wrong-password requests without creating keys. [Installer and original evidence](../../deploy/windows-desktop/) and [publication ledger](../RELEASE_EVIDENCE.md) contain checksums and source correlation. Independent recovery/format, MSVC ABI and offline kit passed. This is hosted software evidence; physical file-safe Hello acceptance remains NOT RUN. H-01/H-03 and full physical H-02/H-04, other-account isolation and preview requirements are not marked passed.

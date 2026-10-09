@@ -1,25 +1,28 @@
 # Windows desktop test installers
 
-Latest: **opt-in Windows Hello for the active password vault** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37815672528/artifacts/11567523288), [successful Windows run 37815672528](https://github.com/kurasis/passkeylocal/actions/runs/37815672528). [PR #32](https://github.com/kurasis/passkeylocal/pull/32) merged as `6185e8008c8f1b943cb61de61ac2e7c8875d2523`. Code head `977fe6a4bab63992868dbb2462fddb786e2e8107`; installed/tested source `c18894e210a07546ba66cf178b8048ae5c40ac61`. The merged application tree equals the tested PR tree.
+Latest: **independent Windows Hello for File Safe and Passwords** — [download installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/37893262653/artifacts/11599464003), [successful Windows run 37893262653](https://github.com/kurasis/passkeylocal/actions/runs/37893262653). [PR #34](https://github.com/kurasis/passkeylocal/pull/34) merged as `58084c47377d17e634a0d1839baf7cff24a96d46`. Code head `93821b69e978f9f75a7862cccb397b6eecc73dfb`; installed/tested source `5369fadd0dc35c03cb568125cae7c444ec9e8472`. The merged application tree equals the tested PR tree.
 
 Open the artifact while signed in to GitHub, extract it and run `PassKey-Local-Windows-x64-0.1.0-unsigned-setup.exe`. This is an unsigned experimental installer; Microsoft's signed x64 WebView2 offline installer is included. Node/Python are not required. Artifact retention is 30 days; after expiry run the [Windows workflow](https://github.com/kurasis/passkeylocal/actions/workflows/windows.yml) on main.
 
-Installer: 218,130,545 bytes; SHA-256 `cde3091431697da7b8d958c271dc91f6d67186bc266b9b4f120723cf7d537642`, matched to original metadata and checksum sidecar. Original evidence: [build](build-c18894e.json), [installed-app smoke](smoke-c18894e.json), [5 GiB resource measurement](file-safe-resource-c18894e.json), [signed WebView2](webview2-download-c18894e.json), [Russian Hello controls](windows-hello-c18894e.png), [settings](windows-settings-c18894e.png), [locked window](windows-locked-c18894e.png). The unversioned sidecar matches this installer.
+Installer: 219,901,819 bytes; SHA-256 `4fdd5dbc13a323f1de41766d048b96ce2b8e1d02144b7840138f775563bf255a`, matched to original metadata and checksum sidecar. Original evidence: [build](build-5369fad.json), [installed-app smoke](smoke-5369fad.json), [5 GiB resource](file-safe-resource-5369fad.json), [signed WebView2](webview2-download-5369fad.json), [file-safe Hello form](windows-file-safe-hello-5369fad.png), [password-vault Hello](windows-hello-5369fad.png), [settings](windows-settings-5369fad.png), [locked window](windows-locked-5369fad.png). The unversioned sidecar matches this installer.
 
-## Connect the vault
+## Connect File Safe
 
-1. Close the previous app and install this build. Open the vault with its master password; keep a verified password backup.
-2. Open Settings → **Вход через Windows Hello / Unlock with Windows Hello**. The default is until the app closes, for at most 24 hours. Remembering this computer for 6, 12 or 24 hours is a separate explicit choice.
-3. Re-enter the master password and select **Подключить Windows Hello / Connect Windows Hello**. Windows performs credential creation and a separate protected round trip. The setting becomes enabled only on success.
-4. Lock the app and select **Войти через Windows Hello / Unlock with Windows Hello**. Windows may accept fingerprint, face or PIN. Cancellation leaves the password form available. **Отключить Hello и удалить его ключи / Disable Hello and remove its keys** removes the local connection.
+1. Close the previous app and install this build. Open **Файловый сейф / File Safe** with its own master password; keep a verified encrypted password backup.
+2. Expand **Windows Hello для файлового сейфа / Windows Hello for File Safe**. The default lasts until the app closes, for at most 24 hours. Remember this computer for 6, 12 or 24 hours only by explicit choice.
+3. Re-enter the **file-safe** master password and select **Подключить файловый сейф к Windows Hello / Connect file safe to Windows Hello**. Windows performs creation and a separate authorization round trip; enabled appears only after protected recovery succeeds.
+4. Lock File Safe and select **Открыть файловый сейф через Windows Hello / Unlock file safe with Windows Hello**. Fingerprint, face or PIN is verified by Windows. Cancellation leaves it locked and the password form available; no automatic retry occurs.
+5. **Отключить Hello и удалить его ключи / Disable Hello and remove its keys** removes only the safe's exact owned objects. Failed deletion remains cleanup-required for retry.
 
-Password change, vault replacement/restore, expiry and detected clock rollback disable the old connection. Session mode requires a password after app exit; remove its old objects before reconnecting. Failed deletion remains visible as cleanup-required, with a retry action. The master-password KDBX format and independent recovery stay unchanged.
+File Safe and Passwords have separate connections, roots/components, namespaces and tokens. Opening one never opens the other. Existing password-vault connections retain their exact AAD and require no migration; their [connection guide](../../docs/windows/HELLO_VAULT_ENROLLMENT.md) remains applicable. The owner's prior “works” reply confirms basic password-vault flow only.
 
-[Design, boundaries and remaining acceptance](../../docs/windows/HELLO_VAULT_ENROLLMENT.md). This is experimental opt-in, off by default. The new packaged application lifecycle still needs physical owner acceptance; prior synthetic passes do not constitute that result. Same-PC/other-account manual testing remains excluded and unverified. Earlier diagnostic buttons are under **Диагностика Windows Hello / Windows Hello diagnostics**; no completed diagnostic needs repeating.
+Safe password/root change, restore, expiry and observed clock rollback invalidate its old envelope. Rotation/restore keep old owned objects journaled until explicit removal. Session mode needs a password after app exit and removal before reconnecting. Ordinary saves/imports retain the connection. Portable v1 backup bytes and independent Python recovery stay unchanged.
+
+[File-safe design, operation and evidence limits](../../docs/file-safe/WINDOWS_HELLO.md). New physical file-safe acceptance on Kensington is pending: use a disposable safe, connect, lock, unlock explicitly, export a small test file and verify a password backup. Broader lifetime/restart/negative cases are separately unverified. Same-PC second-account testing remains excluded. No completed standalone diagnostic is requested again. Preview remains unavailable under its separate isolation gates.
 
 ## Prior owner measurements
 
-The following reports predate active-vault enrollment and preserve their original scope/flags. Their references to unavailable production enrollment describe those earlier builds; the new implementation and remaining physical acceptance are described above.
+The following historical reports preserve their original source, scope and flags. Earlier descriptions of unavailable production enrollment refer to those earlier builds.
 
 ## Completed single-button KDBX recovery
 
@@ -124,10 +127,10 @@ production lifecycle acceptance remain open under the revised one-account plan.
 
 ## Validation of this installer
 
-[General CI 37815672521](https://github.com/kurasis/passkeylocal/actions/runs/37815672521) and Windows CI passed all 11 checks on code head `977fe6a4bab63992868dbb2462fddb786e2e8107`. Windows: 167 routine native tests, including 12 enrollment lifecycle cases and one fixed-command input test; independent MSVC/header ABI and 5 GiB resource checks executed separately. Linux: 135 routine native tests; TypeScript: 174; desktop/browser UI: 46; production PWA: eight. Recovery OS/version matrix, offline kit and independent Python interop passed.
+[General CI 37893262472](https://github.com/kurasis/passkeylocal/actions/runs/37893262472) and Windows CI passed all 11 checks on code head `93821b69e978f9f75a7862cccb397b6eecc73dfb`. Windows: 177 routine native tests; Linux: 145; TypeScript: 174; desktop/browser UI: 49; production PWA: eight. Ten new native and three new UI cases cover safe lifecycle, purpose isolation and old-vault compatibility. MSVC/header ABI, 5 GiB resource, OS/version recovery matrix, offline kit and fresh independent native/Python interop passed separately.
 
-The installed NSIS app passed binary equality, UI/IPC/lock checks and source correlation. The new enrollment command returned off/no-record revoke without a component, refused malformed actions and stale sessions, and populated the actual worker-backed connection form with session mode as default. Hosted Windows lacks usable Hello/TPM; no physical enrollment success is claimed from those paths or synthetic browser IPC.
+Actual NSIS installation, executable equality, worker/native UI/IPC, module locks and provenance passed. The file-safe command returned off/no-record revoke without secret material, rejected malformed input and stale generation, and refused a wrong safe password before native object creation. Its installed connection form defaulted to session mode with four choices and an empty required password. Existing password-vault smoke and diagnostic report boundaries passed. Hosted Windows has no usable Hello/TPM; this is not a physical protected-unlock result.
 
-10,000-file restore: 78.239 seconds. Hosted 5 GiB primitive: 50.399 seconds; sampled peak working set 10,551,296 bytes. These are hosted observations, not target guarantees.
+10,000-file restore: 159.504 seconds. Hosted 5 GiB primitive: 46.463 seconds; sampled peak working set 10,645,504 bytes. These are hosted observations, not target guarantees.
 
-[Release evidence](../../docs/RELEASE_EVIDENCE.md) records the remaining physical lifecycle acceptance. The [Cloudflare ZIP](../cloudflare-pages/) is a separate web build.
+[Release evidence](../../docs/RELEASE_EVIDENCE.md). The [Cloudflare ZIP](../cloudflare-pages/) remains a separate web build.

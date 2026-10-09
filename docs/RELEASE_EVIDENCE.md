@@ -1,5 +1,43 @@
 # Release evidence and gate status
 
+## File Safe Windows Hello publication (2026-10-09)
+
+[PR #34](https://github.com/kurasis/passkeylocal/pull/34) merged as `58084c47377d17e634a0d1839baf7cff24a96d46`;
+application tree equals tested source `5369fadd0dc35c03cb568125cae7c444ec9e8472` (head `93821b69e978f9f75a7862cccb397b6eecc73dfb`).
+[General CI 37893262472](https://github.com/kurasis/passkeylocal/actions/runs/37893262472) and
+[Windows CI 37893262653](https://github.com/kurasis/passkeylocal/actions/runs/37893262653)
+passed all 11 checks. Logs confirm 177 Windows routine native tests, 145 Linux,
+174 TypeScript, 49 desktop/browser and eight production PWA scenarios. MSVC/header
+ABI, 5 GiB resource, five Python environments, offline recovery kit and fresh
+native/Python recovery parity passed. Locally the Python corpus was 91 passed /
+12 skipped (Windows ACL and absent KeePassXC), never counted as passes.
+
+Original artifact ZIP matches GitHub digest `sha256:b8d036e2f5d85ad2784a545e37be5003bfdb276d3194b48232471dec190dcd52`.
+Installer: 219,901,819 bytes; SHA-256 `4fdd5dbc13a323f1de41766d048b96ce2b8e1d02144b7840138f775563bf255a`,
+matching original build metadata and sidecar. Real per-user installation,
+executable equality, worker/native command admission, UI, lock and source
+correlation passed. File-safe status/no-record revoke exposes no root; stale and
+malformed requests and a wrong safe password are refused. The actual connection
+form has four modes, session default and required empty password. Original
+[file-safe controls](../deploy/windows-desktop/windows-file-safe-hello-5369fad.png)
+and other metadata are retained byte-for-byte in the [download folder](../deploy/windows-desktop/).
+Hosted Hello is unavailable; physical file-safe unlock is not claimed.
+
+Independent experimental opt-in is available. Existing password-vault enrollment
+AAD/namespace bytes remain compatible; its prior owner feedback retains its own
+scope. New physical file-safe acceptance, broader lifecycle/negative cases and
+excluded account-isolation measurement remain unverified. No completed diagnostic
+repeat is requested. [File-safe connection guide](file-safe/WINDOWS_HELLO.md) and
+[acceptance ledger](file-safe/ACCEPTANCE.md) describe these limits; preview remains
+blocked by separate OS-isolation requirements.
+
+Hosted 10,000-file restore: 159.504 s; 5 GiB process:
+46.463 s, sampled peak working set 10,645,504 bytes.
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-58084c4.zip): 217,566 bytes;
+SHA-256 `ebf4fe5dc264712fde436356535c74350fbf8c94130c954cd259b46d0dc78459`. All ten files equal a fresh merged-main web build; native IPC
+is absent. No server deployment occurred. Publication changes only docs/artifacts;
+application, tests, dependencies and workflows retain the tested bytes.
+
 ## Independent File Safe Hello integration (2026-10-09)
 
 [File-safe Hello](file-safe/WINDOWS_HELLO.md) now protects the safe's random root
