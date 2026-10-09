@@ -71,6 +71,12 @@ the handle/clipboard negative checks. Finer proof-only stages isolate which
 rejection must be observed without stopping the remaining negative checks.
 No failed probe is counted as a successful all-denials result.
 
+The failing call is the deliberately absent handle query. The hostile worker
+now queries its actual ProcessHandleInformation snapshot, validates its bounded
+layout and requires both inherited sections as positive controls before asserting
+that the nonlisted canary handle is absent. It no longer dereferences an invalid
+handle; unavailable enumeration remains a failed test. Production code is unchanged.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

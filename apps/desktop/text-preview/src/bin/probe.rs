@@ -42,8 +42,64 @@ fn main() {
         let parent = lines[0].parse::<u32>().map_err(|_| Error::Protocol)?;
         let sentinel = lines[1].parse::<usize>().map_err(|_| Error::Protocol)? as HANDLE;
         stage(111);
-        let mut flags = 0;
-        if unsafe { GetHandleInformation(sentinel, &mut flags) } != 0 {
+        // Query the actual handle table rather than dereferencing a deliberately
+        // absent handle: Windows may raise STATUS_INVALID_HANDLE for the latter.
+        #[repr(C)]
+        #[derive(Clone, Copy)]
+        struct Entry {
+            handle: HANDLE,
+            handle_count: usize,
+            pointer_count: usize,
+            granted: u32,
+            kind: u32,
+            attributes: u32,
+            reserved: u32,
+        }
+        #[link(name = "ntdll")]
+        extern "system" {
+            fn NtQueryInformationProcess(
+                process: HANDLE,
+                class: u32,
+                buffer: *mut std::ffi::c_void,
+                size: u32,
+                returned: *mut u32,
+            ) -> i32;
+        }
+        let mut table = vec![0usize; 8192];
+        let mut returned = 0;
+        let size = std::mem::size_of_val(table.as_slice());
+        let status = unsafe {
+            NtQueryInformationProcess(
+                GetCurrentProcess(),
+                51,
+                table.as_mut_ptr().cast(),
+                size as u32,
+                &mut returned,
+            )
+        };
+        let header = 2 * std::mem::size_of::<usize>();
+        let count = table[0];
+        if status != 0
+            || returned as usize > size
+            || (returned as usize) < header
+            || count > (returned as usize - header) / std::mem::size_of::<Entry>()
+        {
+            return Ok("FAIL: own handle table unavailable".to_owned());
+        }
+        let entries = unsafe {
+            std::slice::from_raw_parts(
+                table.as_ptr().cast::<u8>().add(header).cast::<Entry>(),
+                count,
+            )
+        };
+        let input_id = std::env::args().nth(1).unwrap().parse::<usize>().unwrap() as HANDLE;
+        let output_id = std::env::args().nth(2).unwrap().parse::<usize>().unwrap() as HANDLE;
+        if !entries.iter().any(|e| e.handle == input_id)
+            || !entries.iter().any(|e| e.handle == output_id)
+        {
+            return Ok("FAIL: handle table positive control".to_owned());
+        }
+        if entries.iter().any(|e| e.handle == sentinel) {
             return Ok("FAIL: inherited sentinel".to_owned());
         }
         let input_handle = std::env::args().nth(1).unwrap().parse::<usize>().unwrap() as HANDLE;
