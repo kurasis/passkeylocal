@@ -4,8 +4,12 @@ This increment connects the previously measured native PRF/TPM mechanism to the
 active KDBX crypto worker. It is an experimental, explicit opt-in, off by default.
 The original synthetic reports and their false flags remain historical evidence;
 they are not runtime enrollment settings or a request to repeat those tests.
-Physical acceptance of this new application lifecycle is still pending. The
-owner's same-PC/other-account test remains excluded and unverified.
+After receiving the new installer, the owner reported that it works on
+2026-10-09. This confirms the basic delivered flow, without a detailed lifetime,
+restart or negative-case report. Broader physical lifecycle acceptance remains
+pending; the same-PC/other-account test stays excluded and unverified. For a
+standalone implementation brief, start with the
+[developer handoff](WINDOWS_HELLO_DEVELOPER_HANDOFF.md).
 
 ## User flow
 
@@ -113,9 +117,10 @@ The existing independent Python check opens the component-opened/re-saved KDBX
 with only its password and compares full records/history. See the
 [release ledger](../RELEASE_EVIDENCE.md) for actual run results.
 
-No production physical pass is inferred from the owner's completed public-fixture
-report. Remaining owner acceptance is the new packaged opt-in/lock/unlock/revoke
-flow, remembered restart and session expiry behavior, and interruption/negative
+The owner's subsequent “works” response is basic application-flow confirmation;
+no comprehensive physical pass is inferred from it or the public-fixture report.
+Remaining detailed acceptance includes revocation, remembered restart and session
+expiry behavior, and interruption/negative
 cases using a disposable vault in the existing Windows account. No previous
 standalone diagnostic or second-account procedure is requested. Broader sensor,
 ESS, standard-user and lockout coverage retains its original unverified scope.
