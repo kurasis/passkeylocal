@@ -74,6 +74,22 @@ fn real_lpac_text_and_negative_worker_are_os_enforced() {
     assert_eq!(&received[..length], b"minimal env positive");
     tcp.accept().unwrap();
     println!("PASS: identical minimal environment TCP/UDP positive control");
+    use windows_sys::Win32::System::Memory::{
+        VirtualAlloc, VirtualFree, MEM_COMMIT, MEM_RELEASE, MEM_RESERVE, PAGE_READWRITE,
+    };
+    let memory = unsafe {
+        VirtualAlloc(
+            std::ptr::null(),
+            300 * 1024 * 1024,
+            MEM_COMMIT | MEM_RESERVE,
+            PAGE_READWRITE,
+        )
+    };
+    assert!(
+        !memory.is_null(),
+        "unrestricted allocation positive control"
+    );
+    assert_ne!(unsafe { VirtualFree(memory, 0, MEM_RELEASE) }, 0);
     let local = std::env::var("LOCALAPPDATA").unwrap();
     let user = std::env::var("USERPROFILE").unwrap();
     let probe_nonce = nonce();

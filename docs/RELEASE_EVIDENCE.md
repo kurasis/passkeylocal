@@ -94,6 +94,10 @@ explicitly as network-stack denial; per-transport attempts are NOT RUN when
 startup is refused. Unexpected startup errors fail the test. No networking
 capability or registry-read grant is added merely to initialize a forbidden stack.
 
+Parent memory and parent handle duplication are probed separately; a combined
+rights request alone could mask partial access. An unrestricted 300 MiB allocation
+positive control distinguishes job memory refusal from host-wide allocation failure.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

@@ -180,12 +180,14 @@ fn main() {
                 return Ok("FAIL: input security-descriptor escalation".to_owned());
             }
         }
-        let process = unsafe { OpenProcess(PROCESS_VM_READ | PROCESS_DUP_HANDLE, 0, parent) };
-        if !process.is_null() {
-            unsafe {
-                CloseHandle(process);
+        for right in [PROCESS_VM_READ, PROCESS_DUP_HANDLE] {
+            let process = unsafe { OpenProcess(right, 0, parent) };
+            if !process.is_null() {
+                unsafe {
+                    CloseHandle(process);
+                }
+                return Ok("FAIL: parent memory or handle access".to_owned());
             }
-            return Ok("FAIL: parent memory".to_owned());
         }
         stage(115);
         if unsafe { OpenClipboard(std::ptr::null_mut()) } != 0 {
