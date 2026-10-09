@@ -38,7 +38,11 @@ fixture verifies the final line remains reachable. Paging UI and typecheck passe
 The first actual LPAC launch refused creation with Win32 2. Startup now explicitly
 sets all standard handles to null, matching the section-only handle list and
 Chromium's process startup practice, rather than inheriting CI/console streams.
-The actual enforcement tests must pass after this correction.
+That change alone did not resolve Win32 2. Windows requires the package identity
+to be registered. Registration/unregistration now use Chromium's KernelBase
+entry points separately from profile-directory creation; no profile directory or
+registry/filesystem storage grant is requested. Negative tests must still verify
+that neither direct nor profile writes are available.
 
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,

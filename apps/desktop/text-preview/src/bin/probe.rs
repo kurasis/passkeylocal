@@ -87,6 +87,14 @@ fn main() {
                 return Ok("FAIL: file persistence".to_owned());
             }
         }
+        // Registration must not grant a writable own storage profile. Try
+        // creating all missing directories, not just opening a missing leaf.
+        let own_profile = std::path::Path::new(lines.last().unwrap())
+            .parent()
+            .unwrap();
+        if std::fs::create_dir_all(own_profile).is_ok() {
+            return Ok("FAIL: own profile storage".to_owned());
+        }
         let key: Vec<u16> = "Software\\PassKeyLocalPreviewSyntheticCanary\0"
             .encode_utf16()
             .collect();

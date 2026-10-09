@@ -12,7 +12,10 @@ use windows_sys::Win32::{
     Foundation::*,
     Security::{Authorization::*, Isolation::*, *},
     Storage::FileSystem::{FILE_GENERIC_EXECUTE, FILE_GENERIC_READ},
-    System::{JobObjects::*, Memory::*, SystemInformation::GetSystemDirectoryW, Threading::*},
+    System::{
+        JobObjects::*, LibraryLoader::*, Memory::*, SystemInformation::GetSystemDirectoryW,
+        Threading::*,
+    },
 };
 use zeroize::{Zeroize, Zeroizing};
 pub(crate) fn failed(stage: &str) -> Error {
@@ -72,6 +75,43 @@ impl Drop for Sid {
     fn drop(&mut self) {
         unsafe {
             FreeSid(self.0);
+        }
+    }
+}
+// Chromium registers the package identity separately from creating profile
+// directories. Fail closed if this Windows entry point is unavailable. No
+// CreateAppContainerProfile/profile directory or storage grants are requested.
+struct Registration {
+    sid: PSID,
+    unregister: unsafe extern "system" fn(PSID) -> i32,
+}
+impl Registration {
+    fn new(sid: PSID, name: &[u16]) -> Result<Self> {
+        let module_name = wide(std::ffi::OsStr::new("kernelbase.dll"));
+        let module = unsafe { GetModuleHandleW(module_name.as_ptr()) };
+        if module.is_null() {
+            return Err(failed("identity-module"));
+        }
+        let register =
+            unsafe { GetProcAddress(module, c"AppContainerRegisterSid".as_ptr().cast()) }
+                .ok_or_else(|| failed("identity-register-api"))?;
+        let unregister =
+            unsafe { GetProcAddress(module, c"AppContainerUnregisterSid".as_ptr().cast()) }
+                .ok_or_else(|| failed("identity-unregister-api"))?;
+        let register: unsafe extern "system" fn(PSID, *const u16, *const u16) -> i32 =
+            unsafe { std::mem::transmute(register) };
+        let unregister: unsafe extern "system" fn(PSID) -> i32 =
+            unsafe { std::mem::transmute(unregister) };
+        if unsafe { register(sid, name.as_ptr(), name.as_ptr()) } < 0 {
+            return Err(failed("identity-register"));
+        }
+        Ok(Self { sid, unregister })
+    }
+}
+impl Drop for Registration {
+    fn drop(&mut self) {
+        unsafe {
+            (self.unregister)(self.sid);
         }
     }
 }
@@ -259,6 +299,7 @@ fn run_with_timeout(
         return Err(failed("derive-unprofiled-sid"));
     }
     let sid = Sid(sid);
+    let _registration = Registration::new(sid.0, &name)?;
     executable_acl(&path, sid.0, GRANT_ACCESS)?;
     let _grant = Grant {
         path: &path,

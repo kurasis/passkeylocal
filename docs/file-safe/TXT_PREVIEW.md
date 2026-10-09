@@ -21,8 +21,9 @@ admission; lock/session checks also revoke pending work. No export dialog, exter
 application, file path or plaintext temp fallback is used.
 
 The separately built Rust worker uses only strict UTF-8 decoding. A fresh CSPRNG
-nonce derives a unique **unprofiled LPAC SID**: no AppContainer profile or writable
-profile storage is created. A temporary RX grant applies only to the fixed worker
+nonce derives a unique **LPAC SID without a storage profile**: the package identity is registered through the same KernelBase entry points used by Chromium,
+then unregistered on exit. This is separate from creating profile directories;
+`CreateAppContainerProfile` and storage grants are not used. Missing APIs fail closed. A temporary RX grant applies only to the fixed worker
 executable and is revoked without replacing unrelated ACL entries. There are no
 capabilities, profile/directory/network/registry grants or inherited environment
 secrets. Current directory is the Windows system directory; TEMP/TMP point to a
@@ -54,7 +55,7 @@ The supported path creates no intentional document file/cache/index/thumbnail.
 worker behind the `proof` feature and actual Windows LPAC integration tests. The
 Windows workflow builds/proves the exact release TXT worker before Tauri packaging.
 The hostile executable is never installed and the production worker has no debug
-command interpreter. Tests use synthetic canaries and a fresh unprofiled SID.
+command interpreter. Tests use synthetic canaries and a fresh registered SID without a storage profile.
 
 Hosted proof checks token/capabilities, input write denial, absent nonlisted
 inheritable handle, unrelated file/profile/TEMP/registry/parent-memory/clipboard

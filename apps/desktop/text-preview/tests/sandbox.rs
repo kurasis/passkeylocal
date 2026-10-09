@@ -60,6 +60,16 @@ fn real_lpac_text_and_negative_worker_are_os_enforced() {
     udp.recv_from(&mut [0; 16]).unwrap();
     let local = std::env::var("LOCALAPPDATA").unwrap();
     let user = std::env::var("USERPROFILE").unwrap();
+    let probe_nonce = nonce();
+    let package_name = format!(
+        "PassKeyLocal.Preview.{}",
+        probe_nonce
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    );
+    let profile = Path::new(&local).join("Packages").join(package_name);
+    assert!(!profile.exists());
     let paths = [
         vault.clone(),
         base.join("object.obj"),
@@ -67,6 +77,7 @@ fn real_lpac_text_and_negative_worker_are_os_enforced() {
         Path::new(&user).join("Documents/PassKey-preview-probe.tmp"),
         Path::new(&local).join("Temp/PassKey-preview-probe.tmp"),
         Path::new(&local).join("Packages/PassKey-preview-probe.tmp"),
+        profile.join("LocalState/selected-document.txt"),
     ];
     let payload = format!(
         "{}\n{}\n{}\n{}\n{}",
@@ -84,7 +95,7 @@ fn real_lpac_text_and_negative_worker_are_os_enforced() {
     let report = proof_run(
         Path::new(env!("CARGO_BIN_EXE_passkey-preview-probe")),
         payload.as_bytes(),
-        nonce(),
+        probe_nonce,
         || true,
         Duration::from_secs(30),
     )
@@ -99,6 +110,7 @@ fn real_lpac_text_and_negative_worker_are_os_enforced() {
     for p in &paths[2..] {
         assert!(!p.exists(), "probe persisted a file");
     }
+    assert!(!profile.exists(), "worker created a storage profile");
     drop(sentinel);
     std::fs::remove_dir_all(base).unwrap();
 }
