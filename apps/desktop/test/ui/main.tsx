@@ -79,7 +79,14 @@ if (fixture) {
     ];
   }
 }
+let delayPreview = false; let releasePreview = () => {}; const previewCalls: Array<{operation:string;file?:string}> = [];
 const api: FileSafeApi = {
+  async preview(request) {
+    previewCalls.push({ operation: request.operation, ...(request.operation === "read" ? { file: request.file } : {}) });
+    if (request.operation === "cancel") return null;
+    if (delayPreview) await new Promise<void>((r) => releasePreview = r);
+    return { request_id: request.request_id, text: "Synthetic inert <script>alert(1)</script>\nПривет 🗂\n" + Array.from({length:10000},(_,i)=>`Synthetic line ${i}`).join("\n") };
+  },
   async hello(request) {
     if (request.operation === 'status') return { status: { ...hello } };
     helloCalls.push({ operation: request.operation, ...('mode' in request ? { mode: request.mode } : {}) });
@@ -121,7 +128,7 @@ const api: FileSafeApi = {
         retained_packages: 0,
       },
       hello: "independent-opt-in",
-      preview: "unavailable",
+      preview: "txt-isolated",
     } satisfies SafeStatus;
   },
   async access(_password, _create, expectedGeneration) {
@@ -193,6 +200,12 @@ const api: FileSafeApi = {
   async change(_token, _snapshot, change) {
     changes.push(change);
     if (change.kind === "folder") folders.push({ id: (1000 + revision).toString(16).padStart(32, "0"), parent_id: change.parent_id, name: change.name });
+    if (change.kind === "folder_edit") folders = folders.map((f) => f.id === change.folder_id ? { ...f, name: change.name } : f);
+    if (change.kind === "folder_remove") {
+      if (folders.some((f) => f.parent_id === change.folder_id) || explorerFiles?.some((f) => f.folder_id === change.folder_id)) throw { code: "NOT_EMPTY" };
+      folders = folders.filter((f) => f.id !== change.folder_id);
+    }
+    if (change.kind === "edit" && explorerFiles) explorerFiles = explorerFiles.map((f) => f.id === change.edit.file_id ? { ...f, ...change.edit } : f);
     if (change.kind === "trash" && explorerFiles) explorerFiles = explorerFiles.map((file) => change.file_ids.includes(file.id) ? { ...file, deleted: change.deleted } : file);
     revision++;
   },
@@ -218,6 +231,9 @@ const api: FileSafeApi = {
 Object.assign(window, {
   uiTest: {
     queries() { return queries; },
+    previewCalls() { return previewCalls; },
+    delayPreview() { delayPreview = true; },
+    releasePreview() { delayPreview = false; releasePreview(); },
     changes() { return changes; },
     helloCalls() { return helloCalls; },
     cancelHello() { cancelHello = true; },

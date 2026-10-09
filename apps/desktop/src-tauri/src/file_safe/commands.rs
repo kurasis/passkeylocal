@@ -1,4 +1,4 @@
-//! Main-window-only, typed commands. No renderer path or plaintext-byte API.
+//! Main-window-only typed metadata, operations and isolated validated TXT output. No renderer path API.
 use super::manager::{collect_sources, Change, ImportOutcome, Page, Query, SafeHost, Status};
 use crate::{
     host::{focused, trusted, WindowParent},
@@ -8,6 +8,41 @@ use tauri::{Emitter, Manager, State, WebviewWindow};
 fn hwnd(window: &WebviewWindow) -> Result<usize> {
     focused(window)?;
     Ok(window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize)
+}
+#[tauri::command]
+pub async fn file_safe_preview(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    request: super::preview::Request,
+) -> Result<Option<super::preview::Response>> {
+    focused(&window)?;
+    match request {
+        super::preview::Request::Cancel { token, request_id } => {
+            app.state::<SafeHost>()
+                .get()?
+                .preview_cancel(&token, &request_id)?;
+            Ok(None)
+        }
+        super::preview::Request::Read {
+            token,
+            snapshot,
+            file,
+            version,
+            request_id,
+        } => {
+            app.state::<SafeHost>()
+                .get()?
+                .preview_begin(&token, &request_id)?;
+            tauri::async_runtime::spawn_blocking(move || {
+                app.state::<SafeHost>()
+                    .get()?
+                    .preview_text(&token, &snapshot, &file, version.as_deref(), &request_id)
+                    .map(Some)
+            })
+            .await
+            .map_err(|_| Error::new("UNAVAILABLE"))?
+        }
+    }
 }
 #[tauri::command]
 pub async fn file_safe_hello(

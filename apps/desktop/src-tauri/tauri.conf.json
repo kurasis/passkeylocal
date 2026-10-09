@@ -18,6 +18,7 @@
   },
   "bundle": {
     "active": true,
+    "externalBin": ["binaries/passkey-text-worker"],
     "targets": ["nsis"],
     "category": "Utility",
     "resources": { "../../../docs/file-safe/licenses/": "file-safe-licenses/" },

@@ -947,6 +947,7 @@ pub fn run() {
             file_safe_import,
             file_safe_cancel,
             file_safe_export,
+            file_safe_preview,
             file_safe_rotate,
             file_safe_backup,
             file_safe_recover,

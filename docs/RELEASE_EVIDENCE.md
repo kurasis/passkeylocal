@@ -1,5 +1,37 @@
 # Release evidence and gate status
 
+## File Safe placement, context actions and isolated TXT implementation (2026-10-09)
+
+The desktop module switches move into the header and imports/new folders into the
+left explorer panel. Right-click/keyboard menus reuse file editing, favorites,
+versions, recycle/restore and consent-gated export. Native folder rename preserves
+children; confirmed removal refuses root/nonempty folders, including recycled
+files. The portable catalog/object format and password/Hello recovery are unchanged.
+
+An additive focused-window preview command authenticates one bounded selected TXT
+version before launching a fixed separate unprofiled LPAC worker. Read-only input,
+explicit two-handle inheritance, zero-capability token readback, job-at-creation,
+child/clipboard restrictions, 256 MiB memory, timeout/cancel and correlated output
+are implemented. Strict UTF-8/BOM and inert virtualized text are the only supported
+parser path; no plaintext file, broad path API or fallback exists.
+
+Local: 148 Linux native tests passed (three new folder/content/ticket tests).
+Cross-Windows GNU Clippy checks the worker/proof FFI; decoder/protocol tests pass.
+Six new browser scenarios cover actual menu requests/consent, folder mutations,
+keyboard/menu edge placement, inert/virtualized TXT, delayed lock reply and sidebar
+placement. Local full UI: 61 passed; TypeScript: 174; production PWA: eight. Typecheck, both
+frontends and bundle isolation passed. Actual Windows LPAC/installed results
+are recorded at publication; Windows enforcement is **pending**, not claimed by
+these local doubles. Initial UI execution needed the supplied Chromium path;
+one new assertion needed scope across the existing version-export buttons. The
+existing header geometry check now verifies that modules are inside the header
+and separate from the brand, rather than requiring their previous lower row.
+
+[TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
+never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
+PDF/images and new hardware Hello acceptance remain unverified. Historical owner
+reports retain their source and scope; no repeated old diagnostic is requested.
+
 ## File Safe explorer publication (2026-10-09)
 
 [PR #35](https://github.com/kurasis/passkeylocal/pull/35) merged as `e63a2859b9f6757603f63a73a5e1e7b474a8826c`;

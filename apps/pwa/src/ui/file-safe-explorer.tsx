@@ -31,7 +31,7 @@ function dateLabel(value: string, lang: string) {
   });
 }
 
-export function FileSafeExplorer({ files, folders, parent, selected, select, detail, openFolder, sort, setSort, busy, lang, labels }: {
+export function FileSafeExplorer({ files, folders, parent, selected, select, detail, openFolder, context, sort, setSort, busy, lang, labels }: {
   files: SafeFile[];
   folders: SafeFolder[];
   parent: string | null;
@@ -39,6 +39,7 @@ export function FileSafeExplorer({ files, folders, parent, selected, select, det
   select: (id: string, checked: boolean) => void;
   detail: (id: string) => void;
   openFolder: (id: string) => void;
+  context: (target: { kind: "file" | "folder"; id: string }, x: number, y: number, anchor: HTMLElement) => void;
   sort: SafeQuery["sort"];
   setSort: (sort: SafeQuery["sort"]) => void;
   busy: boolean;
@@ -46,7 +47,15 @@ export function FileSafeExplorer({ files, folders, parent, selected, select, det
   labels: { select: string; empty: string; files: string; name: string; ext: string; size: string; modified: string; openFolder: string; up: string; sortName: string; sortDate: string; sortSize: string };
 }) {
   const [scroll, setScroll] = useState(0);
+  const [windowRows, setWindowRows] = useState(12);
   const viewport = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = viewport.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => setWindowRows(Math.min(24, Math.max(12, Math.ceil(node.clientHeight / 52) + 4))));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     if (viewport.current) viewport.current.scrollTop = 0;
     setScroll(0);
@@ -58,7 +67,7 @@ export function FileSafeExplorer({ files, folders, parent, selected, select, det
   ];
   const height = 52;
   const start = Math.max(0, Math.floor(scroll / height) - 2);
-  const end = Math.min(rows.length, start + 12);
+  const end = Math.min(rows.length, start + windowRows);
   const heading = (label: string, value: SafeQuery["sort"], accessible: string) => <button type="button" aria-label={accessible} aria-pressed={sort === value} disabled={busy} onClick={() => setSort(value)}>{label}{sort === value && <span aria-hidden="true">{value === "name" ? "↑" : "↓"}</span>}</button>;
   return <div className="file-safe-table">
     <div className="file-safe-columns" aria-hidden="false">
@@ -78,7 +87,9 @@ export function FileSafeExplorer({ files, folders, parent, selected, select, det
       {!rows.length && <p className="file-safe-empty">{labels.empty}</p>}
       <div style={{ height: rows.length * height, position: "relative" }}>
         {rows.slice(start, end).map((row, index) => <div className="file-safe-row" role="listitem" key={`${row.kind}:${row.id}`} data-selected={row.kind === "file" && selected.includes(row.id)}
-          style={{ position: "absolute", height, top: (start + index) * height, left: 0, right: 0 }}>
+          style={{ position: "absolute", height, top: (start + index) * height, left: 0, right: 0 }}
+          onContextMenu={(event) => { if (row.kind === "parent" || busy) return; event.preventDefault(); context({ kind: row.kind, id: row.id }, event.clientX, event.clientY, event.currentTarget.querySelector<HTMLButtonElement>("button")!); }}
+          onKeyDown={(event) => { if (row.kind === "parent" || busy || !(event.key === "ContextMenu" || event.key === "F10" && event.shiftKey)) return; event.preventDefault(); const anchor = event.currentTarget.querySelector<HTMLButtonElement>("button")!; const bounds = anchor.getBoundingClientRect(); context({ kind: row.kind, id: row.id }, bounds.left, bounds.bottom, anchor); }}>
           {row.kind === "file" ? <>
             <input type="checkbox" disabled={busy} aria-label={`${labels.select}: ${row.file.name}`} checked={selected.includes(row.id)} onChange={(e) => select(row.id, e.target.checked)} />
             <button type="button" className="file-safe-file" disabled={busy} onClick={() => detail(row.id)} title={row.file.name}><Icon name="file" /><span>{row.file.favorite && "★ "}{row.file.name}</span></button>

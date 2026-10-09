@@ -677,6 +677,44 @@ impl SafeStore {
         self.commit(c, expected, None, check)?;
         Ok(uuid)
     }
+    /// Rename a virtual folder or remove an empty one without touching objects.
+    pub fn edit_folder(
+        &mut self,
+        expected: &str,
+        folder: &str,
+        name: Option<&str>,
+        check: &impl Fn() -> Result<()>,
+    ) -> Result<()> {
+        self.checked(expected)?;
+        let mut catalog = self.session()?.catalog.clone();
+        let target = catalog
+            .folders
+            .iter()
+            .find(|f| f.id == folder)
+            .ok_or(Error::new("NOT_FOUND"))?;
+        if target.parent_id.is_none() {
+            return Err(Error::new("INVALID_INPUT"));
+        }
+        if let Some(name) = name {
+            catalog
+                .folders
+                .iter_mut()
+                .find(|f| f.id == folder)
+                .unwrap()
+                .name = name.to_owned();
+        } else {
+            if catalog
+                .folders
+                .iter()
+                .any(|f| f.parent_id.as_deref() == Some(folder))
+                || catalog.files.iter().any(|f| f.folder_id == folder)
+            {
+                return Err(Error::new("NOT_EMPTY"));
+            }
+            catalog.folders.retain(|f| f.id != folder);
+        }
+        self.commit(catalog, expected, None, check)
+    }
     pub fn edit(
         &mut self,
         expected: &str,
@@ -907,6 +945,49 @@ impl SafeStore {
         let key = write_key(&c.head(), &root, next)?;
         check()?;
         self.commit(c, expected, Some((root, key)), check)
+    }
+    /// Read one immutable bounded version into memory; authenticate the whole
+    /// object before returning any bytes to the isolated parser.
+    pub fn text_input(
+        &self,
+        expected: &str,
+        file: &str,
+        version: Option<&str>,
+        check: &impl Fn() -> Result<()>,
+    ) -> Result<Zeroizing<Vec<u8>>> {
+        self.checked(expected)?;
+        let catalog = &self.session()?.catalog;
+        let file = catalog
+            .files
+            .iter()
+            .find(|f| f.id == file)
+            .ok_or(Error::new("NOT_FOUND"))?;
+        if !file.name.to_ascii_lowercase().ends_with(".txt") {
+            return Err(Error::new("PREVIEW_UNSUPPORTED"));
+        }
+        let version = file
+            .versions
+            .iter()
+            .find(|v| v.id == version.unwrap_or(&file.current_version_id))
+            .ok_or(Error::new("NOT_FOUND"))?;
+        if version.plaintext_size > passkey_text_preview::MAX_INPUT as u64 {
+            return Err(Error::new("LIMIT_EXCEEDED"));
+        }
+        let mut bytes = Zeroizing::new(Vec::with_capacity(version.plaintext_size as usize));
+        decrypt_object(
+            &mut open_read(
+                &self
+                    .path()?
+                    .join("objects")
+                    .join(format!("{}.obj", version.object_id)),
+            )?,
+            &mut *bytes,
+            &catalog.vault_id,
+            version,
+            check,
+        )?;
+        check()?;
+        Ok(bytes)
     }
     pub fn export(
         &self,

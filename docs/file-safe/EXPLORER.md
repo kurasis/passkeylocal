@@ -23,7 +23,7 @@ discarded at lock; it is not a persisted recent-files list.
 The Name column sorts names ascending. Size and Modified sort files descending,
 as in the existing native query. On narrow screens some columns are hidden;
 the sort selector keeps every sort available. Favorites and Recycle bin are
-separate file views using the existing native filters. File details retain rename,
+separate file views using the existing native filters. The desktop module switches share the top header; import/new-folder controls sit below the left places panel. Right-click a file/folder, or press Shift+F10/ContextMenu on its button, for actions. File actions include details, rename/move, favorite, history, acknowledged export and recycle/restore. Permanent deletion still requires its existing confirmation. Folder actions enter/create a child, rename or confirm removal of an empty folder; native checks refuse the root and any child/file, including recycled files. File details retain rename,
 tags, notes, moving, versions and acknowledged plaintext export. No file is
 executed or opened externally by folder/file navigation.
 
@@ -42,7 +42,7 @@ For Hello, open this settings screen, expand **Windows Hello for File Safe /
 Windows Hello для файлового сейфа**, confirm the safe's own password and connect.
 Its PRF/TPM protection and independent password recovery are unchanged; see
 [the Hello guide](WINDOWS_HELLO.md). The portable encrypted format, storage engine,
-native permissions and standalone recovery tool require no migration.
+storage schema and standalone recovery tool require no migration. The additional preview command accepts only opaque IDs and validated inert text; there is no general file/path permission.
 
 ## Validation scope
 
@@ -55,6 +55,5 @@ folders and exercises parent/history/breadcrumb navigation and the separate Hell
 settings screen. Its original screenshot and source correlation are published
 with the installer after CI passes.
 
-These are software/navigation checks, not new biometric or viewer isolation
-evidence. Preview remains unavailable under its separate acceptance gates. See
+The new text-only worker has separate [TXT isolation evidence](TXT_PREVIEW.md); the earlier navigation checks do not establish that boundary or new biometric acceptance. See
 [release evidence](../RELEASE_EVIDENCE.md) and [the operating guide](OPERATING_GUIDE.md).

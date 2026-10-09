@@ -56,6 +56,31 @@ fn main() {
             "{}",
             serde_json::json!({"files_in_fixture":10000,"restore_seconds":restore.as_secs_f64(),"search_seconds":search.as_secs_f64(),"rows_returned":page.files.len(),"status":"PASS"})
         );
+    } else if command == "preview-seed" {
+        // Ephemeral hosted acceptance only; never linked/bundled in the app.
+        assert_eq!(std::env::var("GITHUB_ACTIONS").as_deref(), Ok("true"));
+        assert_eq!(
+            std::env::var("RUNNER_ENVIRONMENT").as_deref(),
+            Ok("github-hosted")
+        );
+        let source = Path::new(&args[3]);
+        let mut s = SafeStore::open(path).unwrap();
+        s.unlock(&password, &check).unwrap();
+        assert!(
+            s.list().unwrap().files.is_empty(),
+            "Use only a fresh synthetic safe"
+        );
+        let root = s.list().unwrap().folders[0].id.clone();
+        s.import(
+            &s.snapshot().unwrap(),
+            &mut open_read(source).unwrap(),
+            "Synthetic preview.txt",
+            &root,
+            None,
+            &check,
+        )
+        .unwrap();
+        println!("PASS: synthetic TXT fixture imported by production store");
     } else if command == "write" {
         fs::create_dir_all(path).unwrap();
         let mut s = SafeStore::open(&path.join("native")).unwrap();

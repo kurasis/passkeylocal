@@ -30,6 +30,7 @@ pub struct SafeManager {
     pub(super) clock: Mutex<Inactivity>,
     pub(super) interval: Mutex<Duration>,
     busy: AtomicBool,
+    pub(super) preview_state: Mutex<super::preview::State>,
     exists: AtomicBool,
     pub backups: BackupQueue,
     progress: Mutex<Progress>,
@@ -112,6 +113,14 @@ pub struct Page {
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Change {
+    FolderEdit {
+        folder_id: String,
+        name: String,
+    },
+    FolderRemove {
+        folder_id: String,
+        confirm: bool,
+    },
     Folder {
         parent_id: String,
         name: String,
@@ -184,6 +193,7 @@ impl SafeManager {
             clock: Mutex::new(Inactivity::new(duration)),
             interval: Mutex::new(duration),
             busy: AtomicBool::new(false),
+            preview_state: Mutex::new(super::preview::State::default()),
             exists: AtomicBool::new(exists),
             backups,
             progress: Mutex::new(Progress::default()),
@@ -212,6 +222,9 @@ impl SafeManager {
         let epoch = self.epoch.fetch_add(1, Ordering::SeqCst) + 1;
         self.cancel.fetch_add(1, Ordering::SeqCst);
         *active = None;
+        if let Ok(mut preview) = self.preview_state.lock() {
+            *preview = super::preview::State::default();
+        }
         Ok(epoch)
     }
     pub fn revoke(&self) {
@@ -350,7 +363,11 @@ impl SafeManager {
             } else {
                 "unavailable"
             },
-            preview: "unavailable",
+            preview: if cfg!(windows) {
+                "txt-isolated"
+            } else {
+                "unavailable"
+            },
         })
     }
     pub(super) fn queue_backup(&self, store: &SafeStore) {
@@ -412,7 +429,7 @@ impl SafeManager {
         self.queue_backup(&s);
         Ok(token)
     }
-    fn session<T>(
+    pub(super) fn session<T>(
         &self,
         token: &str,
         f: impl FnOnce(&mut SafeStore, &dyn Fn() -> Result<()>) -> Result<T>,
@@ -542,6 +559,15 @@ impl SafeManager {
             match change {
                 Change::Folder { parent_id, name } => {
                     s.folder(expected, &parent_id, &name, &|| check())?;
+                }
+                Change::FolderEdit { folder_id, name } => {
+                    s.edit_folder(expected, &folder_id, Some(&name), &|| check())?
+                }
+                Change::FolderRemove { folder_id, confirm } => {
+                    if !confirm {
+                        return Err(Error::new("INVALID_INPUT"));
+                    }
+                    s.edit_folder(expected, &folder_id, None, &|| check())?;
                 }
                 Change::Edit { edit } => {
                     s.edit(expected, &edit, &|| check())?;

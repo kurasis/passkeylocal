@@ -3,6 +3,7 @@ pub mod backup;
 pub mod commands;
 pub mod format;
 pub mod manager;
+pub mod preview;
 pub mod store;
 #[cfg(test)]
 mod tests;

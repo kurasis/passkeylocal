@@ -115,7 +115,7 @@ test("10,000-entry synthetic metadata UI is paged, virtualized and keyboard scro
     })
     .click();
   await expect(
-    page.getByText("Preview is unavailable in this build.", { exact: false }),
+    page.getByText("Preview supports plain UTF-8 .txt files", { exact: false }),
   ).toBeVisible();
   for (const button of await page
     .getByRole("button", { name: "Export unencrypted copy", exact: true })

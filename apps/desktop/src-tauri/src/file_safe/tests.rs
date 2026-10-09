@@ -731,3 +731,150 @@ fn recovery_binds_verified_head_bytes_and_rejects_changes_during_verification() 
     assert!(SafeStore::verify_package(&package, b"password", &change_head).is_err());
     assert_eq!(fs::read(base.join("ACTIVE.json")).unwrap(), prior);
 }
+
+#[test]
+fn folder_rename_preserves_children_and_removal_requires_empty_nonroot() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut store = SafeStore::open(&temp.path().join("safe")).unwrap();
+    store.create(b"synthetic password", &ok).unwrap();
+    let root = store.list().unwrap().folders[0].id.clone();
+    let folder = store
+        .folder(&store.snapshot().unwrap(), &root, "Parent", &ok)
+        .unwrap();
+    let child = store
+        .folder(&store.snapshot().unwrap(), &folder, "Child", &ok)
+        .unwrap();
+    let before = store.snapshot().unwrap();
+    store
+        .edit_folder(&before, &folder, Some("Renamed"), &ok)
+        .unwrap();
+    let listing = store.list().unwrap();
+    assert_eq!(
+        listing
+            .folders
+            .iter()
+            .find(|f| f.id == child)
+            .unwrap()
+            .parent_id
+            .as_deref(),
+        Some(folder.as_str())
+    );
+    assert_eq!(
+        store
+            .edit_folder(&before, &folder, None, &ok)
+            .unwrap_err()
+            .code,
+        "CONFLICT"
+    );
+    assert_eq!(
+        store
+            .edit_folder(&store.snapshot().unwrap(), &root, None, &ok)
+            .unwrap_err()
+            .code,
+        "INVALID_INPUT"
+    );
+    assert_eq!(
+        store
+            .edit_folder(&store.snapshot().unwrap(), &folder, None, &ok)
+            .unwrap_err()
+            .code,
+        "NOT_EMPTY"
+    );
+    let source = temp.path().join("source");
+    fs::write(&source, b"synthetic").unwrap();
+    let file = store
+        .import(
+            &store.snapshot().unwrap(),
+            &mut open_read(&source).unwrap(),
+            "note.txt",
+            &child,
+            None,
+            &ok,
+        )
+        .unwrap();
+    store
+        .trash(&store.snapshot().unwrap(), &file, true, false, &ok)
+        .unwrap();
+    assert_eq!(
+        store
+            .edit_folder(&store.snapshot().unwrap(), &child, None, &ok)
+            .unwrap_err()
+            .code,
+        "NOT_EMPTY"
+    );
+    store
+        .trash(&store.snapshot().unwrap(), &file, true, true, &ok)
+        .unwrap();
+    store
+        .edit_folder(&store.snapshot().unwrap(), &child, None, &ok)
+        .unwrap();
+    store
+        .edit_folder(&store.snapshot().unwrap(), &folder, None, &ok)
+        .unwrap();
+    assert_eq!(store.list().unwrap().folders.len(), 1);
+}
+#[test]
+fn text_preview_authenticates_all_bytes_and_refuses_stale_or_unselected_objects() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.path().join("safe");
+    let mut store = SafeStore::open(&base).unwrap();
+    store.create(b"synthetic password", &ok).unwrap();
+    let root = store.list().unwrap().folders[0].id.clone();
+    let source = temp.path().join("source");
+    let text = b"\xef\xbb\xbfSynthetic <script>inert</script>\n";
+    fs::write(&source, text).unwrap();
+    let stale = store.snapshot().unwrap();
+    let file = store
+        .import(
+            &stale,
+            &mut open_read(&source).unwrap(),
+            "note.TXT",
+            &root,
+            None,
+            &ok,
+        )
+        .unwrap();
+    let snapshot = store.snapshot().unwrap();
+    assert_eq!(
+        &*store.text_input(&snapshot, &file, None, &ok).unwrap(),
+        text
+    );
+    assert_eq!(
+        store.text_input(&stale, &file, None, &ok).unwrap_err().code,
+        "CONFLICT"
+    );
+    assert_eq!(
+        store
+            .text_input(&snapshot, &file, Some(&id()), &ok)
+            .unwrap_err()
+            .code,
+        "NOT_FOUND"
+    );
+    assert_eq!(
+        store
+            .text_input(&snapshot, &file, None, &|| Err(crate::storage::Error::new(
+                "CANCELLED"
+            )))
+            .unwrap_err()
+            .code,
+        "CANCELLED"
+    );
+    let active: serde_json::Value =
+        serde_json::from_slice(&fs::read(base.join("ACTIVE.json")).unwrap()).unwrap();
+    let objects = base
+        .join("stores")
+        .join(active["store_id"].as_str().unwrap())
+        .join(active["vault_id"].as_str().unwrap())
+        .join("objects");
+    let path = fs::read_dir(objects)
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    let mut bytes = fs::read(&path).unwrap();
+    let last = bytes.len() - 1;
+    bytes[last] ^= 1;
+    fs::write(&path, bytes).unwrap();
+    assert!(store.text_input(&snapshot, &file, None, &ok).is_err());
+}
