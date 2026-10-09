@@ -1,17 +1,23 @@
 use super::*;
 use std::cell::Cell;
 #[derive(Default)]
-struct Fake {
-    deleted: bool,
+pub(crate) struct Fake {
+    pub(crate) deleted: bool,
     id: String,
-    prompts: usize,
-    deny: bool,
-    delete_error: bool,
-    create_error: bool,
+    pub(crate) prompts: usize,
+    pub(crate) deny: bool,
+    pub(crate) delete_error: bool,
+    pub(crate) create_error: bool,
 }
 impl Protection for Fake {
     fn create(&mut self, h: &mut Header) -> Result<Zeroizing<[u8; 32]>> {
-        assert!(h.key_name().starts_with("PassKeyLocal.VaultHello."));
+        assert!(h
+            .key_name()
+            .starts_with(if h.purpose().unwrap() == Purpose::Vault {
+                "PassKeyLocal.VaultHello."
+            } else {
+                "PassKeyLocal.FileSafeHello."
+            }));
         assert_ne!(h.user(), [0; 32]);
         self.id = h.id.clone();
         self.deleted = false;
@@ -50,7 +56,7 @@ impl Protection for Fake {
         }
         Ok(Zeroizing::new(c[..32].to_vec()))
     }
-    fn delete(&mut self) -> Result<()> {
+    fn delete(&mut self, _header: &Header) -> Result<()> {
         if self.delete_error {
             return Err(Error::new("WRITE_FAILED"));
         }
@@ -64,6 +70,89 @@ fn binding() -> Binding {
         password_epoch: 0,
         generation: 1,
         sha256: "a".repeat(64),
+        safe: None,
+    }
+}
+fn safe_binding() -> Binding {
+    Binding {
+        vault: crate::file_safe::format::id(),
+        password_epoch: 0,
+        generation: 0,
+        sha256: "b".repeat(64),
+        safe: Some(SafeBinding {
+            store_id: crate::file_safe::format::id(),
+            key_epoch_id: crate::file_safe::format::id(),
+        }),
+    }
+}
+#[test]
+fn old_vault_header_serialization_and_key_domain_remain_compatible() {
+    let old = r#"{"domain":"PassKeyLocal.VaultHello.v1","version":1,"id":"12345678-1234-4123-8123-123456789012","vault":"12345678-1234-4123-8123-123456789013","epoch":2,"mode":"remember6","created":1000,"expires":21601000,"salt":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"credential":[1],"public":[2],"name":[3]}"#;
+    let header: Header = serde_json::from_str(old).unwrap();
+    assert!(header.safe.is_none());
+    assert_eq!(header.aad(), old.as_bytes());
+    assert_eq!(
+        header.key_name(),
+        "PassKeyLocal.VaultHello.12345678-1234-4123-8123-123456789012"
+    );
+    assert_eq!(
+        header.user(),
+        <[u8; 32]>::from(Sha256::digest(
+            "PassKeyLocal.VaultHello.v1:12345678-1234-4123-8123-123456789012"
+        ))
+    );
+}
+#[test]
+fn purposes_reject_copied_records_and_use_distinct_aead_keys_and_owned_names() {
+    libsodium_rs::ensure_init().unwrap();
+    let d = tempfile::tempdir().unwrap();
+    let v = safe_binding();
+    let j = Journal::for_purpose(d.path(), Purpose::FileSafe).unwrap();
+    let mut m = Manager::file_safe();
+    let mut f = Fake::default();
+    m.enroll(&j, &mut f, &v, Mode::Remember24, &[42; 32], &|| {
+        Ok((v.clone(), 1000))
+    })
+    .unwrap();
+    let mut record = j.read().unwrap().unwrap();
+    assert!(record
+        .header
+        .key_name()
+        .starts_with("PassKeyLocal.FileSafeHello."));
+    let vault = Journal::open(d.path()).unwrap();
+    std::fs::copy(&j.path, &vault.path).unwrap();
+    assert!(vault.read().is_err());
+    let mut moved = record.clone();
+    moved.header.domain = DOMAIN.into();
+    moved.header.vault = uuid::Uuid::new_v4().to_string();
+    moved.header.safe = None;
+    assert_ne!(record.header.user(), moved.header.user());
+    assert!(moved.open(&[7; 32]).is_err());
+    record.header.safe.as_mut().unwrap().key_epoch_id = crate::file_safe::format::id();
+    assert!(record.open(&[7; 32]).is_err());
+}
+#[test]
+fn wrong_safe_store_or_root_epoch_refuses_before_authorization_and_clears_record() {
+    for store in [false, true] {
+        libsodium_rs::ensure_init().unwrap();
+        let d = tempfile::tempdir().unwrap();
+        let j = Journal::for_purpose(d.path(), Purpose::FileSafe).unwrap();
+        let mut m = Manager::file_safe();
+        let mut f = Fake::default();
+        let mut v = safe_binding();
+        m.enroll(&j, &mut f, &v, Mode::Remember6, &[42; 32], &|| {
+            Ok((v.clone(), 1000))
+        })
+        .unwrap();
+        if store {
+            v.safe.as_mut().unwrap().store_id = crate::file_safe::format::id();
+        } else {
+            v.safe.as_mut().unwrap().key_epoch_id = crate::file_safe::format::id();
+        }
+        assert!(m.unlock(&j, &mut f, &v, &|| Ok((v.clone(), 2000))).is_err());
+        assert_eq!(f.prompts, 2);
+        let record = j.read().unwrap().unwrap();
+        assert!(!record.ready && record.ciphertext.is_empty());
     }
 }
 fn setup() -> (tempfile::TempDir, Journal, Manager, Fake, Binding) {

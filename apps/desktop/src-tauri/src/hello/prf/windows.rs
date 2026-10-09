@@ -349,6 +349,8 @@ impl Probe<'_> {
         let rp_id = wide(self.rp);
         let rp_name = wide(if self.rp == "vault.passkey-local.desktop.invalid" {
             "PassKey Local vault unlock"
+        } else if self.rp == "file-safe.passkey-local.desktop.invalid" {
+            "PassKey Local file-safe unlock"
         } else if direct {
             "PassKey Local attestation test"
         } else {
@@ -358,6 +360,8 @@ impl Probe<'_> {
             "PassKey Local {} {}",
             if self.rp == "vault.passkey-local.desktop.invalid" {
                 "vault"
+            } else if self.rp == "file-safe.passkey-local.desktop.invalid" {
+                "file safe"
             } else {
                 "test"
             },

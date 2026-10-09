@@ -26,6 +26,20 @@ impl<'a> Credential<'a> {
             "vault.passkey-local.desktop.invalid",
         )
     }
+    pub(crate) fn file_safe(
+        hwnd: usize,
+        current: &'a (dyn Fn() -> bool + Sync),
+        salt: [u8; 32],
+        user: [u8; 32],
+    ) -> Self {
+        Self::for_rp(
+            hwnd,
+            current,
+            salt,
+            user,
+            "file-safe.passkey-local.desktop.invalid",
+        )
+    }
     fn for_rp(
         hwnd: usize,
         current: &'a (dyn Fn() -> bool + Sync),

@@ -1,4 +1,10 @@
 /** Bounded metadata only. Keys, document bytes and filesystem paths stay native. */
+import type { HelloMode, HelloVaultStatus } from './hello-vault-protocol.ts';
+export type SafeHelloRequest =
+  | { operation: 'status' }
+  | { operation: 'enroll'; token: string; password: string; mode: HelloMode }
+  | { operation: 'unlock' | 'revoke'; expected_generation: string };
+export interface SafeHelloResponse { status: HelloVaultStatus; token?: string }
 export interface SafeFolder {
   id: string;
   parent_id: string | null;
@@ -40,7 +46,7 @@ export interface SafeStatus {
   interval_ms: number;
   progress: { stage: string; done: number; total: number };
   backup: SafeBackup;
-  hello: "unavailable";
+  hello: "unavailable" | "independent-opt-in";
   preview: "unavailable";
 }
 export interface SafeQuery {
@@ -102,6 +108,7 @@ export interface SafeRecovery {
   versions?: number;
 }
 export interface FileSafeApi {
+  hello(request: SafeHelloRequest): Promise<SafeHelloResponse>;
   status(): Promise<SafeStatus>;
   access(
     password: string,

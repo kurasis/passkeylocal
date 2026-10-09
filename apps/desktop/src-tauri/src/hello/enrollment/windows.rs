@@ -11,20 +11,28 @@ fn mapped(f: Failure) -> Error {
         _ => "HELLO_UNAVAILABLE",
     })
 }
-struct Native<'a> {
+pub(crate) struct Native<'a> {
     hwnd: usize,
     current: &'a (dyn Fn() -> bool + Sync),
     credential: Option<Credential<'a>>,
     key: Option<Key<'a>>,
 }
 impl<'a> Native<'a> {
+    pub(crate) fn new(hwnd: usize, current: &'a (dyn Fn() -> bool + Sync)) -> Self {
+        Self {
+            hwnd,
+            current,
+            credential: None,
+            key: None,
+        }
+    }
     fn configure(&mut self, h: &Header) {
-        self.credential = Some(Credential::enrollment(
-            self.hwnd,
-            self.current,
-            h.salt,
-            h.user(),
-        ));
+        let create = if h.purpose().expect("validated header") == Purpose::Vault {
+            Credential::enrollment
+        } else {
+            Credential::file_safe
+        };
+        self.credential = Some(create(self.hwnd, self.current, h.salt, h.user()));
         self.key = Some(Key::new(&h.key_name(), self.current));
     }
 }
@@ -75,7 +83,8 @@ impl Protection for Native<'_> {
             .unwrap(c)
             .map_err(mapped)
     }
-    fn delete(&mut self) -> Result<()> {
+    fn delete(&mut self, h: &Header) -> Result<()> {
+        self.configure(h);
         let a = self
             .credential
             .as_mut()
@@ -92,23 +101,6 @@ impl Protection for Native<'_> {
         b
     }
 }
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Reply {
-    pub status: Status,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<Vec<u8>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub binding: Option<Binding>,
-}
-impl Drop for Reply {
-    fn drop(&mut self) {
-        use zeroize::Zeroize;
-        if let Some(c) = &mut self.component {
-            c.zeroize()
-        }
-    }
-}
 impl Manager {
     pub fn run(
         &mut self,
@@ -119,52 +111,6 @@ impl Manager {
         action: &Action,
     ) -> Result<Reply> {
         let _attempt = crate::hello::Attempt::begin()?;
-        libsodium_rs::ensure_init().map_err(|_| Error::new("UNAVAILABLE"))?;
-        let j = Journal::open(root)?;
-        let mut b = Native {
-            hwnd,
-            current,
-            credential: None,
-            key: None,
-        };
-        if matches!(action, Action::Revoke {}) {
-            if let Some(r) = self.read(&j)? {
-                b.configure(&r.header);
-                self.revoke(&j, &mut b, r)?;
-            }
-            return Ok(Reply {
-                status: Status::off(),
-                component: None,
-                binding: None,
-            });
-        }
-        let (binding, now) = context()?;
-        let mut reply = Reply {
-            status: self.status(&j, &binding, now)?,
-            component: None,
-            binding: None,
-        };
-        match action {
-            Action::Status {} => {}
-            Action::Revoke {} => unreachable!(),
-            Action::Enroll {
-                mode,
-                generation,
-                sha256,
-                component,
-            } => {
-                if *generation != binding.generation || *sha256 != binding.sha256 {
-                    return Err(Error::new("CONFLICT"));
-                }
-                let mut secret = Zeroizing::new([0; 32]);
-                secret.copy_from_slice(component);
-                reply.status = self.enroll(&j, &mut b, &binding, *mode, &secret, context)?;
-            }
-            Action::Unlock {} => {
-                reply.component = Some(self.unlock(&j, &mut b, &binding, context)?.to_vec());
-                reply.binding = Some(binding);
-            }
-        }
-        Ok(reply)
+        self.run_with(root, &mut Native::new(hwnd, current), context, action)
     }
 }

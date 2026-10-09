@@ -10,6 +10,25 @@ fn hwnd(window: &WebviewWindow) -> Result<usize> {
     Ok(window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize)
 }
 #[tauri::command]
+pub async fn file_safe_hello(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    request: super::hello::Request,
+) -> Result<super::hello::Response> {
+    use super::hello::Request;
+    if matches!(request, Request::Enroll { .. } | Request::Unlock { .. }) {
+        focused(&window)?;
+    } else {
+        trusted(&window)?;
+    }
+    let hwnd = window.hwnd().map_err(|_| Error::new("UNAVAILABLE"))?.0 as usize;
+    tauri::async_runtime::spawn_blocking(move || {
+        app.state::<SafeHost>().get()?.hello_run(hwnd, &request)
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))?
+}
+#[tauri::command]
 pub fn file_safe_status(window: WebviewWindow, state: State<'_, SafeHost>) -> Result<Status> {
     trusted(&window)?;
     state.get()?.status()

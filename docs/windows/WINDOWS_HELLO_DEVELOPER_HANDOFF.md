@@ -13,8 +13,11 @@ documents describe earlier increments and are not the current enrollment API.
 Windows Hello is connected to the **password vault** in the existing Tauri 2
 desktop application. It is an optional, experimental alternative to typing the
 master password. The same KDBX engine and independent password recovery remain
-in use. File Safe has a separate format and lock state; this implementation does
-**not** enable Hello for File Safe or change the browser biometric adapter.
+in use. The password-vault baseline described here has a separate scope from File Safe.
+The subsequent [File Safe integration](../file-safe/WINDOWS_HELLO.md) reuses its
+PRF/TPM mechanism with a different protected secret, purpose, key/RP, journal and
+native session. Its root never reaches the renderer. Browser biometrics remain
+a separate adapter; the owner feedback below applies only to the password vault.
 
 The deployed implementation was introduced by
 [PR #32](https://github.com/kurasis/passkeylocal/pull/32):

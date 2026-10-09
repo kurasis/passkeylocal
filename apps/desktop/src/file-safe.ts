@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import type { FileSafeApi } from "../../pwa/src/file-safe-protocol.ts";
 let activityAt = 0;
 export const fileSafe: FileSafeApi = {
+  hello: (request) => invoke("file_safe_hello", { request }),
   status: () => invoke("file_safe_status"),
   access: (password, create, expectedGeneration) =>
     invoke("file_safe_access", { password, create, expectedGeneration }),

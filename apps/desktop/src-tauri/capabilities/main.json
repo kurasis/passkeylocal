@@ -52,6 +52,7 @@
     "core:event:allow-unlisten",
     "core:window:allow-destroy",
     "allow-file-safe-status",
+    "allow-file-safe-hello",
     "allow-file-safe-access",
     "allow-file-safe-lock",
     "allow-lock-all",

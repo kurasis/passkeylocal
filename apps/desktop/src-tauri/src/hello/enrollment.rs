@@ -12,7 +12,7 @@ use std::{
 };
 use zeroize::Zeroizing;
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
 #[cfg(windows)]
 pub mod windows;
 pub fn credential_write(operation: &str, args: &serde_json::Value) -> bool {
@@ -23,6 +23,32 @@ pub fn credential_write(operation: &str, args: &serde_json::Value) -> bool {
 }
 const DOMAIN: &str = "PassKeyLocal.VaultHello.v1";
 const MAX_RECORD: usize = 16384;
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
+pub(crate) enum Purpose {
+    #[default]
+    Vault,
+    FileSafe,
+}
+impl Purpose {
+    fn domain(self) -> &'static str {
+        match self {
+            Self::Vault => DOMAIN,
+            Self::FileSafe => "PassKeyLocal.FileSafeHello.v1",
+        }
+    }
+    fn directory(self) -> &'static str {
+        match self {
+            Self::Vault => "hello-vault",
+            Self::FileSafe => "hello-file-safe",
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SafeBinding {
+    pub store_id: String,
+    pub key_epoch_id: String,
+}
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Binding {
@@ -30,6 +56,8 @@ pub struct Binding {
     pub password_epoch: u64,
     pub generation: u64,
     pub sha256: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub safe: Option<SafeBinding>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -71,7 +99,7 @@ impl Drop for Action {
 }
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Header {
+pub(crate) struct Header {
     domain: String,
     version: u32,
     id: String,
@@ -84,13 +112,28 @@ struct Header {
     credential: Vec<u8>,
     public: Vec<u8>,
     name: Vec<u8>,
+    // Omitted for Vault: its existing serialized AAD remains byte compatible.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    safe: Option<SafeBinding>,
 }
 impl Header {
+    fn purpose(&self) -> Result<Purpose> {
+        match self.domain.as_str() {
+            DOMAIN => Ok(Purpose::Vault),
+            "PassKeyLocal.FileSafeHello.v1" => Ok(Purpose::FileSafe),
+            _ => Err(invalid()),
+        }
+    }
     fn key_name(&self) -> String {
-        format!("PassKeyLocal.VaultHello.{}", self.id)
+        let prefix = if self.domain == DOMAIN {
+            "PassKeyLocal.VaultHello"
+        } else {
+            "PassKeyLocal.FileSafeHello"
+        };
+        format!("{prefix}.{}", self.id)
     }
     fn user(&self) -> [u8; 32] {
-        Sha256::digest(format!("{DOMAIN}:{}", self.id)).into()
+        Sha256::digest(format!("{}:{}", self.domain, self.id)).into()
     }
     fn aad(&self) -> Vec<u8> {
         serde_json::to_vec(self).expect("fixed metadata")
@@ -112,12 +155,12 @@ fn invalid() -> Error {
     Error::new("INVALID_STATE")
 }
 impl Record {
-    fn new(b: &Binding, mode: Mode, now: i64) -> Self {
+    fn new(b: &Binding, mode: Mode, now: i64, purpose: Purpose) -> Self {
         let mut salt = [0; 32];
         libsodium_rs::random::fill_bytes(&mut salt);
         Self {
             header: Header {
-                domain: DOMAIN.into(),
+                domain: purpose.domain().into(),
                 version: 1,
                 id: uuid::Uuid::new_v4().to_string(),
                 vault: b.vault.clone(),
@@ -129,6 +172,7 @@ impl Record {
                 credential: vec![],
                 public: vec![],
                 name: vec![],
+                safe: b.safe.clone(),
             },
             ready: false,
             last_seen: now,
@@ -138,10 +182,20 @@ impl Record {
     }
     fn validate(&self) -> Result<()> {
         let h = &self.header;
-        if h.domain != DOMAIN
+        let identity = match h.purpose()? {
+            Purpose::Vault => uuid(&h.vault) && h.safe.is_none(),
+            Purpose::FileSafe => {
+                crate::file_safe::format::valid_id(&h.vault)
+                    && h.epoch == 0
+                    && h.safe.as_ref().is_some_and(|s| {
+                        crate::file_safe::format::valid_id(&s.store_id)
+                            && crate::file_safe::format::valid_id(&s.key_epoch_id)
+                    })
+            }
+        };
+        if !identity
             || h.version != 1
             || !uuid(&h.id)
-            || !uuid(&h.vault)
             || h.created < 0
             || h.expires.checked_sub(h.created) != Some(h.mode.duration())
             || self.last_seen < h.created
@@ -163,6 +217,7 @@ impl Record {
         self.ready
             && self.header.vault == b.vault
             && self.header.epoch == b.password_epoch
+            && self.header.safe == b.safe
             && now >= self.last_seen
             && now >= self.header.created
             && now < self.header.expires
@@ -170,7 +225,7 @@ impl Record {
     fn key(&self, prf: &[u8; 32]) -> Result<aes::Key> {
         let mut key = Zeroizing::new([0; 32]);
         hkdf::Hkdf::<Sha256>::new(Some(&self.header.salt), prf)
-            .expand(DOMAIN.as_bytes(), key.as_mut_slice())
+            .expand(self.header.domain.as_bytes(), key.as_mut_slice())
             .map_err(|_| invalid())?;
         aes::Key::from_bytes(key.as_slice()).map_err(|_| invalid())
     }
@@ -203,16 +258,22 @@ impl Record {
 struct Journal {
     path: PathBuf,
     _pins: Vec<fs::File>,
+    purpose: Purpose,
 }
 impl Journal {
+    #[cfg(test)]
     fn open(root: &Path) -> Result<Self> {
-        let root = io::child(root, "hello-vault")?;
+        Self::for_purpose(root, Purpose::Vault)
+    }
+    fn for_purpose(root: &Path, purpose: Purpose) -> Result<Self> {
+        let root = io::child(root, purpose.directory())?;
         io::reject_links(&root)?;
         fs::create_dir_all(&root)?;
         io::secure_directory(&root)?;
         Ok(Self {
             path: io::child(&root, "enrollment.json")?,
             _pins: io::pin_directory(&root)?,
+            purpose,
         })
     }
     fn read(&self) -> Result<Option<Record>> {
@@ -223,6 +284,9 @@ impl Journal {
         }
         let r: Record = serde_json::from_slice(&io::read(&self.path, MAX_RECORD)?)?;
         r.validate()?;
+        if r.header.purpose()? != self.purpose {
+            return Err(invalid());
+        }
         if r.header.mode == Mode::Session && r.ready {
             return Err(invalid());
         }
@@ -230,6 +294,9 @@ impl Journal {
     }
     fn save(&self, r: &Record) -> Result<()> {
         r.validate()?;
+        if r.header.purpose()? != self.purpose {
+            return Err(invalid());
+        }
         let bytes = serde_json::to_vec(r)?;
         if bytes.len() > MAX_RECORD {
             return Err(invalid());
@@ -246,15 +313,15 @@ impl Journal {
     }
 }
 // Fixed native objects only. Test doubles exist only under cfg(test).
-trait Protection {
+pub(crate) trait Protection {
     fn create(&mut self, h: &mut Header) -> Result<Zeroizing<[u8; 32]>>;
     fn reopen(&mut self, h: &Header) -> Result<()>;
     fn authorize(&mut self) -> Result<Zeroizing<[u8; 32]>>;
     fn wrap(&mut self, component: &[u8; 32]) -> Result<Vec<u8>>;
     fn unwrap(&mut self, cipher: &[u8]) -> Result<Zeroizing<Vec<u8>>>;
-    fn delete(&mut self) -> Result<()>;
+    fn delete(&mut self, header: &Header) -> Result<()>;
 }
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Status {
     pub state: &'static str,
@@ -262,7 +329,7 @@ pub struct Status {
     pub expires_at: Option<i64>,
 }
 impl Status {
-    fn off() -> Self {
+    pub(crate) fn off() -> Self {
         Self {
             state: "off",
             mode: None,
@@ -273,8 +340,23 @@ impl Status {
 #[derive(Default)]
 pub struct Manager {
     session: Option<Record>,
+    purpose: Purpose,
 }
 impl Manager {
+    pub(crate) fn file_safe() -> Self {
+        Self {
+            session: None,
+            purpose: Purpose::FileSafe,
+        }
+    }
+    // Used before root rotation/restore, independent of OS cleanup availability.
+    pub(crate) fn invalidate(&mut self, root: &Path) -> Result<()> {
+        let j = Journal::for_purpose(root, self.purpose)?;
+        if let Some(r) = self.read(&j)? {
+            self.invalidate_record(&j, r)?;
+        }
+        Ok(())
+    }
     fn read(&self, j: &Journal) -> Result<Option<Record>> {
         let disk = j.read()?;
         Ok(match (&self.session, disk) {
@@ -298,7 +380,7 @@ impl Manager {
         r.nonce = [0; 12];
         // Durable invalidation precedes deletion. Failed deletion remains retryable.
         j.save(&r)?;
-        b.delete()
+        b.delete(&r.header)
             .map_err(|_| Error::new("HELLO_CLEANUP_REQUIRED"))?;
         j.remove()
     }
@@ -344,7 +426,7 @@ impl Manager {
         if &observed != binding {
             return Err(Error::new("CONFLICT"));
         }
-        let mut r = Record::new(binding, mode, now);
+        let mut r = Record::new(binding, mode, now, self.purpose);
         j.save(&r)?;
         // Backend object identity is chosen from the durable record, before creation.
         let result = (|| {
@@ -417,5 +499,81 @@ impl Manager {
             self.session = Some(r)
         }
         Ok(secret)
+    }
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Reply {
+    pub status: Status,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub component: Option<Vec<u8>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub binding: Option<Binding>,
+}
+impl Drop for Reply {
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        if let Some(c) = &mut self.component {
+            c.zeroize()
+        }
+    }
+}
+
+impl Manager {
+    pub(crate) fn run_with(
+        &mut self,
+        root: &Path,
+        b: &mut impl Protection,
+        context: &dyn Fn() -> Result<(Binding, i64)>,
+        action: &Action,
+    ) -> Result<Reply> {
+        libsodium_rs::ensure_init().map_err(|_| Error::new("UNAVAILABLE"))?;
+        let j = Journal::for_purpose(root, self.purpose)?;
+        if matches!(action, Action::Status {}) && self.read(&j)?.is_none() {
+            return Ok(Reply {
+                status: Status::off(),
+                component: None,
+                binding: None,
+            });
+        }
+        if matches!(action, Action::Revoke {}) {
+            if let Some(r) = self.read(&j)? {
+                self.revoke(&j, b, r)?;
+            }
+            return Ok(Reply {
+                status: Status::off(),
+                component: None,
+                binding: None,
+            });
+        }
+        let (binding, now) = context()?;
+        let mut reply = Reply {
+            status: self.status(&j, &binding, now)?,
+            component: None,
+            binding: None,
+        };
+        match action {
+            Action::Status {} => {}
+            Action::Revoke {} => unreachable!(),
+            Action::Enroll {
+                mode,
+                generation,
+                sha256,
+                component,
+            } => {
+                if *generation != binding.generation || *sha256 != binding.sha256 {
+                    return Err(Error::new("CONFLICT"));
+                }
+                let mut secret = Zeroizing::new([0; 32]);
+                secret.copy_from_slice(component);
+                reply.status = self.enroll(&j, b, &binding, *mode, &secret, context)?;
+            }
+            Action::Unlock {} => {
+                reply.component = Some(self.unlock(&j, b, &binding, context)?.to_vec());
+                reply.binding = Some(binding);
+            }
+        }
+        Ok(reply)
     }
 }

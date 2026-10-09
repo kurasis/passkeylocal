@@ -1,6 +1,7 @@
 /** Windows-only file-safe workspace. Original bytes never enter this component. */
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useLang } from "../i18n.ts";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useLang, useT } from "../i18n.ts";
+import type { HelloMode, HelloVaultStatus } from '../hello-vault-protocol.ts';
 import type {
   FileSafeApi,
   SafeChange,
@@ -24,7 +25,11 @@ const words = {
     create: "Create file safe",
     unlock: "Unlock file safe",
     lock: "Lock file safe",
-    hello: "Windows Hello unavailable",
+    hello: "Unlock file safe with Windows Hello",
+    helloTitle: "Windows Hello for File Safe",
+    helloExplain: "Connect this safe separately after confirming its master password. Windows verifies your fingerprint, face or PIN. Password changes and restoring a backup disable the connection.",
+    helloEnable: "Connect file safe to Windows Hello",
+    helloPassword: "Confirm file-safe master password",
     preview:
       "Preview is unavailable in this build. You can store files or explicitly export a copy.",
     files: "Files",
@@ -125,7 +130,11 @@ const words = {
     create: "Создать файловый сейф",
     unlock: "Открыть файловый сейф",
     lock: "Заблокировать файловый сейф",
-    hello: "Windows Hello недоступен",
+    hello: "Открыть файловый сейф через Windows Hello",
+    helloTitle: "Windows Hello для файлового сейфа",
+    helloExplain: "Подключите этот сейф отдельно, подтвердив его мастер-пароль. Windows проверяет отпечаток, лицо или PIN. Смена пароля и восстановление резервной копии отключают привязку.",
+    helloEnable: "Подключить файловый сейф к Windows Hello",
+    helloPassword: "Подтвердите мастер-пароль файлового сейфа",
     preview:
       "Предпросмотр недоступен в этой сборке. Можно хранить файлы или явно экспортировать копию.",
     files: "Файлы",
@@ -220,6 +229,12 @@ const words = {
 };
 export function FileSafe({ api }: { api: FileSafeApi }) {
   const lang = useLang();
+  const t = useT();
+  const helloModeId = useId();
+  const helloPasswordId = useId();
+  const [hello, setHello] = useState<HelloVaultStatus | null>(null);
+  const [helloMode, setHelloMode] = useState<HelloMode>('session');
+  const [helloPassword, setHelloPassword] = useState('');
   const languageRef = useRef(lang);
   languageRef.current = lang;
   const w = words[lang];
@@ -274,6 +289,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     setCandidate(null);
     setOldPassword("");
     setNewPassword("");
+    setHelloPassword('');
+    setHello(null);
     setFolderName("");
     setReplaceAck(false);
     setRemoveAck(false);
@@ -309,7 +326,11 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       return;
     }
     setMessage(
-      code === "CANCELLED"
+      code === 'HELLO_CANCELLED' ? t('helloVaultCancelled')
+      : code === 'HELLO_UNAVAILABLE' ? t('helloVaultUnavailable')
+      : code === 'HELLO_CLEANUP_REQUIRED' ? t('helloVaultCleanup')
+      : code === 'HELLO_EXPIRED' ? t('helloVaultExpired')
+      : code === "CANCELLED" || code === 'STALE'
         ? w.cancelled
         : code === "CONFLICT"
           ? w.conflict
@@ -332,6 +353,10 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       setToken(result.token);
       setStatus(result);
       setAdmissionReady(true);
+      try {
+        const hello = await api.hello({ operation: 'status' });
+        if (live.current && epoch === generation.current) setHello(hello.status);
+      } catch { /* Existing lock/status remains authoritative during a busy OS operation. */ }
     } catch {
       if (live.current && epoch === generation.current) {
         redact();
@@ -589,9 +614,12 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           >
             {busy ? w.working : status?.exists ? w.unlock : w.create}
           </button>
-          <button type="button" className="secondary" disabled>
-            {w.hello}
-          </button>
+          {hello?.state === 'enabled' && <button type="button" className="secondary"
+            disabled={busy || !status || !admissionReady}
+            onClick={() => status && void run(() => api.hello({ operation: 'unlock', expected_generation: status.generation }), w.ready)}>
+              {w.hello}
+          </button>}
+          {hello?.state === 'cleanup-required' && <p className="muted">{t('helloVaultExpired')}</p>}
         </form>
         {recovery}
         {message && <Banner kind="info">{message}</Banner>}
@@ -1017,6 +1045,29 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         </button>
       </details>
       {recovery}
+      <details className="card stack" data-testid="file-safe-hello">
+        <summary>{w.helloTitle}</summary>
+        <p>{w.helloExplain}</p>
+        <p className="muted">{t('helloVaultExperimental')}</p>
+        {hello && <p role="status">{t(hello.state === 'enabled' ? 'helloVaultEnabled' : hello.state === 'cleanup-required' ? 'helloVaultCleanup' : 'helloVaultOff')}</p>}
+        {hello?.state === 'enabled' && <p>{t(`helloVaultMode_${hello.mode ?? 'session'}`)}{hello.expiresAt ? ` · ${new Date(hello.expiresAt).toLocaleString()}` : ''}</p>}
+        {hello?.state === 'off' && <form className="stack" onSubmit={(e) => {
+          e.preventDefault();
+          const pw = helloPassword;
+          setHelloPassword('');
+          void run(() => api.hello({ operation: 'enroll', token, password: pw, mode: helloMode }), w.ready);
+        }}>
+          <label htmlFor={helloModeId}>{t('helloVaultMode')}</label>
+          <select id={helloModeId} value={helloMode} disabled={busy} onChange={(e) => setHelloMode(e.target.value as HelloMode)}>
+            {(['session', 'remember6', 'remember12', 'remember24'] as const).map((mode) => <option key={mode} value={mode}>{t(`helloVaultMode_${mode}`)}</option>)}
+          </select>
+          <label htmlFor={helloPasswordId}>{w.helloPassword}</label>
+          <input id={helloPasswordId} name="file-safe-hello-password" type="password" autoComplete="current-password" maxLength={1024} value={helloPassword} disabled={busy} onChange={(e) => setHelloPassword(e.target.value)} />
+          <button type="submit" disabled={busy || !helloPassword}>{w.helloEnable}</button>
+        </form>}
+        {hello && hello.state !== 'off' && <button type="button" className="secondary" disabled={busy || !status || !admissionReady}
+          onClick={() => status && void run(() => api.hello({ operation: 'revoke', expected_generation: status.generation }), w.ready)}>{t('helloVaultDisable')}</button>}
+      </details>
       <details className="card stack">
         <summary>{w.rotate}</summary>
         <p>{w.rotationExplain}</p>
