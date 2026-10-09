@@ -14,7 +14,7 @@ use windows_sys::Win32::{
     Storage::FileSystem::{FILE_GENERIC_EXECUTE, FILE_GENERIC_READ},
     System::{
         JobObjects::*, LibraryLoader::*, Memory::*, SystemInformation::GetSystemDirectoryW,
-        Threading::*,
+        SystemServices::MAXIMUM_ALLOWED, Threading::*,
     },
 };
 use zeroize::{Zeroize, Zeroizing};
@@ -466,11 +466,11 @@ fn run_with_timeout(
 }
 pub(crate) fn token_is_lpac(process: HANDLE) -> Result<bool> {
     let mut token = null_mut();
-    if unsafe { OpenProcessToken(process, TOKEN_QUERY, &mut token) } == 0 {
+    if unsafe { OpenProcessToken(process, TOKEN_QUERY | TOKEN_DUPLICATE, &mut token) } == 0 {
         return Err(failed("open-worker-token"));
     }
     let token = Handle::new(token)?;
-    for class in [TokenIsAppContainer, TokenIsLessPrivilegedAppContainer] {
+    for class in [TokenIsAppContainer] {
         let mut value = 0u32;
         let mut length = 0;
         if unsafe {
@@ -508,5 +508,55 @@ pub(crate) fn token_is_lpac(process: HANDLE) -> Result<bool> {
     {
         return Ok(false);
     }
-    Ok(unsafe { *(groups.as_ptr().cast::<u32>()) } == 0)
+    if unsafe { *(groups.as_ptr().cast::<u32>()) } != 0 {
+        return Ok(false);
+    }
+    // Prove actual LPAC access semantics, as Chromium does. Some Windows
+    // versions reject the newer TokenIsLessPrivilegedAppContainer info class.
+    // World gets both bits; AC gets bit 1; restricted packages get bit 2.
+    // Only an LPAC token must resolve MAXIMUM_ALLOWED to exactly bit 2.
+    let mut impersonation = null_mut();
+    if unsafe { DuplicateToken(token.0, SecurityImpersonation, &mut impersonation) } == 0 {
+        return Err(failed("lpac-access-token"));
+    }
+    let impersonation = Handle::new(impersonation)?;
+    let sddl = wide(std::ffi::OsStr::new(
+        "O:SYG:SYD:(A;;0x3;;;WD)(A;;0x1;;;AC)(A;;0x2;;;S-1-15-2-2)",
+    ));
+    let mut descriptor = null_mut();
+    if unsafe {
+        ConvertStringSecurityDescriptorToSecurityDescriptorW(
+            sddl.as_ptr(),
+            SDDL_REVISION_1,
+            &mut descriptor,
+            null_mut(),
+        )
+    } == 0
+    {
+        return Err(failed("lpac-access-descriptor"));
+    }
+    let mapping: GENERIC_MAPPING = unsafe { zeroed() };
+    let mut privileges = [0usize; 256];
+    let mut privilege_size = size_of::<[usize; 256]>() as u32;
+    let mut granted = 0;
+    let mut allowed = 0;
+    let result = unsafe {
+        AccessCheck(
+            descriptor,
+            impersonation.0,
+            MAXIMUM_ALLOWED,
+            &mapping,
+            privileges.as_mut_ptr().cast(),
+            &mut privilege_size,
+            &mut granted,
+            &mut allowed,
+        )
+    };
+    unsafe {
+        LocalFree(descriptor.cast());
+    }
+    if result == 0 {
+        return Err(failed("lpac-access-check"));
+    }
+    Ok(allowed != 0 && granted == 2)
 }

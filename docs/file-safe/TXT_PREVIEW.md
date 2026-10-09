@@ -33,7 +33,9 @@ nonexistent inaccessible child. Normal runtime DLL reads remain OS-controlled.
 An explicit handle list contains only a frozen read-only anonymous input section
 and a bounded output section. The host closes its writable input handle/view before
 launch. The process belongs to a kill-on-close job **at creation**, starts suspended
-and resumes only after actual AppContainer/LPAC/zero-capability token readback.
+and resumes only after actual AppContainer/zero-capability token readback and a behavioral LPAC AccessCheck.
+The latter must grant the restricted-packages bit and deny the ordinary
+ALL_APPLICATION_PACKAGES bit using the actual token; no flag-only inference.
 Child creation is prohibited, the job allows one process, committed memory is
 limited to 256 MiB and UI access including clipboard is restricted. Text needs a
 smaller budget than the original 1 GiB multi-parser maximum; no PDF/image decoder

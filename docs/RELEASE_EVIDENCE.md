@@ -54,6 +54,13 @@ The hostile probe additionally attempts writes using its actual TEMP/TMP and
 profile environment variables, including any Windows-adjusted profile path;
 parent-supplied canary paths alone are insufficient evidence of diskless operation.
 
+The minimal environment allowed process creation. Windows then refused the newer
+LPAC token information class with Win32 87. LPAC verification now uses Chromium's
+behavioral access check: the actual impersonation token must obtain only the
+restricted-packages bit, never the ALL_APPLICATION_PACKAGES bit, from a synthetic
+descriptor. AppContainer and zero-capability readback remain mandatory. This
+checks OS enforcement rather than trusting a launch flag.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner
