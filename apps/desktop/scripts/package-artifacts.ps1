@@ -16,6 +16,7 @@ $metadata = @{
   architecture='x86_64-pc-windows-msvc'; signing='unsigned'; sha256=$hash;
   webview2='Evergreen offline installer bundled; clean-machine runtime test NOT RUN';
   fileSafe='experimental native streaming storage and independent Python recovery';
+  fileSafeInterface='folder explorer with nested paths/history and separate settings';
   fileSafePreview='unavailable: AppContainer/LPAC isolation proof BLOCKED';
   windowsHello='experimental independent opt-in PRF/TPM password-vault and file-safe unlock; file-safe physical acceptance pending';
   windowsHelloDiagnostics='WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action';

@@ -6,6 +6,9 @@ import { I18nContext, translator } from "../../../pwa/src/i18n.ts";
 import type {
   FileSafeApi,
   SafeFile,
+  SafeFolder,
+  SafeQuery,
+  SafeChange,
   SafePage,
   SafeStatus,
 } from "../../../pwa/src/file-safe-protocol.ts";
@@ -48,6 +51,34 @@ let peakReads = 0;
 let busyReads = 0;
 const token = "a".repeat(32);
 const root = { id: "f".repeat(32), parent_id: null, name: "" };
+let folders: SafeFolder[] = [root];
+let explorerFiles: SafeFile[] | null = null;
+const queries: SafeQuery[] = [];
+const changes: SafeChange[] = [];
+let revision = 0;
+const fixture = new URLSearchParams(location.search).get("explorer");
+if (fixture) {
+  const id = (value: number) => value.toString(16).padStart(32, "0");
+  if (fixture === "many") {
+    folders = [root, ...Array.from({ length: 205 }, (_, i) => ({ id: id(100 + i), parent_id: root.id, name: `Folder ${String(i).padStart(3, "0")}` }))];
+    explorerFiles = [];
+  } else {
+    folders = [root,
+      { id: id(100), parent_id: root.id, name: "Documents" },
+      { id: id(101), parent_id: id(100), name: "2026" },
+      { id: id(102), parent_id: id(101), name: "Reports" },
+      { id: id(103), parent_id: root.id, name: "Images" },
+    ];
+    explorerFiles = [
+      { ...files[0]!, name: "Root readme.txt", size: "1024", modified_at: "2026-10-09T06:00:00.000Z" },
+      { ...files[1]!, name: "Invoice.pdf", folder_id: id(100), size: "2048" },
+      { ...files[2]!, name: "Nested report.csv", folder_id: id(102), size: "9007199254740993" },
+      { ...files[3]!, name: "old.bin", deleted: true, size: "1" },
+      { ...files[4]!, name: "Zeta.log", size: "10", favorite: true },
+      { ...files[5]!, name: "Alpha.txt", size: "3072" },
+    ];
+  }
+}
 const api: FileSafeApi = {
   async hello(request) {
     if (request.operation === 'status') return { status: { ...hello } };
@@ -119,6 +150,7 @@ const api: FileSafeApi = {
   activity() {},
   async interval() {},
   async page(_token, query) {
+    queries.push({ ...query });
     activeReads++;
     peakReads = Math.max(peakReads, activeReads);
     if (exclusiveReads && activeReads > 1) {
@@ -128,17 +160,25 @@ const api: FileSafeApi = {
     }
     try {
       if (exclusiveReads) await new Promise((resolve) => setTimeout(resolve, 100));
-      const result = files.filter((f) => f.name.includes(query.search));
+      const folder = folders.find((f) => f.id === (query.folder_id ?? root.id));
+      if (!folder) throw { code: "NOT_FOUND" };
+      const ancestors = [folder];
+      let current = folder;
+      while (current.parent_id) { current = folders.find((f) => f.id === current.parent_id)!; ancestors.unshift(current); }
+      const children = folders.filter((f) => f.parent_id === folder.id).sort((a, b) => a.name.localeCompare(b.name));
+      const search = query.search.toLowerCase();
+      const result = (explorerFiles ?? files).filter((f) => (query.mode === "trash" ? f.deleted : query.mode === "favorites" ? !f.deleted && f.favorite : !f.deleted && f.folder_id === folder.id) && (!search || [f.name, f.notes, ...f.tags].some((value) => value.toLowerCase().includes(search))));
+      result.sort((a, b) => query.sort === "modified" ? b.modified_at.localeCompare(a.modified_at) : query.sort === "size" ? (BigInt(a.size) < BigInt(b.size) ? 1 : -1) : a.name.localeCompare(b.name));
       const page: SafePage = {
-        snapshot_id: "s",
+        snapshot_id: `s${revision}`,
         sequence: "9007199254740993",
         root_id: root.id,
-        folder_id: root.id,
-        folders: [],
-        ancestors: [root],
+        folder_id: folder.id,
+        folders: children.slice(query.folder_offset, query.folder_offset + 200),
+        ancestors,
         files: result.slice(query.offset, query.offset + query.limit),
         total: result.length,
-        folders_total: 0,
+        folders_total: children.length,
         storage_bytes: "9007199254740993",
       };
       if (delay)
@@ -150,7 +190,12 @@ const api: FileSafeApi = {
       activeReads--;
     }
   },
-  async change() {},
+  async change(_token, _snapshot, change) {
+    changes.push(change);
+    if (change.kind === "folder") folders.push({ id: (1000 + revision).toString(16).padStart(32, "0"), parent_id: change.parent_id, name: change.name });
+    if (change.kind === "trash" && explorerFiles) explorerFiles = explorerFiles.map((file) => change.file_ids.includes(file.id) ? { ...file, deleted: change.deleted } : file);
+    revision++;
+  },
   async import() {
     return null;
   },
@@ -172,6 +217,8 @@ const api: FileSafeApi = {
 };
 Object.assign(window, {
   uiTest: {
+    queries() { return queries; },
+    changes() { return changes; },
     helloCalls() { return helloCalls; },
     cancelHello() { cancelHello = true; },
     delayHello() { delayHello = true; },

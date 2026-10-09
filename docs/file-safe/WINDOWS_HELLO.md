@@ -10,7 +10,7 @@ response concerns password-vault Hello only.
 
 1. Open File Safe using its own master password and keep a verified encrypted
    backup recoverable by that password.
-2. Expand **Windows Hello for File Safe / Windows Hello для файлового сейфа**.
+2. Open **File-safe settings / Настройки сейфа**, then expand **Windows Hello for File Safe / Windows Hello для файлового сейфа**.
    Choose session mode (default) or remember this computer for 6, 12 or 24 hours.
 3. Re-enter the **file-safe** master password and select **Connect file safe to
    Windows Hello / Подключить файловый сейф к Windows Hello**. A wrong password

@@ -1,5 +1,5 @@
 /** Small, bundled line icons; no external assets, fonts or requests. */
-export type IconName = 'vault' | 'key' | 'lock' | 'shield' | 'star' | 'backup' | 'settings' | 'palette' | 'sun' | 'moon' | 'sparkles' | 'search' | 'sliders' | 'plus' | 'chevron' | 'check';
+export type IconName = 'vault' | 'key' | 'lock' | 'shield' | 'star' | 'backup' | 'settings' | 'palette' | 'sun' | 'moon' | 'sparkles' | 'search' | 'sliders' | 'plus' | 'chevron' | 'check' | 'folder' | 'file' | 'arrowLeft' | 'arrowRight' | 'arrowUp' | 'trash';
 const paths: Record<IconName, string> = {
   vault: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM3 8h2m-2 8h2m7-8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0 0v3m0 2v3m-4-4h3m2 0h3',
   key: 'M14 3a7 7 0 0 0-6.5 9.6L3 17v4h4v-3h3l2.4-2.5A7 7 0 1 0 14 3Zm3 4h.01',
@@ -16,6 +16,12 @@ const paths: Record<IconName, string> = {
   sliders: 'M3 6h4m4 0h10M3 12h10m4 0h4M3 18h4m4 0h10M7 3v6m6 0v6M7 15v6',
   plus: 'M12 5v14M5 12h14',
   chevron: 'm9 6 6 6-6 6',
+  folder: 'M3 7V5a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z',
+  file: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Zm0 0v6h6M8 13h8m-8 4h6',
+  arrowLeft: 'm12 5-7 7 7 7M5 12h14',
+  arrowRight: 'm12 5 7 7-7 7M5 12h14',
+  arrowUp: 'm5 12 7-7 7 7M12 5v14',
+  trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
   check: 'm5 12 4 4L19 6'
 };
 
