@@ -1,5 +1,43 @@
 # Release evidence and gate status
 
+## File Safe explorer publication (2026-10-09)
+
+[PR #35](https://github.com/kurasis/passkeylocal/pull/35) merged as `e63a2859b9f6757603f63a73a5e1e7b474a8826c`;
+application tree equals tested source `db201b1edae9dbee69bcd38e54ffc1ba97d8833d` (head `6572c6f939cb5d27c9a0e39aa9222122505dbb5d`).
+[General CI 37911616095](https://github.com/kurasis/passkeylocal/actions/runs/37911616095) and
+[Windows CI 37911616203](https://github.com/kurasis/passkeylocal/actions/runs/37911616203)
+passed all 11 checks. Logs confirm 177 Windows routine native tests, 145 Linux,
+174 TypeScript, 55 desktop/browser and eight production PWA scenarios. MSVC/header
+ABI, 5 GiB resource, five Python environments, offline recovery kit and fresh
+native/Python parity passed. Native storage, permissions, crypto and recovery
+source bytes are unchanged by the explorer increment.
+
+Original artifact ZIP matches GitHub digest `sha256:e346db52b3e0a8782e671fe548947bc3b96a521f5cc58f440860ba71edab9915`.
+Installer: 219,910,733 bytes; SHA-256 `8e5ded99e1eedf836938c0ccba15e8c5f2e7b29d6660d6ae945fcd37b4afa94f`,
+matching original build metadata and sidecar. Real per-user installation,
+executable equality, UI/native commands, lock and source correlation passed.
+The installed app created native nested folders and traversed parent row,
+history and breadcrumb paths. Separate settings retain the fixed Hello command,
+password admission and default-session form. An original
+[installed explorer screenshot](../deploy/windows-desktop/windows-file-safe-explorer-db201b1.png)
+and metadata are retained byte-for-byte in the [download folder](../deploy/windows-desktop/).
+Hosted Hello is unavailable; no new physical protected-unlock result is claimed.
+
+Six new UI cases cover nested navigation/current-parent creation, settings/secrets,
+late folder replies after lock, bounded 205-folder pages, Russian layout across
+three palettes, sort requests and exact sizes above 2^53. Existing independent
+Hello and owner reports retain their scope. Physical file-safe biometric, account
+isolation, standard-user and preview gates remain unverified; no old diagnostic
+repeat is requested. [Explorer guide](file-safe/EXPLORER.md) and
+[acceptance ledger](file-safe/ACCEPTANCE.md) explain remaining limits.
+
+Hosted 10,000-file restore: 81.461 s; 5 GiB process:
+35.556 s, sampled peak working set 10,649,600 bytes.
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-e63a285.zip): 218,294 bytes;
+SHA-256 `e514033b6d390ebb52a73e2dc2e09dd283474c0862bdafa124984cef3707206c`. All ten files equal a fresh merged-main web build; native IPC
+is absent. No server deployment occurred. Publication changes only docs/artifacts;
+application, tests, dependencies and workflows retain the tested bytes.
+
 ## File Safe explorer and separate settings (2026-10-09)
 
 The [explorer interface](file-safe/EXPLORER.md) now displays folders before files

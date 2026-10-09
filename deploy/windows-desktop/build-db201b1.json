@@ -1,0 +1,19 @@
+{
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "sourceCommit": "db201b1edae9dbee69bcd38e54ffc1ba97d8833d",
+  "fileSafeInterface": "folder explorer with nested paths/history and separate settings",
+  "windowsHello": "experimental independent opt-in PRF/TPM password-vault and file-safe unlock; file-safe physical acceptance pending",
+  "cargoLock": "909e76f511545395d5efc6674e5cb4c24bc437c422aca80faf032ce8b61910c9",
+  "version": "0.1.0",
+  "signing": "unsigned",
+  "sha256": "8e5ded99e1eedf836938c0ccba15e8c5f2e7b29d6660d6ae945fcd37b4afa94f",
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "fileSafePreview": "unavailable: AppContainer/LPAC isolation proof BLOCKED",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "node": "v22.23.3",
+  "product": "PassKey Local",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "architecture": "x86_64-pc-windows-msvc"
+}
