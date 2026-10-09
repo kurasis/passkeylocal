@@ -6,6 +6,7 @@ import type {
   FileSafeApi,
   SafeChange,
   SafeFile,
+  SafeFolder,
   SafePage,
   SafeQuery,
   SafeStatus,
@@ -13,6 +14,8 @@ import type {
 } from "../file-safe-protocol.ts";
 import { Banner } from "./common.tsx";
 import { Icon } from "./icons.tsx";
+import { TextPreview } from "./file-safe-preview.tsx";
+import { SafeMenu, type SafeMenuAction } from "./file-safe-menu.tsx";
 import { FileSafeExplorer } from "./file-safe-explorer.tsx";
 
 const words = {
@@ -47,8 +50,8 @@ const words = {
     previousFolders: "Previous folders",
     nextFolders: "Next folders",
     loading: "Opening folder…",
-    preview:
-      "Preview is unavailable in this build. You can store files or explicitly export a copy.",
+    preview: "Preview supports plain UTF-8 .txt files up to 8 MiB.",
+    previewTxt: "Preview TXT",
     files: "Files",
     favorites: "Favorites",
     trash: "Recycle bin",
@@ -127,6 +130,13 @@ const words = {
     retained: "Retained content bytes",
     select: "Select",
     details: "File details",
+    rename: "Rename",
+    newChild: "New subfolder",
+    removeFolder: "Remove empty folder",
+    removeFolderExplain: "Remove this empty folder? Folders with files, recycled files or subfolders cannot be removed.",
+    unstar: "Remove from favorites",
+    closeDialog: "Cancel",
+    notEmpty: "The folder contains files or subfolders, including recycled files. Move them first.",
     close: "Close details",
     status: "Backup status",
     unavailable: "Unavailable",
@@ -168,8 +178,8 @@ const words = {
     previousFolders: "Предыдущие папки",
     nextFolders: "Следующие папки",
     loading: "Открываем папку…",
-    preview:
-      "Предпросмотр недоступен в этой сборке. Можно хранить файлы или явно экспортировать копию.",
+    preview: "Предпросмотр доступен для обычных файлов .txt в UTF-8 до 8 МиБ.",
+    previewTxt: "Предпросмотр TXT",
     files: "Файлы",
     favorites: "Избранное",
     trash: "Корзина",
@@ -249,6 +259,13 @@ const words = {
     retained: "Байтов сохранённого содержимого",
     select: "Выбрать",
     details: "Сведения о файле",
+    rename: "Переименовать",
+    newChild: "Новая подпапка",
+    removeFolder: "Удалить пустую папку",
+    removeFolderExplain: "Удалить эту пустую папку? Папку с файлами, файлами в корзине или подпапками удалить нельзя.",
+    unstar: "Убрать из избранного",
+    closeDialog: "Отмена",
+    notEmpty: "В папке есть файлы или подпапки, в том числе файлы в корзине. Сначала переместите их.",
     close: "Закрыть сведения",
     status: "Статус копии",
     unavailable: "Недоступно",
@@ -301,7 +318,11 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const [working, setWorking] = useState(false);
   const [admissionReady, setAdmissionReady] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [detail, setDetail] = useState<string | null>(null);
+  const [menu, setMenu] = useState<{ kind: "file" | "folder"; id: string; x: number; y: number; anchor: HTMLElement } | null>(null);
+  const [folderDialog, setFolderDialog] = useState<{ operation: "rename" | "remove" | "create"; folder: SafeFolder; name: string } | null>(null);
+  const [detailAction, setDetailAction] = useState<string>("");
   const [folderName, setFolderName] = useState("");
   const [removeAck, setRemoveAck] = useState(false);
   const [retention, setRetention] = useState(10);
@@ -326,6 +347,9 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     setPage(null);
     setSelected([]);
     setDetail(null);
+    setPreviewId(null);
+    setMenu(null);
+    setFolderDialog(null);
     setMessage("");
     setPassword("");
     setRepeat("");
@@ -378,6 +402,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         ? w.cancelled
         : code === "CONFLICT"
           ? w.conflict
+          : code === "NOT_EMPTY"
+            ? w.notEmpty
           : code === "BUSY"
             ? w.busy
             : code === "AUTH_FAILED"
@@ -496,6 +522,9 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     setView(next);
     setSelected([]);
     setDetail(null);
+    setPreviewId(null);
+    setMenu(null);
+    setFolderDialog(null);
     setHelloPassword("");
     setOldPassword("");
     setNewPassword("");
@@ -510,6 +539,9 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     setPageLoading(true);
     setSelected([]);
     setDetail(null);
+    setPreviewId(null);
+    setMenu(null);
+    setFolderDialog(null);
     setRemoveAck(false);
     setQuery((q) => ({ ...q, ...location, search: "", offset: 0, folder_offset: 0 }));
     redrawNavigation((value) => value + 1);
@@ -534,6 +566,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     showLocation(entry);
   };
   const parent = query.mode === "files" && page && page.ancestors.length > 1 ? page.ancestors[page.ancestors.length - 2]?.id ?? null : null;
+  const previewFile = page?.files.find((f) => f.id === previewId);
   const current = page?.files.find((f) => f.id === detail);
   const importFiles = (recursive: boolean, replace: string | null = null) => {
     if (!token || !page) return;
@@ -569,6 +602,26 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     }
     return false;
   };
+  const closeMenu = () => { const anchor = menu?.anchor; setMenu(null); anchor?.focus(); };
+  const menuFile = page?.files.find((f) => menu?.kind === "file" && f.id === menu.id);
+  const menuFolder = page?.folders.find((f) => menu?.kind === "folder" && f.id === menu.id);
+  const openDetails = (id: string, action = "") => { setDetailAction(action); setDetail(id); };
+  const menuActions: SafeMenuAction[] = menuFile ? [
+    ...(menuFile.name.toLowerCase().endsWith(".txt") ? [{ label: w.previewTxt, run: () => { setDetail(null); setPreviewId(menuFile.id); } }] : []),
+    { label: w.details, run: () => openDetails(menuFile.id) },
+    { label: w.rename, run: () => openDetails(menuFile.id, "rename") },
+    { label: w.move, run: () => openDetails(menuFile.id, "move") },
+    { label: menuFile.favorite ? w.unstar : w.favorite, run: () => { void change({ kind: "edit", edit: { file_id: menuFile.id, folder_id: menuFile.folder_id, name: menuFile.name, tags: menuFile.tags, notes: menuFile.notes, favorite: !menuFile.favorite } }); } },
+    { label: w.history, run: () => openDetails(menuFile.id, "history") },
+    { label: w.export, run: () => openDetails(menuFile.id, "export") },
+    { label: menuFile.deleted ? w.recover : w.delete, danger: !menuFile.deleted, run: () => { setDetail(null); void change({ kind: "trash", file_ids: [menuFile.id], deleted: !menuFile.deleted, permanent: false, confirm: false }); } },
+    ...(menuFile.deleted ? [{ label: w.permanent, danger: true, run: () => { setSelected([menuFile.id]); setRemoveAck(false); } }] : []),
+  ] : menuFolder ? [
+    { label: w.openFolder, run: () => navigate(menuFolder.id) },
+    { label: w.newChild, run: () => setFolderDialog({ operation: "create", folder: menuFolder, name: "" }) },
+    { label: w.rename, run: () => setFolderDialog({ operation: "rename", folder: menuFolder, name: menuFolder.name }) },
+    { label: w.removeFolder, danger: true, run: () => setFolderDialog({ operation: "remove", folder: menuFolder, name: menuFolder.name }) },
+  ] : [];
   const restoreBackup = async (pw: string, ticket: string) => {
     if (working) return;
     setWorking(true);
@@ -722,7 +775,6 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     >
       <div className="page-heading file-safe-heading">
         <div>
-          <span className="eyebrow">{w.subtitle}</span>
           <h1>{view === "settings" ? w.settings : w.title}</h1>
         </div>
         <div className="input-row">
@@ -740,8 +792,35 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         </button>
         </div>
       </div>
+      {previewFile && page && <TextPreview api={api} token={token} snapshot={page.snapshot_id} file={previewFile} lang={lang} close={() => setPreviewId(null)} lock={() => { redact(); void api.lock(); }} />}
+      {menu && menuActions.length > 0 && <SafeMenu x={menu.x} y={menu.y} title={menuFile?.name ?? menuFolder?.name ?? ""} actions={menuActions.map((a) => ({ ...a, disabled: busy }))} close={closeMenu} />}
+      {folderDialog && <div className="desktop-close-overlay"><form className="card stack file-safe-dialog" role="dialog" aria-modal="true" aria-label={folderDialog.operation === "create" ? w.newChild : folderDialog.operation === "remove" ? w.removeFolder : w.rename} onKeyDown={(e) => { if (e.key === "Escape") setFolderDialog(null); }} onSubmit={(e) => {
+        e.preventDefault(); const d = folderDialog; setFolderDialog(null);
+        void change(d.operation === "create" ? { kind: "folder", parent_id: d.folder.id, name: d.name } : d.operation === "rename" ? { kind: "folder_edit", folder_id: d.folder.id, name: d.name } : { kind: "folder_remove", folder_id: d.folder.id, confirm: true });
+      }}>
+        <h2>{folderDialog.folder.name}</h2>
+        {folderDialog.operation === "remove" ? <p>{w.removeFolderExplain}</p> : <label>{w.folderName}<input autoFocus required maxLength={255} value={folderDialog.name} onChange={(e) => setFolderDialog({ ...folderDialog, name: e.target.value })} /></label>}
+        <div className="input-row"><button type="submit" disabled={busy} className={folderDialog.operation === "remove" ? "danger" : ""}>{folderDialog.operation === "create" ? w.folder : folderDialog.operation === "remove" ? w.removeFolder : w.rename}</button><button type="button" className="secondary" onClick={() => setFolderDialog(null)}>{w.closeDialog}</button></div>
+      </form></div>}
       {view === "files" && <>
-      <p className="muted file-safe-import-note">{w.originals}</p>
+
+
+      {busy && (
+        <Banner kind="info">
+          <span role="status">
+            {w.working}{" "}
+            {status?.progress.total
+              ? `${status.progress.done} / ${status.progress.total}`
+              : ""}
+          </span>
+        </Banner>
+      )}
+      {message && <Banner kind="info">{message}</Banner>}
+      <div className="file-safe-layout">
+        <aside className="stack file-safe-sidebar" aria-label={w.title}>
+          <nav className="card stack file-safe-places">
+          {(["files", "favorites", "trash"] as const).map((mode) => <button type="button" className="secondary" key={mode} aria-current={query.mode === mode ? "page" : undefined} disabled={busy} onClick={() => navigate(null, mode)}><Icon name={mode === "files" ? "folder" : mode === "favorites" ? "star" : "trash"} />{w[mode]}</button>)}
+          </nav>
       <div className="file-safe-toolbar">
         <button
           type="button"
@@ -794,20 +873,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           </button>
         )}
       </div>
-      {busy && (
-        <Banner kind="info">
-          <span role="status">
-            {w.working}{" "}
-            {status?.progress.total
-              ? `${status.progress.done} / ${status.progress.total}`
-              : ""}
-          </span>
-        </Banner>
-      )}
-      {message && <Banner kind="info">{message}</Banner>}
-      <div className="file-safe-layout">
-        <aside className="card stack file-safe-sidebar" aria-label={w.title}>
-          {(["files", "favorites", "trash"] as const).map((mode) => <button type="button" className="secondary" key={mode} aria-current={query.mode === mode ? "page" : undefined} disabled={busy} onClick={() => navigate(null, mode)}><Icon name={mode === "files" ? "folder" : mode === "favorites" ? "star" : "trash"} />{w[mode]}</button>)}
+          <p className="muted file-safe-import-note">{w.originals}</p>
         </aside>
         <div className="stack file-safe-content">
           <div className="file-safe-pathbar">
@@ -836,7 +902,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               <FileSafeExplorer
                 files={page.files} folders={query.mode === "files" ? page.folders : []} parent={parent}
                 selected={selected} select={(id, checked) => setSelected((ids) => checked ? [...ids, id] : ids.filter((x) => x !== id))}
-                detail={setDetail} openFolder={navigate} sort={query.sort} busy={busy} lang={lang} labels={w}
+                detail={(id) => { const file = page.files.find((f) => f.id === id); if (file?.name.toLowerCase().endsWith(".txt")) { setDetail(null); setPreviewId(id); } else { setPreviewId(null); setDetailAction(""); setDetail(id); } }} openFolder={navigate}
+                context={(target, x, y, anchor) => { setMenu({ ...target, x, y, anchor }); }} sort={query.sort} busy={busy} lang={lang} labels={w}
                 setSort={(sort) => { setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort, offset: 0 })); }}
               />
               {query.mode === "files" && page.folders_total > 200 && <div className="input-row file-safe-folder-pages">
@@ -934,7 +1001,9 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           )}
           {current && (
             <FileDetails
-              key={current.id}
+              key={`${current.id}:${detailAction}`}
+              initialAction={detailAction}
+              preview={() => setPreviewId(current.id)}
               file={current}
               folders={[...(page?.ancestors ?? []), ...(page?.folders ?? [])]}
               busy={busy}
@@ -1127,6 +1196,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
 
 function FileDetails({
   file,
+  initialAction,
+  preview,
   folders,
   busy,
   labels: w,
@@ -1136,6 +1207,8 @@ function FileDetails({
   exportVersion,
 }: {
   file: SafeFile;
+  initialAction: string;
+  preview: () => void;
   folders: SafePage["folders"];
   busy: boolean;
   labels: typeof words.en;
@@ -1144,6 +1217,8 @@ function FileDetails({
   replace: () => void;
   exportVersion: (version: string | null) => void;
 }) {
+  const section = useRef<HTMLElement>(null);
+  useEffect(() => { if (!initialAction) return; const target = section.current?.querySelector<HTMLElement>(`[data-action="${initialAction}"]`); target?.scrollIntoView({ block: "nearest" }); target?.focus(); }, [initialAction]);
   const [name, setName] = useState(file.name);
   const [tags, setTags] = useState(file.tags.join(", "));
   const [notes, setNotes] = useState(file.notes);
@@ -1151,7 +1226,7 @@ function FileDetails({
   const [folder, setFolder] = useState(file.folder_id);
   const [ack, setAck] = useState(false);
   return (
-    <section className="card stack" aria-label={w.details}>
+    <section ref={section} className="card stack" aria-label={w.details}>
       <div className="input-row">
         <h2>{file.name}</h2>
         <button type="button" className="secondary" onClick={close}>
@@ -1181,6 +1256,7 @@ function FileDetails({
         <label>
           {w.name}
           <input
+            data-action="rename"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={255}
@@ -1189,7 +1265,7 @@ function FileDetails({
         </label>
         <label>
           {w.move}
-          <select value={folder} onChange={(e) => setFolder(e.target.value)}>
+          <select data-action="move" value={folder} onChange={(e) => setFolder(e.target.value)}>
             {folders
               .filter((f, i, all) => all.findIndex((x) => x.id === f.id) === i)
               .map((f) => (
@@ -1227,7 +1303,8 @@ function FileDetails({
           {w.save}
         </button>
       </form>
-      <Banner kind="info">{w.preview}</Banner>
+      <p className="muted">{w.preview}</p>
+      {file.name.toLowerCase().endsWith(".txt") && <button type="button" className="secondary" disabled={busy} onClick={preview}>{w.previewTxt}</button>}
       <button
         type="button"
         className="secondary"
@@ -1240,6 +1317,7 @@ function FileDetails({
       <label className="checkbox">
         <input
           type="checkbox"
+          data-action="export"
           checked={ack}
           onChange={(e) => setAck(e.target.checked)}
         />
@@ -1252,7 +1330,7 @@ function FileDetails({
       >
         {w.export}
       </button>
-      <h3>{w.history}</h3>
+      <h3 data-action="history" tabIndex={-1}>{w.history}</h3>
       {file.versions.map((v) => (
         <div className="file-safe-version" key={v.id}>
           <span>

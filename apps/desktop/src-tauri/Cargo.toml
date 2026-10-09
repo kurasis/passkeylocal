@@ -9,6 +9,7 @@ license = "GPL-3.0-only"
 name = "passkey_local_desktop"
 
 [dependencies]
+passkey-text-preview = { path = "../text-preview" }
 libsodium-rs = "=0.2.5"
 hkdf = "=0.12.4"
 base64 = "=0.22.1"

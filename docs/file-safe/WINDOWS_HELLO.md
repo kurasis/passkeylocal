@@ -128,6 +128,6 @@ and open a password backup. Record the build and actual observations. Broader
 expiry/restart/revoke/negative cases remain separately unverified. No previous
 standalone diagnostic or excluded second-account test is requested.
 
-Preview remains unavailable pending its separate OS-isolation gates. Adding
+[TXT preview](TXT_PREVIEW.md) has separate experimental LPAC/installed evidence; full multi-format and standard-user isolation gates remain pending. Adding
 Hello does not approve document parsers or complete full file-safe acceptance.
 See [release evidence](../RELEASE_EVIDENCE.md) and [acceptance ledger](ACCEPTANCE.md).

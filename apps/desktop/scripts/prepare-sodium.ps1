@@ -8,9 +8,11 @@ if ($source.Count -ne 1) { throw 'Expected the locked libsodium-sys-stable sourc
 $dest = Join-Path $env:RUNNER_TEMP 'passkey-local-sodium-1.0.22'
 New-Item -ItemType Directory -Force $dest | Out-Null
 Copy-Item "$($source[0].FullName)/LATEST.tar.gz", "$($source[0].FullName)/LATEST.tar.gz.minisig" $dest
+# Preserve the original upstream-signed archive; the floating stable URL changed.
+$original = Join-Path $PSScriptRoot '../build-inputs/libsodium'
 $name = 'libsodium-1.0.22-stable-msvc.zip'
-Invoke-WebRequest "https://download.libsodium.org/libsodium/releases/$name" -OutFile "$dest/$name"
+Copy-Item "$original/$name" "$dest/$name"
 if ((Get-FileHash "$dest/$name" -Algorithm SHA256).Hash.ToLowerInvariant() -ne '4b310d0602b6217d68b3000df19af595841ba101910af8d335096f9c45c9f36a') { throw 'Pinned libsodium MSVC archive hash changed' }
-Invoke-WebRequest "https://download.libsodium.org/libsodium/releases/$name.minisig" -OutFile "$dest/$name.minisig"
+Copy-Item "$original/$name.minisig" "$dest/$name.minisig"
 "SODIUM_DIST_DIR=$dest" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-Write-Host 'Pinned HTTPS archive ready; libsodium-sys-stable still verifies the upstream minisign signature before use.'
+Write-Host 'Pinned original signed archive ready; libsodium-sys-stable still verifies the upstream minisign signature before use.'

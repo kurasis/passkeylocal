@@ -1,6 +1,6 @@
 # File-safe acceptance ledger
 
-Baseline `670e41fda3935258dde8dc4f095e666370ad7bfb`; branch `feat/encrypted-file-safe`. Final source/workflow/artifact provenance is recorded below. Synthetic fixtures only. **Full feature release BLOCKED**: isolated preview and remaining physical acceptance are incomplete. The current [Hello increment](WINDOWS_HELLO.md) enables an experimental, independent PRF/TPM root envelope, with new file-safe hardware acceptance pending. Current storage/recovery remains unsigned and experimental. The original matrix below records its earlier baseline; the update supersedes only its unavailable-Hello implementation notes.
+Baseline `670e41fda3935258dde8dc4f095e666370ad7bfb`; branch `feat/encrypted-file-safe`. Final source/workflow/artifact provenance is recorded below. Synthetic fixtures only. **Full feature release BLOCKED**: complete multi-format preview and remaining physical acceptance are incomplete. The current [Hello increment](WINDOWS_HELLO.md) enables an experimental, independent PRF/TPM root envelope, with new file-safe hardware acceptance pending. Current storage/recovery remains unsigned and experimental. The original matrix below records its earlier baseline; the update supersedes only its unavailable-Hello implementation notes.
 
 ## File-safe Hello implementation update (2026-10-09)
 

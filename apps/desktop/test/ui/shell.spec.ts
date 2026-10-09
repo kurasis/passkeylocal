@@ -14,15 +14,17 @@ test('Russian desktop header, module buttons, sidebar and content never overlap'
         const r = document.querySelector(selector)!.getBoundingClientRect();
         return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
       };
-      return { header: rect('.topbar'), modules: rect('.module-navigation'), nav: rect('.tabbar'), main: rect('main'), width: window.innerWidth, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+      return { brand: rect('.brand'), header: rect('.topbar'), modules: rect('.module-navigation'), nav: rect('.tabbar'), main: rect('main'), width: window.innerWidth, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
     });
     expect(geometry.overflow, `horizontal overflow at ${width}/${zoom}`).toBe(false);
-    expect(geometry.modules.top).toBeGreaterThanOrEqual(geometry.header.bottom - 1);
-    expect(geometry.main.top).toBeGreaterThanOrEqual(geometry.modules.bottom - 1);
+    expect(geometry.modules.top).toBeGreaterThanOrEqual(geometry.header.top);
+    expect(geometry.modules.bottom).toBeLessThanOrEqual(geometry.header.bottom);
+    expect(geometry.main.top).toBeGreaterThanOrEqual(geometry.header.bottom - 1);
+    if (geometry.modules.top < geometry.brand.bottom && geometry.brand.top < geometry.modules.bottom) expect(geometry.modules.left).toBeGreaterThanOrEqual(geometry.brand.right);
     // The sidebar is in flow on desktop; mobile navigation occupies its own
     // fixed bottom area and the app already reserves its height.
     if (width >= 900) {
-      expect(geometry.nav.top).toBeGreaterThanOrEqual(geometry.modules.bottom);
+      expect(geometry.nav.top).toBeGreaterThanOrEqual(geometry.header.bottom);
       expect(geometry.nav.right).toBeLessThanOrEqual(geometry.main.left + 1);
     }
     expect(geometry.modules.right).toBeLessThanOrEqual(geometry.width + 1);

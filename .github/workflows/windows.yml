@@ -50,6 +50,9 @@ jobs:
       - name: Prepare pinned signed libsodium build inputs over HTTPS
         shell: pwsh
         run: apps/desktop/scripts/prepare-sodium.ps1
+      - name: Isolated TXT worker and hostile LPAC proof
+        shell: pwsh
+        run: apps/desktop/scripts/check-text-preview.ps1
       - run: npm run typecheck
       - run: npm test
       - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check

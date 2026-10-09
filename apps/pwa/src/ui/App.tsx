@@ -246,13 +246,18 @@ export function App() {
   return (
     <I18nContext.Provider value={{ t, lang }}>
       <AppContext.Provider value={api}>
-        <div className={`app ${unlocked ? 'workspace' : 'access-layout'}`}>
+        <div className={`app ${unlocked ? 'workspace' : 'access-layout'}${desktop ? ' desktop-app' : ''}${module === 'files' ? ' file-safe-app' : ''}`}>
           <header className="topbar">
             <div className="brand"><span className="brand-mark"><Icon name="vault" /></span><span>{t('appName')}<small>{t('brandSubtitle')}</small></span></div>
             <div className="topbar-actions">
+              {desktop && fileSafe && <div className="module-navigation" role="navigation" aria-label={lang === 'ru' ? 'Хранилища' : 'Vault modules'}>
+            <button type="button" className="secondary" aria-current={module === 'passwords' ? 'page' : undefined} onClick={() => setModule('passwords')}>{lang === 'ru' ? 'Пароли' : 'Passwords'}</button>
+            <button type="button" className="secondary" aria-current={module === 'files' ? 'page' : undefined} onClick={() => setModule('files')}>{lang === 'ru' ? 'Файловый сейф' : 'File Safe'}</button>
+            <button type="button" className="secondary" onClick={() => { lockNow(); void fileSafe?.lockAll(); }}>{lang === 'ru' ? 'Заблокировать всё' : 'Lock all'}</button>
+          </div>}
               <span className="privacy-chip"><Icon name="shield" />{t('localOnly')}</span>
               <ThemeMenu value={prefs.theme} onChange={(value) => setPref('theme', value)} />
-            {phase === 'unlocked' && (
+            {module === 'passwords' && phase === 'unlocked' && (
               <button type="button" className="secondary" aria-label={t('lock')} title={t('lock')} onClick={lockNow}>
                 <Icon name="lock" /><span className="lock-label">{t('lock')}</span>
               </button>
@@ -267,11 +272,7 @@ export function App() {
               </button>
             </Banner>
           )}
-          {desktop && fileSafe && <div className="module-navigation" role="navigation" aria-label={lang === 'ru' ? 'Хранилища' : 'Vault modules'}>
-            <button type="button" className="secondary" aria-current={module === 'passwords' ? 'page' : undefined} onClick={() => setModule('passwords')}>{lang === 'ru' ? 'Пароли' : 'Passwords'}</button>
-            <button type="button" className="secondary" aria-current={module === 'files' ? 'page' : undefined} onClick={() => setModule('files')}>{lang === 'ru' ? 'Файловый сейф' : 'File Safe'}</button>
-            <button type="button" className="secondary" onClick={() => { lockNow(); void fileSafe?.lockAll(); }}>{lang === 'ru' ? 'Заблокировать всё' : 'Lock all'}</button>
-          </div>}
+
           <main>{body}</main>
           {desktop && closePrompt && <div className="desktop-close-overlay"><section className="card stack desktop-close-dialog" role="dialog" aria-modal="true" aria-labelledby="desktop-close-title">
             <h2 id="desktop-close-title">{t('desktopCloseTitle')}</h2><p>{t('desktopCloseExplain')}</p>

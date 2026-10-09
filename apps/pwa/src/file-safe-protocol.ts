@@ -1,4 +1,4 @@
-/** Bounded metadata only. Keys, document bytes and filesystem paths stay native. */
+/** Bounded metadata and validated inert text. Keys, original document decoding and paths stay native. */
 import type { HelloMode, HelloVaultStatus } from './hello-vault-protocol.ts';
 export type SafeHelloRequest =
   | { operation: 'status' }
@@ -47,7 +47,7 @@ export interface SafeStatus {
   progress: { stage: string; done: number; total: number };
   backup: SafeBackup;
   hello: "unavailable" | "independent-opt-in";
-  preview: "unavailable";
+  preview: "unavailable" | "txt-isolated";
 }
 export interface SafeQuery {
   folder_id: string | null;
@@ -72,6 +72,8 @@ export interface SafePage {
 }
 export type SafeChange =
   | { kind: "folder"; parent_id: string; name: string }
+  | { kind: "folder_edit"; folder_id: string; name: string }
+  | { kind: "folder_remove"; folder_id: string; confirm: boolean }
   | {
       kind: "edit";
       edit: Pick<
@@ -108,6 +110,7 @@ export interface SafeRecovery {
   versions?: number;
 }
 export interface FileSafeApi {
+  preview(request: { operation: "read"; token: string; snapshot: string; file: string; version: string | null; request_id: string } | { operation: "cancel"; token: string; request_id: string }): Promise<{ request_id: string; text: string } | null>;
   hello(request: SafeHelloRequest): Promise<SafeHelloResponse>;
   status(): Promise<SafeStatus>;
   access(

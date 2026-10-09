@@ -1,5 +1,115 @@
 # Release evidence and gate status
 
+## File Safe placement, context actions and isolated TXT implementation (2026-10-09)
+
+The desktop module switches move into the header and imports/new folders into the
+left explorer panel. Right-click/keyboard menus reuse file editing, favorites,
+versions, recycle/restore and consent-gated export. Native folder rename preserves
+children; confirmed removal refuses root/nonempty folders, including recycled
+files. The portable catalog/object format and password/Hello recovery are unchanged.
+
+An additive focused-window preview command authenticates one bounded selected TXT
+version before launching a fixed separate unprofiled LPAC worker. Read-only input,
+explicit two-handle inheritance, zero-capability token readback, job-at-creation,
+child/clipboard restrictions, 256 MiB memory, timeout/cancel and correlated output
+are implemented. Strict UTF-8/BOM and inert virtualized, paged text are the only supported
+parser path; no plaintext file, broad path API or fallback exists.
+
+Local: 148 Linux native tests passed (three new folder/content/ticket tests).
+Cross-Windows GNU Clippy checks the worker/proof FFI; decoder/protocol tests pass.
+Six new browser scenarios cover actual menu requests/consent, folder mutations,
+keyboard/menu edge placement, inert/virtualized TXT, delayed lock reply and sidebar
+placement. Local full UI: 61 passed; TypeScript: 174; production PWA: eight. Typecheck, both
+frontends and bundle isolation passed. Actual Windows LPAC/installed results
+are recorded at publication; Windows enforcement is **pending**, not claimed by
+these local doubles. Initial UI execution needed the supplied Chromium path;
+one new assertion needed scope across the existing version-export buttons. The
+existing header geometry check now verifies that modules are inside the header
+and separate from the brand, rather than requiring their previous lower row.
+
+The first Windows run stopped before application checks because the upstream floating
+libsodium stable archive changed (observed SHA-256 `31d03aa0b2855f431c689518fae44e9f6191aea8bc195c0487d69764189672c9`).
+The original local archive was reverified with the binding's pinned upstream minisign
+public key and retained in the repository with its original signature. The original expected archive
+hash remains unchanged; no dependency upgrade or signature bypass was made.
+TXT paging bounds browser scroll height to 20,000 segments per section; a 100,000-line
+fixture verifies the final line remains reachable. Paging UI and typecheck passed.
+
+The first actual LPAC launch refused creation with Win32 2. Startup now explicitly
+sets all standard handles to null, matching the section-only handle list and
+Chromium's process startup practice, rather than inheriting CI/console streams.
+That change alone did not resolve Win32 2. Windows requires the package identity
+to be registered. Registration/unregistration now use Chromium's KernelBase
+entry points separately from profile-directory creation; no profile directory or
+registry/filesystem storage grant is requested. Negative tests must still verify
+that neither direct nor profile writes are available.
+
+After registering the identity, creation advanced to Win32 203 (missing required
+environment variable). The sorted minimal environment now supplies Windows
+profile variable names with nonexistent inaccessible system-directory children;
+it still inherits no user environment, source/vault paths or secrets. The profile
+write probes remain mandatory.
+
+The hostile probe additionally attempts writes using its actual TEMP/TMP and
+profile environment variables, including any Windows-adjusted profile path;
+parent-supplied canary paths alone are insufficient evidence of diskless operation.
+
+The minimal environment allowed process creation. Windows then refused the newer
+LPAC token information class with Win32 87. LPAC verification now uses Chromium's
+behavioral access check: the actual impersonation token must obtain only the
+restricted-packages bit, never the ALL_APPLICATION_PACKAGES bit, from a synthetic
+descriptor. AppContainer and zero-capability readback remain mandatory. This
+checks OS enforcement rather than trusting a launch flag.
+
+Actual Windows text round trip and invalid-UTF8 refusal now pass; timeout and
+cancellation also pass. The hostile probe exited before its final report.
+Proof-only public stage numbers and exit-code diagnostics identify that failure
+without installing a debug interpreter or logging document contents.
+
+The hostile probe termination is NTSTATUS `0xc0000008` (invalid handle) in
+the handle/clipboard negative checks. Finer proof-only stages isolate which
+rejection must be observed without stopping the remaining negative checks.
+No failed probe is counted as a successful all-denials result.
+
+The failing call is the deliberately absent handle query. The hostile worker
+now queries its actual ProcessHandleInformation snapshot, validates its bounded
+layout and requires both inherited sections as positive controls before asserting
+that the nonlisted canary handle is absent. It no longer dereferences an invalid
+handle; unavailable enumeration remains a failed test. Production code is unchanged.
+
+The completed handle-table control exposed a genuine input-write escalation:
+DuplicateHandle could gain SECTION_MAP_WRITE from the attenuated read handle
+against the default object DACL. Anonymous input/output sections now use an empty
+DACL, following Chromium's Windows shared-memory design; the trusted creator
+retains initial rights, and the child receives only subsets. The hostile test
+retains write escalation and additionally attempts WRITE_DAC/WRITE_OWNER escalation.
+No failed write test is relabeled as passed.
+
+Empty section DACLs pass write/WRITE_DAC/WRITE_OWNER escalation checks; file,
+actual TEMP/profile, registry, parent and clipboard refusals also pass. The next
+probe stop is Rust std networking panicking during Winsock startup. Tests now
+observe the raw startup result and prove an unrestricted TCP/UDP control using
+the exact same minimal environment. An LPAC access/syscall refusal is recorded
+explicitly as network-stack denial; per-transport attempts are NOT RUN when
+startup is refused. Unexpected startup errors fail the test. No networking
+capability or registry-read grant is added merely to initialize a forbidden stack.
+
+Parent memory and parent handle duplication are probed separately; a combined
+rights request alone could mask partial access. An unrestricted 300 MiB allocation
+positive control distinguishes job memory refusal from host-wide allocation failure.
+
+The first installed smoke failed an outdated geometry assertion after it had
+scrolled deep into Hello diagnostics. Module controls now belong to the sticky
+header, while the content rect moves with scroll. The installed check resets to
+scroll origin and verifies controls inside the header, separate from the brand,
+with content/sidebar below it. It preserves overflow and separate-column checks.
+TXT installed-path acceptance remains pending until this full smoke completes.
+
+[TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
+never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
+PDF/images and new hardware Hello acceptance remain unverified. Historical owner
+reports retain their source and scope; no repeated old diagnostic is requested.
+
 ## File Safe explorer publication (2026-10-09)
 
 [PR #35](https://github.com/kurasis/passkeylocal/pull/35) merged as `e63a2859b9f6757603f63a73a5e1e7b474a8826c`;

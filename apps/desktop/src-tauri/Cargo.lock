@@ -2560,6 +2560,7 @@ dependencies = [
  "fs2",
  "hkdf",
  "libsodium-rs",
+ "passkey-text-preview",
  "raw-window-handle",
  "rfd",
  "serde",
@@ -2574,6 +2575,14 @@ dependencies = [
  "windows",
  "windows-core",
  "windows-future",
+ "windows-sys 0.61.2",
+ "zeroize",
+]
+
+[[package]]
+name = "passkey-text-preview"
+version = "0.1.0"
+dependencies = [
  "windows-sys 0.61.2",
  "zeroize",
 ]

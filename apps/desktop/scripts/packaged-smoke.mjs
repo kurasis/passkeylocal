@@ -315,17 +315,21 @@ try {
   // module controls and the sidebar previously occupied the same vertical area.
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
   await expect(page.getByRole('heading', { name: 'Настройки', exact: true })).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   const layout = await page.evaluate(() => {
     const rect = (selector) => {
       const r = document.querySelector(selector).getBoundingClientRect();
       return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
     };
-    return { modules: rect('.module-navigation'), nav: rect('.tabbar'), main: rect('main'), desktop: innerWidth >= 900, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
+    return { brand: rect('.brand'), header: rect('.topbar'), modules: rect('.module-navigation'), nav: rect('.tabbar'), main: rect('main'), desktop: innerWidth >= 900, overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth };
   });
   assert.equal(layout.overflow, false, 'Installed Russian layout has no horizontal overflow');
-  assert(layout.main.top >= layout.modules.bottom - 1, 'Main content follows module controls');
+  assert(layout.modules.top >= layout.header.top && layout.modules.bottom <= layout.header.bottom, 'Module controls stay inside the header');
+  assert(layout.main.top >= layout.header.bottom - 1, 'Main content follows the header at scroll origin');
+  if (layout.modules.top < layout.brand.bottom && layout.brand.top < layout.modules.bottom) assert(layout.modules.left >= layout.brand.right, 'Module controls do not overlap the brand');
   if (layout.desktop) {
-    assert(layout.nav.top >= layout.modules.bottom, 'Sidebar follows module controls without overlap');
+    assert(layout.nav.top >= layout.header.bottom, 'Sidebar follows the header without overlap');
     assert(layout.nav.right <= layout.main.left + 1, 'Sidebar and main content occupy separate columns');
   }
   await mkdir('apps/desktop/artifacts', { recursive: true });
@@ -408,6 +412,58 @@ try {
   await safePath.getByRole('button', { name: 'File Safe', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true })).toBeVisible();
   await page.screenshot({ path: 'apps/desktop/artifacts/windows-file-safe-explorer-smoke.png' });
+
+  // Restart around an unbundled fixture driver, never add a plaintext/path
+  // bypass to production IPC. The ordinary synthetic import source is not a
+  // preview temp file. The restarted installed app uses its real broker/LPAC.
+  const previousExit = new Promise((r) => child.once('exit', r));
+  child.kill(); await previousExit; await browser.close(); browser = undefined;
+  const previewSource = join(process.env.RUNNER_TEMP, 'PassKeyPreviewSyntheticOriginal.txt');
+  const previewCanary = 'Synthetic inert <script>alert(1)</script>\nПривет 🗂\n';
+  await writeFile(previewSource, previewCanary);
+  const fixture = spawn(resolve('apps/desktop/src-tauri/target/debug/examples/file_safe_fixture_driver.exe'), ['preview-seed', safeData, previewSource], { stdio: ['pipe', 'pipe', 'pipe'] });
+  fixture.stdin.end(safePassword);
+  assert.equal(await new Promise((r) => fixture.once('exit', r)), 0, 'Unbundled synthetic fixture seeding must pass');
+  child = spawn(exe, [], { env: environment, stdio: ['ignore', 'pipe', 'pipe'] });
+  for (const stream of [child.stdout, child.stderr]) stream.on('data', (chunk) => { hostOutput = (hostOutput + chunk.toString()).slice(-16000); });
+  for (let attempt = 0; attempt < 30; attempt++) {
+    try { browser = await chromium.connectOverCDP('http://127.0.0.1:9222', { timeout: 1000 }); break; }
+    catch { await new Promise((r) => setTimeout(r, 1000)); }
+  }
+  assert(browser, 'Restarted installed app must be ready');
+  const previewContext = browser.contexts()[0]; page = previewContext.pages()[0] ?? await previewContext.waitForEvent('page');
+  page.setDefaultTimeout(30000);
+  page.on('pageerror', () => errors.push('pageerror'));
+  await previewContext.route('**/*', (route) => { const url = new URL(route.request().url()); if (['tauri.localhost', 'ipc.localhost', 'localhost', '127.0.0.1'].includes(url.hostname) || url.protocol === 'tauri:') return route.continue(); foreignRequests++; return route.abort(); });
+  powershell(`[void](New-Object -ComObject WScript.Shell).AppActivate(${child.pid})`);
+  await page.getByRole('button', { name: 'File Safe', exact: true }).click();
+  await page.getByLabel('File-safe master password', { exact: true }).fill(safePassword);
+  await page.getByRole('button', { name: 'Unlock file safe', exact: true }).click();
+  const installedWorker = join(process.env.LOCALAPPDATA, 'PassKey Local', 'passkey-text-worker.exe');
+  assert(existsSync(installedWorker));
+  const workerHash = digest(await readFile(installedWorker));
+  const sandboxProof = JSON.parse((await readFile('apps/desktop/artifacts/text-preview-sandbox.json', 'utf8')).replace(/^\uFEFF/, ''));
+  assert.equal(workerHash, sandboxProof.workerSha256, 'Installed TXT worker must match the exact proved release binary');
+  await page.getByRole('button', { name: 'Synthetic preview.txt', exact: true }).click();
+  const previewDialog = page.getByRole('dialog', { name: 'TXT preview', exact: true });
+  await expect(previewDialog.getByText('Synthetic inert <script>alert(1)</script>', { exact: true })).toBeVisible();
+  await expect(previewDialog.getByText('Привет 🗂', { exact: true })).toBeVisible();
+  assert.equal(await previewDialog.locator('script,a,iframe,object,img').count(), 0);
+  await previewDialog.screenshot({ path: 'apps/desktop/artifacts/windows-file-safe-txt-smoke.png' });
+  await previewDialog.getByRole('button', { name: 'Lock file safe', exact: true }).click();
+  await page.getByLabel('File-safe master password', { exact: true }).waitFor();
+  assert.equal(await page.getByRole('dialog', { name: 'TXT preview', exact: true }).count(), 0);
+  assert.equal(await page.getByText('Synthetic inert', { exact: false }).count(), 0);
+  await page.getByLabel('File-safe master password', { exact: true }).fill(safePassword);
+  await page.getByRole('button', { name: 'Unlock file safe', exact: true }).click();
+  await page.getByRole('button', { name: 'Synthetic preview.txt', exact: true }).click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Rename', exact: true }).click();
+  await page.getByLabel('Name', { exact: true }).fill('Renamed synthetic preview.txt');
+  await page.getByRole('button', { name: 'Save details', exact: true }).click();
+  await page.getByRole('button', { name: 'Close details', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Renamed synthetic preview.txt', exact: true })).toBeVisible();
+  const fileSafeTextPreview = { status: 'PASS', workerSha256: workerHash, scope: 'actual installed native selected-version authentication, LPAC UTF-8/BOM-free inert UI and lock redaction; context-menu rename', input: 'public synthetic UTF-8 canary', noActiveElements: true };
+
   await page.getByRole('button', { name: 'Passwords', exact: true }).click();
   await page.getByLabel('Master password', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'File Safe', exact: true }).click();
@@ -433,8 +489,8 @@ try {
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
     fixture: 'synthetic fresh vault with one entry', status: 'PASS',
-    helloEnrollmentBoundary, fileSafeHelloBoundary, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
-    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'native nested folder creation, parent row, history and breadcrumb navigation', 'file-safe Hello settings are a separate view', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
+    helloEnrollmentBoundary, fileSafeHelloBoundary, fileSafeTextPreview, helloConfiguration: helloReport.helloConfiguration, helloKeyProof, helloOaepCapability, helloPkcs1Compatibility, helloPkcs1Behavior, helloAttestationCapability, helloWebauthnCapability, helloPrfProof, helloDirectAttestation, helloTpmCapability, helloTpmProof, helloTpmLocalBinding, helloCombinedStatus, helloKeyLoss, helloCopyExport, helloRecoveryRevoke, helloRecoveryPrepare, russianSettingsLayout: layout,
+    evidence: ['actual per-user NSIS installation', 'installed executable equals built binary', 'packaged asset origin', 'WebView2 password saving/autofill disabled with native readback', 'React UI', 'real Tauri IPC and revocable session', 'crypto worker/Argon2 WASM', 'native KDBX save', '6/12/24 hour preferences with native readback and reload', 'password lock and fallback', 'unproved Hello denied', 'independent native file-safe create/folder/lock/password re-unlock', 'native nested folder creation, parent row, history and breadcrumb navigation', 'file-safe Hello settings are a separate view', 'installed isolated TXT preview, inert UTF-8 rendering and lock redaction', 'installed file context-menu rename', 'one module does not cross-unlock another', 'Lock all redacts both modules', 'no foreign requests'],
     limits: ['native dialogs not automated', 'clean offline machine and standard-user installation not exercised', 'physical offline/TPM/Kensington/Safari not tested']
   }, null, 2) + '\n');
   console.log('PASS: packaged Windows assets, real IPC/worker/Argon2, verified native save and lock; Hello remains unavailable.');
