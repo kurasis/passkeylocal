@@ -470,7 +470,8 @@ pub(crate) fn token_is_lpac(process: HANDLE) -> Result<bool> {
         return Err(failed("open-worker-token"));
     }
     let token = Handle::new(token)?;
-    for class in [TokenIsAppContainer] {
+    {
+        let class = TokenIsAppContainer;
         let mut value = 0u32;
         let mut length = 0;
         if unsafe {
