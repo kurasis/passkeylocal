@@ -1,5 +1,54 @@
 # Release evidence and gate status
 
+## File Safe context menus and isolated TXT publication (2026-10-09)
+
+[PR #36](https://github.com/kurasis/passkeylocal/pull/36) merged as `5afdfa27839e49a4ba3c9cf7418b45f0251f97ac`;
+application tree equals tested source `69eee39f6908ef26dc80b635d865f6a1624323d6` (head `ba32360d75c00ccddd450224e39837be7045cf68`).
+[General CI 37928379128](https://github.com/kurasis/passkeylocal/actions/runs/37928379128) and
+[Windows CI 37928379092](https://github.com/kurasis/passkeylocal/actions/runs/37928379092)
+passed all 11 checks. Logs confirm 180 Windows routine native tests, 148 Linux,
+174 TypeScript, 61 desktop/browser and eight production PWA scenarios. MSVC/header
+ABI, 5 GiB resource, five Python environments, offline recovery kit and fresh
+native/Python parity passed. The encrypted file format and Hello/recovery protection remain compatible;
+folder mutation and focused preview admission are additive.
+
+Two worker unit tests and two actual Windows integration tests pass separately.
+The hostile proof checks unrelated file/profile/TEMP/registry, parent memory,
+clipboard, inherited handles, writable input, child launch and allocation limits,
+timeout and cancellation. LPAC refused Winsock startup with 10107; unrestricted TCP/UDP succeeded using the identical minimal environment. Individual transport attempts were NOT RUN after startup refusal. Installed TXT authenticates
+a real native selected version, launches the identical release worker, renders
+inert UTF-8 and clears on lock; context rename also passed. Original
+[proof metadata](../deploy/windows-desktop/text-preview-sandbox-69eee39.json) and
+[installed TXT screenshot](../deploy/windows-desktop/windows-file-safe-txt-69eee39.png)
+are retained byte-for-byte. This does not complete the full standard-user,
+indirect-broker, WER/crash or PDF/image matrix.
+
+Original artifact ZIP matches GitHub digest `sha256:e299e521911c7cc55f902c1c4fb96af972c7d4ff831f1fbb0328194af8a7b017`.
+Installer: 219,955,744 bytes; SHA-256 `c2faa7cc4bea3df558d1697419c540534d0373ece9baaba87d55dbcd695dff10`,
+matching original build metadata and sidecar. Real per-user installation,
+executable equality, UI/native commands, lock and source correlation passed.
+The installed app created native nested folders and traversed parent row,
+history and breadcrumb paths. Separate settings retain the fixed Hello command,
+password admission and default-session form. An original
+[installed explorer screenshot](../deploy/windows-desktop/windows-file-safe-explorer-69eee39.png)
+and metadata are retained byte-for-byte in the [download folder](../deploy/windows-desktop/).
+Hosted Hello is unavailable; no new physical protected-unlock result is claimed.
+
+Six new UI cases cover context/keyboard actions and export consent, folder
+mutations, menu placement across palettes and widths, 100,000-line paged text,
+close/lock cancellation and left-panel imports. Existing independent
+Hello and owner reports retain their scope. Physical file-safe biometric, account
+isolation, standard-user and the full multi-format preview matrix remain unverified; no old diagnostic
+repeat is requested. [Explorer guide](file-safe/EXPLORER.md) and
+[acceptance ledger](file-safe/ACCEPTANCE.md) explain remaining limits.
+
+Hosted 10,000-file restore: 89.944 s; 5 GiB process:
+43.759 s, sampled peak working set 10,629,120 bytes.
+[Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-5afdfa2.zip): 218,828 bytes;
+SHA-256 `0db4906f5b46e9fcba222d599e99bbc047549ed81144654ca58af0c7b108ee42`. All ten files equal a fresh merged-main web build; native IPC
+is absent. No server deployment occurred. Publication changes only docs/artifacts;
+application, tests, dependencies and workflows retain the tested bytes.
+
 ## File Safe placement, context actions and isolated TXT implementation (2026-10-09)
 
 The desktop module switches move into the header and imports/new folders into the

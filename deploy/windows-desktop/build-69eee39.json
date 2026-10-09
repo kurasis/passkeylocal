@@ -1,0 +1,19 @@
+{
+  "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+  "fileSafeInterface": "folder explorer with nested paths/history and separate settings",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "fileSafePreview": "experimental isolated UTF-8 TXT up to 8 MiB; actual hosted LPAC proof and installed read/lock smoke; PDF/images unavailable; standard-user/exhaustive isolation acceptance pending",
+  "node": "v22.23.3",
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "windowsHello": "experimental independent opt-in PRF/TPM password-vault and file-safe unlock; file-safe physical acceptance pending",
+  "architecture": "x86_64-pc-windows-msvc",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "signing": "unsigned",
+  "version": "0.1.0",
+  "product": "PassKey Local",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "cargoLock": "a05f5aed05219ed15afa47d086a6ae42a11091d8cb1967893b8d399aa2ae55a5",
+  "sha256": "c2faa7cc4bea3df558d1697419c540534d0373ece9baaba87d55dbcd695dff10"
+}

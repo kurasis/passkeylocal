@@ -22,7 +22,9 @@ application, file path or plaintext temp fallback is used.
 
 The separately built Rust worker uses only strict UTF-8 decoding. A fresh CSPRNG
 nonce derives a unique **LPAC SID without a storage profile**: the package identity is registered through the same KernelBase entry points used by Chromium,
-then unregistered on exit. This is separate from creating profile directories;
+then unregistration is attempted on exit. Windows maintains non-secret SID/moniker
+registration metadata; a crash or cleanup failure can leave it behind. No document
+bytes, keys or filenames are included in that identity metadata. This is separate from creating profile directories;
 `CreateAppContainerProfile` and storage grants are not used. Missing APIs fail closed. A temporary RX grant applies only to the fixed worker
 executable and is revoked without replacing unrelated ACL entries. There are no
 capabilities, profile/directory/network/registry grants or inherited environment

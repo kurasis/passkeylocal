@@ -1,0 +1,20 @@
+{
+  "workerSha256": "73350bccdf552a7d4b62312d51343f14de183b6634ce51bfca8236ca0422a6f3",
+  "status": "PASS",
+  "limits": "standard-user installed hostile probe and exhaustive Windows-service broker/WER tracing remain NOT RUN",
+  "networkInitialization": "10107",
+  "isolation": "registered unique LPAC SID without storage profile; zero capabilities; explicit read-only input and bounded output sections; job at creation; no child process; 256 MiB committed memory",
+  "workerBytes": 139776,
+  "scope": "hosted Windows actual LPAC text and separate hostile test worker",
+  "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+  "evidence": [
+    "strict UTF-8/BOM and malformed output tests",
+    "actual text round trip and unsupported encoding",
+    "OS denial of file/profile/TEMP/registry/parent memory/clipboard writes and unrelated reads",
+    "native network stack refusal or TCP/UDP/DNS-port/loopback denial; identical minimal environment unrestricted TCP/UDP positive control",
+    "nonlisted inheritable canary handle absent; input mapping cannot be writable",
+    "child launch and 300 MiB allocation denied",
+    "timeout and cancellation job termination"
+  ],
+  "transportChecks": "not-run: LPAC refused Winsock startup; identical minimal environment unrestricted positive control passed"
+}

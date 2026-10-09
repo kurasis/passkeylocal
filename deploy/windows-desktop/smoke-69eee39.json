@@ -1,0 +1,893 @@
+{
+  "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+  "runtime": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "installer": "per-user silent install completed on hosted runner",
+  "installedExecutableSha256": "24f6003ebd2ef6f1b332dc406d30c0036a9fad226969e4e9b7a1d4de11836684",
+  "automation": "Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch",
+  "fixture": "synthetic fresh vault with one entry",
+  "status": "PASS",
+  "helloEnrollmentBoundary": {
+    "status": {
+      "status": {
+        "expiresAt": null,
+        "mode": null,
+        "state": "off"
+      }
+    },
+    "revoke": {
+      "status": {
+        "expiresAt": null,
+        "mode": null,
+        "state": "off"
+      }
+    },
+    "staleRejected": true,
+    "malformedRejected": true
+  },
+  "fileSafeHelloBoundary": {
+    "status": {
+      "status": {
+        "state": "off",
+        "mode": null,
+        "expiresAt": null
+      }
+    },
+    "revoke": {
+      "status": {
+        "state": "off",
+        "mode": null,
+        "expiresAt": null
+      }
+    },
+    "malformedRejected": true,
+    "staleRejected": true,
+    "passwordRejected": true
+  },
+  "fileSafeTextPreview": {
+    "status": "PASS",
+    "workerSha256": "73350bccdf552a7d4b62312d51343f14de183b6634ce51bfca8236ca0422a6f3",
+    "scope": "actual installed native selected-version authentication, LPAC UTF-8/BOM-free inert UI and lock redaction; context-menu rename",
+    "input": "public synthetic UTF-8 canary",
+    "noActiveElements": true
+  },
+  "helloConfiguration": "device-not-present",
+  "helloKeyProof": {
+    "algorithm": "rsa-oaep-sha256",
+    "checks": [
+      {
+        "status": "failed",
+        "test": "hello-configuration"
+      },
+      {
+        "status": "not-run",
+        "test": "provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "policy-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "public-wrap"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-before"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-first"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-first"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-second"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-second"
+      },
+      {
+        "status": "not-run",
+        "test": "private-export"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-key-proof",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloOaepCapability": {
+    "algorithm": "rsa-oaep-sha256",
+    "checks": [
+      {
+        "status": "failed",
+        "test": "hello-configuration"
+      },
+      {
+        "status": "not-run",
+        "test": "provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "policy-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "public-wrap"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-before"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-first"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-first"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-second"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-second"
+      },
+      {
+        "status": "not-run",
+        "test": "private-export"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-oaep-capability",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloPkcs1Compatibility": {
+    "algorithm": "rsa-pkcs1-v1_5",
+    "checks": [
+      {
+        "status": "failed",
+        "test": "hello-configuration"
+      },
+      {
+        "status": "not-run",
+        "test": "provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "policy-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "public-wrap"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-before"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-first"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-first"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-second"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-second"
+      },
+      {
+        "status": "not-run",
+        "test": "private-export"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-pkcs1-compatibility",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloPkcs1Behavior": {
+    "algorithm": "rsa-pkcs1-v1_5",
+    "checks": [
+      {
+        "status": "failed",
+        "test": "hello-configuration"
+      },
+      {
+        "status": "not-run",
+        "test": "provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "policy-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "public-wrap"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-before"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-first"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-first"
+      },
+      {
+        "status": "not-run",
+        "test": "unwrap-second"
+      },
+      {
+        "status": "not-run",
+        "test": "silent-after-second"
+      },
+      {
+        "status": "not-run",
+        "test": "private-export"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-pkcs1-behavior",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloAttestationCapability": {
+    "algorithm": "rsa-2048-decrypt-only",
+    "checks": [
+      {
+        "status": "failed",
+        "test": "hello-configuration"
+      },
+      {
+        "status": "not-run",
+        "test": "provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "policy-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "attestation-claim"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-attestation-capability",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloWebauthnCapability": {
+    "algorithm": "webauthn-prf-aes256gcm",
+    "checks": [
+      {
+        "status": "passed",
+        "test": "webauthn-load"
+      },
+      {
+        "operation": "webauthn-api-9-required",
+        "status": "failed",
+        "test": "webauthn-api"
+      },
+      {
+        "status": "not-run",
+        "test": "hello-platform"
+      },
+      {
+        "status": "not-run",
+        "test": "hello-route"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "webauthn-prf-capability",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1,
+    "webauthn": {
+      "apiVersion": 7,
+      "osBuild": 26100,
+      "routing": "display-name-candidate",
+      "tpmBinding": "not-verified"
+    }
+  },
+  "helloPrfProof": {
+    "algorithm": "webauthn-prf-aes256gcm",
+    "checks": [
+      {
+        "status": "passed",
+        "test": "webauthn-load"
+      },
+      {
+        "operation": "webauthn-api-9-required",
+        "status": "failed",
+        "test": "webauthn-api"
+      },
+      {
+        "status": "not-run",
+        "test": "hello-platform"
+      },
+      {
+        "status": "not-run",
+        "test": "hello-route"
+      },
+      {
+        "status": "not-run",
+        "test": "prf-create"
+      },
+      {
+        "status": "not-run",
+        "test": "prf-first"
+      },
+      {
+        "status": "not-run",
+        "test": "prf-repeat"
+      },
+      {
+        "status": "not-run",
+        "test": "prf-changed"
+      },
+      {
+        "status": "not-run",
+        "test": "prf-roundtrip"
+      },
+      {
+        "status": "passed",
+        "test": "test-passkey-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-webauthn-prf",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1,
+    "webauthn": {
+      "apiVersion": 7,
+      "osBuild": 26100,
+      "routing": "display-name-candidate",
+      "tpmBinding": "not-verified"
+    }
+  },
+  "helloDirectAttestation": {
+    "algorithm": "webauthn-es256-direct-attestation",
+    "checks": [
+      {
+        "status": "passed",
+        "test": "webauthn-load"
+      },
+      {
+        "operation": "webauthn-api-9-required",
+        "status": "failed",
+        "test": "webauthn-api"
+      },
+      {
+        "status": "not-run",
+        "test": "hello-platform"
+      },
+      {
+        "status": "not-run",
+        "test": "hello-route"
+      },
+      {
+        "status": "not-run",
+        "test": "webauthn-direct-create"
+      },
+      {
+        "status": "passed",
+        "test": "test-passkey-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "purpose": "synthetic-webauthn-direct-attestation",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1,
+    "webauthn": {
+      "apiVersion": 7,
+      "osBuild": 26100,
+      "routing": "display-name-candidate",
+      "tpmBinding": "not-verified"
+    }
+  },
+  "helloTpmCapability": {
+    "algorithm": "platform-rsa-oaep-sha256",
+    "authorization": "no-hello-authorization",
+    "checks": [
+      {
+        "nativeCode": "0x80090030",
+        "operation": "open-platform-crypto-provider",
+        "status": "failed",
+        "test": "tpm-provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-provider-properties"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "exportChecks": [],
+    "outcome": "blocked",
+    "perKeyTpmEvidence": "not-verified",
+    "processScope": "same-process",
+    "purpose": "tpm-inner-capability",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "tpm": {},
+    "unlocked": false,
+    "version": 1
+  },
+  "helloTpmProof": {
+    "algorithm": "platform-rsa-oaep-sha256",
+    "authorization": "no-hello-authorization",
+    "checks": [
+      {
+        "nativeCode": "0x80090030",
+        "operation": "open-platform-crypto-provider",
+        "status": "failed",
+        "test": "tpm-provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-provider-properties"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-key-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-public-wrap"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-unwrap-first"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-reopen-unwrap"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-negative-controls"
+      },
+      {
+        "status": "not-run",
+        "test": "private-export"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "exportChecks": [],
+    "outcome": "blocked",
+    "perKeyTpmEvidence": "not-verified",
+    "processScope": "same-process",
+    "purpose": "synthetic-tpm-inner",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "tpm": {},
+    "unlocked": false,
+    "version": 1
+  },
+  "helloTpmLocalBinding": {
+    "algorithm": "platform-rsa-oaep-sha256",
+    "authorization": "no-hello-authorization",
+    "checks": [
+      {
+        "nativeCode": "0x80090030",
+        "operation": "open-platform-crypto-provider",
+        "status": "failed",
+        "test": "tpm-provider-open"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-provider-properties"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-key-create"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-key-policy"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-key-readback"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-read-public"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-public-wrap"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-unwrap-first"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-reopen-unwrap"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-reopen-read-public"
+      },
+      {
+        "status": "not-run",
+        "test": "tpm-negative-controls"
+      },
+      {
+        "status": "passed",
+        "test": "test-key-delete"
+      }
+    ],
+    "eligible": false,
+    "enrolled": false,
+    "exportChecks": [],
+    "outcome": "blocked",
+    "perKeyTpmEvidence": "not-verified",
+    "processScope": "same-process",
+    "purpose": "synthetic-tpm-local-binding",
+    "remaining": [
+      "per-key-tpm-proof",
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "tpm": {},
+    "unlocked": false,
+    "version": 1
+  },
+  "helloCombinedStatus": {
+    "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+    "authorization": "os-required-user-verification",
+    "checks": [],
+    "combinedState": "no-test",
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "no-test",
+    "processScope": "same-process",
+    "purpose": "synthetic-combined-restart",
+    "remaining": [
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloKeyLoss": {
+    "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+    "authorization": "os-required-user-verification",
+    "checks": [
+      {
+        "status": "passed",
+        "test": "combined-journal-create"
+      },
+      {
+        "operation": "webauthn-api-9-required",
+        "status": "failed",
+        "test": "combined-preflight"
+      },
+      {
+        "status": "passed",
+        "test": "combined-journal-cleanup"
+      },
+      {
+        "status": "passed",
+        "test": "test-passkey-delete"
+      },
+      {
+        "nativeCode": "0x80090030",
+        "operation": "open-platform-crypto-provider",
+        "status": "failed",
+        "test": "test-key-delete"
+      }
+    ],
+    "combinedState": "cleanup-required",
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "blocked",
+    "processScope": "same-process",
+    "purpose": "synthetic-combined-key-loss",
+    "remaining": [
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloCopyExport": {
+    "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+    "authorization": "os-required-user-verification",
+    "checks": [],
+    "combinedState": "no-test",
+    "eligible": false,
+    "enrolled": false,
+    "outcome": "no-test",
+    "processScope": "not-measured",
+    "purpose": "synthetic-combined-copy",
+    "remaining": [
+      "fresh-authorization-proof",
+      "fresh-process-proof",
+      "account-machine-copy-proof"
+    ],
+    "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+    "unlocked": false,
+    "version": 1
+  },
+  "helloRecoveryRevoke": {
+    "report": {
+      "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+      "authorization": "os-required-user-verification",
+      "checks": [],
+      "combinedState": "no-test",
+      "eligible": false,
+      "enrolled": false,
+      "outcome": "no-test",
+      "processScope": "same-process",
+      "purpose": "synthetic-kdbx-recovery",
+      "remaining": [
+        "fresh-authorization-proof",
+        "fresh-process-proof",
+        "account-machine-copy-proof"
+      ],
+      "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+      "unlocked": false,
+      "version": 1
+    }
+  },
+  "helloRecoveryPrepare": {
+    "report": {
+      "algorithm": "webauthn-prf-aes256gcm-tpm-oaep-sha256",
+      "authorization": "os-required-user-verification",
+      "checks": [],
+      "combinedState": "cleanup-required",
+      "eligible": false,
+      "enrolled": false,
+      "outcome": "cleanup-required",
+      "processScope": "same-process",
+      "purpose": "synthetic-kdbx-recovery",
+      "remaining": [
+        "fresh-authorization-proof",
+        "fresh-process-proof",
+        "account-machine-copy-proof"
+      ],
+      "sourceCommit": "69eee39f6908ef26dc80b635d865f6a1624323d6",
+      "unlocked": false,
+      "version": 1
+    }
+  },
+  "russianSettingsLayout": {
+    "brand": {
+      "top": 20.390625,
+      "bottom": 64.390625,
+      "left": 24,
+      "right": 225.109375
+    },
+    "header": {
+      "top": 0,
+      "bottom": 85.796875,
+      "left": 0,
+      "right": 1013
+    },
+    "modules": {
+      "top": 18,
+      "bottom": 66.796875,
+      "left": 284.734375,
+      "right": 741.109375
+    },
+    "nav": {
+      "top": 123.796875,
+      "bottom": 604.5625,
+      "left": 24,
+      "right": 230
+    },
+    "main": {
+      "top": 85.796875,
+      "bottom": 5597.578125,
+      "left": 230,
+      "right": 1013
+    },
+    "desktop": true,
+    "overflow": false
+  },
+  "evidence": [
+    "actual per-user NSIS installation",
+    "installed executable equals built binary",
+    "packaged asset origin",
+    "WebView2 password saving/autofill disabled with native readback",
+    "React UI",
+    "real Tauri IPC and revocable session",
+    "crypto worker/Argon2 WASM",
+    "native KDBX save",
+    "6/12/24 hour preferences with native readback and reload",
+    "password lock and fallback",
+    "unproved Hello denied",
+    "independent native file-safe create/folder/lock/password re-unlock",
+    "native nested folder creation, parent row, history and breadcrumb navigation",
+    "file-safe Hello settings are a separate view",
+    "installed isolated TXT preview, inert UTF-8 rendering and lock redaction",
+    "installed file context-menu rename",
+    "one module does not cross-unlock another",
+    "Lock all redacts both modules",
+    "no foreign requests"
+  ],
+  "limits": [
+    "native dialogs not automated",
+    "clean offline machine and standard-user installation not exercised",
+    "physical offline/TPM/Kensington/Safari not tested"
+  ]
+}
