@@ -384,7 +384,7 @@ fn run_with_timeout(
         .to_string_lossy();
     // No inherited environment (tokens, vault paths or source identifiers).
     let environment: Vec<u16> = format!(
-        "SystemRoot={system_root}\0TEMP={system}\\PassKeyNoTemp\0TMP={system}\\PassKeyNoTemp\0\0"
+        "APPDATA={system}\\PassKeyNoProfile\0LOCALAPPDATA={system}\\PassKeyNoProfile\0SystemRoot={system_root}\0TEMP={system}\\PassKeyNoTemp\0TMP={system}\\PassKeyNoTemp\0USERPROFILE={system}\\PassKeyNoProfile\0\0"
     )
     .encode_utf16()
     .collect();

@@ -44,6 +44,12 @@ entry points separately from profile-directory creation; no profile directory or
 registry/filesystem storage grant is requested. Negative tests must still verify
 that neither direct nor profile writes are available.
 
+After registering the identity, creation advanced to Win32 203 (missing required
+environment variable). The sorted minimal environment now supplies Windows
+profile variable names with nonexistent inaccessible system-directory children;
+it still inherits no user environment, source/vault paths or secrets. The profile
+write probes remain mandatory.
+
 [TXT implementation/scope](file-safe/TXT_PREVIEW.md). The hostile worker is test-only,
 never installed. Full standard-user/indirect-broker/crash/physical preview matrix,
 PDF/images and new hardware Hello acceptance remain unverified. Historical owner

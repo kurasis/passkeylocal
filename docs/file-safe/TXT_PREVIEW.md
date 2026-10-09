@@ -26,7 +26,8 @@ then unregistered on exit. This is separate from creating profile directories;
 `CreateAppContainerProfile` and storage grants are not used. Missing APIs fail closed. A temporary RX grant applies only to the fixed worker
 executable and is revoked without replacing unrelated ACL entries. There are no
 capabilities, profile/directory/network/registry grants or inherited environment
-secrets. Current directory is the Windows system directory; TEMP/TMP point to a
+secrets. Current directory is the Windows system directory; required Windows profile
+variables and TEMP/TMP point to a
 nonexistent inaccessible child. Normal runtime DLL reads remain OS-controlled.
 
 An explicit handle list contains only a frozen read-only anonymous input section
