@@ -23,13 +23,30 @@ Executed locally on Linux (Node 24.19.0, Chromium):
 - PWA and desktop frontend builds plus target isolation: PASS.
 - Fresh web-design-guidelines fetch: HTTP 200; applied to changed interface files.
 
-Initial GitHub general CI passed all ten jobs. Windows exposed a Linux-only
-path suffix in the static-test navigation exception; it now compares against
-`join(SRC, 'ui', 'navigation.ts')`, preserving the same single-file boundary
-on both systems. The focused static/privacy regressions passed after this fix.
-GitHub revalidation, Windows/MSVC, installed WebView2 smoke and publication are pending;
-no new hardware acceptance is claimed. Skill installation PR #38 passed all 11
-checks and merged as `6511d67033d2c33385da1e893dd53e05617c2f69`.
+[PR #39](https://github.com/kurasis/passkeylocal/pull/39) merged as `c270a3a2be3ab63b1302a716136194ec2c598ede`.
+Code head `666c2d79e7fc44cd9e3db4d2ba880b4c7bed37f5`; installed/tested
+source `1867c6dd8aafa21cc25bfd32bebbc8070fa69a4e`. The merged application tree equals the tested
+PR tree. [General CI 38047856360](https://github.com/kurasis/passkeylocal/actions/runs/38047856360)
+and [Windows CI 38047856338](https://github.com/kurasis/passkeylocal/actions/runs/38047856338)
+passed all 11 checks, including Windows/MSVC and installed WebView2 smoke.
+The initial Windows run exposed a Linux-only path suffix in a static test;
+platform-native `join()` comparison fixed it. The focused privacy/static tests
+passed after this fix, followed by all Windows unit tests and the full CI run.
+Skill installation PR #38 passed all 11 checks and merged as
+`6511d67033d2c33385da1e893dd53e05617c2f69`.
+
+Published [installer artifact](https://github.com/kurasis/passkeylocal/actions/runs/38047856338/artifacts/11668687607):
+219,962,421 bytes; SHA-256 `a6098b9889f9e62e8270bc0a45232645923f2116273b268f2c2781f0a2ba3d0c`.
+Downloaded and hashed the original installer, matched its checksum sidecar and
+build metadata, checked exact source correlation with PASS installed-app smoke,
+and preserved original evidence/screenshots under [Windows downloads](../deploy/windows-desktop/).
+
+Published [Cloudflare archive](../deploy/cloudflare-pages/passkeylocal-cloudflare-pages-666c2d7.zip):
+220,760 bytes; SHA-256 `5032c9df81a6de53910d71f9de90e5f0658c4defb153518f9770b9f330c9779c`.
+All ten entries match the locally validated production output; ZIP integrity,
+site-root layout and headers were checked. No direct server deployment or new
+physical Windows Hello acceptance is claimed. Existing hardware/standard-user
+isolation limits remain in the original artifact reports.
 
 
 ## Monthly backup reminders and shared safe feedback publication (2026-10-09)
