@@ -1,0 +1,19 @@
+{
+  "architecture": "x86_64-pc-windows-msvc",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "windowsHello": "experimental independent opt-in PRF/TPM password-vault and file-safe unlock; file-safe physical acceptance pending",
+  "fileSafeInterface": "folder explorer with nested paths/history and separate settings",
+  "cargoLock": "a05f5aed05219ed15afa47d086a6ae42a11091d8cb1967893b8d399aa2ae55a5",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "fileSafePreview": "experimental isolated UTF-8 TXT up to 8 MiB; actual hosted LPAC proof and installed read/lock smoke; PDF/images unavailable; standard-user/exhaustive isolation acceptance pending",
+  "node": "v22.23.3",
+  "sha256": "a6098b9889f9e62e8270bc0a45232645923f2116273b268f2c2781f0a2ba3d0c",
+  "signing": "unsigned",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "npmLock": "2006e1c6a904af45e9b7ab8782d79d9c9c15ec68f49c3f59f6f99d5dd241afc0",
+  "version": "0.1.0",
+  "product": "PassKey Local",
+  "sourceCommit": "1867c6dd8aafa21cc25bfd32bebbc8070fa69a4e",
+  "fileSafe": "experimental native streaming storage and independent Python recovery"
+}
