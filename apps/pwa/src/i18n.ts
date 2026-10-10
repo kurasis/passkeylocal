@@ -6,6 +6,9 @@
 import { createContext, useContext } from 'react';
 
 const en = {
+  skipToContent: "Skip to content",
+  discardDraftConfirm: "Discard unsaved changes and leave this screen?",
+  searchFailed: "Search failed. Try changing the search or unlock the vault again.",
   "helloVaultTitle": "Unlock with Windows Hello",
   "helloVaultExplain": "Confirm your master password to connect this vault. Windows checks your fingerprint, face or PIN. The master password always remains available. Changing the password or restoring a vault disables this connection.",
   "helloVaultExperimental": "Experimental Windows feature. First try it with a disposable vault and keep a verified password backup.",
@@ -507,6 +510,9 @@ const en = {
 export type MessageKey = keyof typeof en;
 
 const ru: Record<MessageKey, string> = {
+  skipToContent: "Перейти к содержимому",
+  discardDraftConfirm: "Отменить несохранённые изменения и покинуть этот экран?",
+  searchFailed: "Поиск не выполнен. Измените запрос или разблокируйте хранилище заново.",
   "helloVaultTitle": "Вход через Windows Hello",
   "helloVaultExplain": "Подтвердите мастер-пароль, чтобы подключить это хранилище. Windows проверяет отпечаток, лицо или PIN. Вход мастер-паролем остаётся доступен. Смена пароля или восстановление хранилища отключает привязку.",
   "helloVaultExperimental": "Экспериментальная функция Windows. Сначала проверьте её на временном хранилище и сохраните проверенную резервную копию с мастер-паролем.",

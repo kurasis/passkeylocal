@@ -4,7 +4,7 @@ test('Russian desktop header, module buttons, sidebar and content never overlap'
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   for (const [width, zoom] of [[1311, 1], [900, 1], [1311, 1.25], [1920, 1], [640, 1], [320, 1]]) {
     await page.setViewportSize({ width, height: 780 });
     await page.evaluate((scale) => { document.documentElement.style.zoom = String(scale); }, zoom);
@@ -34,7 +34,7 @@ test('Russian desktop header, module buttons, sidebar and content never overlap'
 
 test('configured Hello offers OS actions, preserves cancellation and handles policy changes', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   await expect(hello.getByText('Windows Hello настроен и доступен', { exact: false })).toBeVisible();
@@ -59,7 +59,7 @@ test('configured Hello offers OS actions, preserves cancellation and handles pol
 
 test('protected-key proof shows specific failures, cleanup and unresolved hardware gates', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const probe = hello.getByRole('button', { name: 'Проверить защищённый ключ', exact: true });
@@ -83,7 +83,7 @@ test('protected-key proof shows specific failures, cleanup and unresolved hardwa
 
 test('protected-key probe cannot duplicate or show late success after Lock all', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => { (window as any).helloTest.defer(); (window as any).helloTest.proofOutcome('roundtrip-passed'); });
   const probe = page.getByRole('button', { name: 'Проверить защищённый ключ', exact: true });
@@ -99,7 +99,7 @@ test('protected-key probe cannot duplicate or show late success after Lock all',
 
 test('pending Hello diagnostic cannot be duplicated or reappear after locking', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   const verify = page.getByRole('button', { name: 'Проверить отпечаток или PIN', exact: true });
@@ -114,7 +114,7 @@ test('pending Hello diagnostic cannot be duplicated or reappear after locking', 
 
 test('authorized OAEP capability is explicit and never reports a complete security proof', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   await hello.getByRole('button', { name: 'Проверить OAEP с подтверждением', exact: true }).click();
@@ -133,7 +133,7 @@ test('authorized OAEP capability is explicit and never reports a complete securi
 
 test('OAEP capability shares single flight and discards a result after Lock all', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   const capability = page.getByRole('button', { name: 'Проверить OAEP с подтверждением', exact: true });
@@ -150,7 +150,7 @@ test('OAEP capability shares single flight and discards a result after Lock all'
 
 test('PKCS#1 compatibility needs its own action and never claims OAEP or unlock eligibility', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   // The OAEP action cannot silently run the legacy experiment.
@@ -178,7 +178,7 @@ test('PKCS#1 compatibility needs its own action and never claims OAEP or unlock 
 
 test('PKCS#1 compatibility shares single flight and discards late results after Lock all', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   const compatibility = page.getByRole('button', { name: 'Проверить совместимость PKCS#1', exact: true });
@@ -195,7 +195,7 @@ test('PKCS#1 compatibility shares single flight and discards late results after 
 
 test('PKCS#1 behavior is explicit, shows measured stages and cannot enable unlock', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   await hello.getByRole('button', { name: 'Проверить совместимость PKCS#1', exact: true }).click();
@@ -231,7 +231,7 @@ test('PKCS#1 behavior is explicit, shows measured stages and cannot enable unloc
 
 test('PKCS#1 behavior shares single flight and discards a late report after Lock all', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   await page.getByRole('button', { name: 'Проверить поведение ключа PKCS#1', exact: true }).click();
@@ -247,7 +247,7 @@ test('PKCS#1 behavior shares single flight and discards a late report after Lock
 
 test('private export details distinguish unsupported formats from permission refusal', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.behaviorFailure('private-export'));
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
@@ -267,7 +267,7 @@ test('private export details distinguish unsupported formats from permission ref
 
 test('attestation capability remains unverified and shows bounded metadata or original failure', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const action = hello.getByRole('button', { name: 'Проверить возможность аттестации ключа', exact: true });
@@ -293,7 +293,7 @@ test('attestation capability remains unverified and shows bounded metadata or or
 
 test('attestation capability shares single flight and discards a late result after Lock all', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   await page.getByRole('button', { name: 'Проверить возможность аттестации ключа', exact: true }).click();
@@ -310,7 +310,7 @@ test('attestation capability shares single flight and discards a late result aft
 
 test('PRF capability stays read-only while synthetic encryption cannot enable vault unlock', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   await page.evaluate(() => (window as any).helloTest.configure('not-configured'));
@@ -338,7 +338,7 @@ test('PRF capability stays read-only while synthetic encryption cannot enable va
 
 test('direct attestation reports none honestly, retains recovery and exposes cleanup failures', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const probe = hello.getByRole('button', { name: 'Получить удостоверение Windows Hello', exact: true });
@@ -364,7 +364,7 @@ test('direct attestation reports none honestly, retains recovery and exposes cle
 
 test('pending direct attestation shares single flight and discards late metadata after Lock All', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   const probe = page.getByRole('button', { name: 'Получить удостоверение Windows Hello', exact: true });
@@ -380,7 +380,7 @@ test('pending direct attestation shares single flight and discards late metadata
 
 test('pending native PRF cannot be duplicated or publish results after Lock All', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   const probe = page.getByRole('button', { name: 'Проверить Windows Hello PRF', exact: true });
@@ -396,7 +396,7 @@ test('pending native PRF cannot be duplicated or publish results after Lock All'
 
 test('TPM diagnostic needs no Hello enrollment and cannot enable real unlock', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   await page.evaluate(() => (window as any).helloTest.configure('not-configured'));
@@ -424,7 +424,7 @@ test('TPM diagnostic needs no Hello enrollment and cannot enable real unlock', a
 
 test('pending TPM work shares single flight and discards a late result after Lock All', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   await page.getByRole('button', { name: 'Проверить внутренний слой TPM', exact: true }).click();
@@ -438,7 +438,7 @@ test('pending TPM work shares single flight and discards a late result after Loc
 
 test('local TPM binding is a separate report, keeps unlock disabled and surfaces cleanup failure', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const probe = hello.getByRole('button', { name: 'Проверить привязку ключа к TPM', exact: true });
@@ -462,7 +462,7 @@ test('local TPM binding is a separate report, keeps unlock disabled and surfaces
 
 test('local binding shares single flight and late results cannot survive Lock All', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   const probe = page.getByRole('button', { name: 'Проверить привязку ключа к TPM', exact: true });
@@ -477,7 +477,7 @@ test('local binding shares single flight and late results cannot survive Lock Al
 
 test('combined preparation requires a full restart, blocks duplicate work and exposes cleanup', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const prepare = hello.getByRole('button', { name: '1. Создать тест Hello + TPM', exact: true });
@@ -499,7 +499,7 @@ test('combined preparation requires a full restart, blocks duplicate work and ex
 test('saved combined test resumes, cancellation preserves retry, success never enables vault unlock', async ({ page }) => {
   await page.goto('/shell.html');
   await page.evaluate(() => (window as any).helloTest.combinedState('ready-to-resume'));
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const resume = hello.getByRole('button', { name: '2. Продолжить после перезапуска', exact: true });
@@ -521,7 +521,7 @@ test('saved combined test resumes, cancellation preserves retry, success never e
 test('unfinished combined cleanup stays available when Hello is disabled', async ({ page }) => {
   await page.goto('/shell.html');
   await page.evaluate(() => { (window as any).helloTest.combinedState('cleanup-required'); (window as any).helloTest.configure('disabled-by-policy'); });
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const cleanup = hello.getByRole('button', { name: 'Удалить тест и временные ключи', exact: true });
@@ -535,7 +535,7 @@ test('unfinished combined cleanup stays available when Hello is disabled', async
 
 test('key-loss experiment is single-flight, shows exact absence evidence and never enrolls', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const loss = hello.getByRole('button', { name: 'Проверить потерю временных ключей', exact: true });
@@ -558,7 +558,7 @@ test('key-loss experiment is single-flight, shows exact absence evidence and nev
 test('key-loss experiment preserves existing work and exposes cleanup after partial deletion', async ({ page }) => {
   await page.goto('/shell.html');
   await page.evaluate(() => (window as any).helloTest.combinedState('ready-to-resume'));
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const loss = hello.getByRole('button', { name: 'Проверить потерю временных ключей', exact: true });
@@ -574,7 +574,7 @@ test('key-loss experiment preserves existing work and exposes cleanup after part
 
 test('late key-loss reports stay redacted after Lock All', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   await page.getByRole('button', { name: 'Проверить потерю временных ключей', exact: true }).click();
@@ -586,7 +586,7 @@ test('late key-loss reports stay redacted after Lock All', async ({ page }) => {
 
 test('copy creation preserves source keys and enables re-export while blocking other creations', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   await hello.getByRole('button', { name: 'Создать файл проверки переноса', exact: true }).click();
@@ -601,7 +601,7 @@ test('copy creation preserves source keys and enables re-export while blocking o
 test('copy import works without configured Hello, reports correlation, and preserves source UI state', async ({ page }) => {
   await page.goto('/shell.html');
   await page.evaluate(() => { (window as any).helloTest.combinedState('copy-ready'); (window as any).helloTest.configure('disabled-by-policy'); });
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   const hello = page.getByRole('region', { name: 'Windows Hello', exact: true });
   const check = hello.getByRole('button', { name: 'Проверить тестовый файл', exact: true });
@@ -621,7 +621,7 @@ test('copy import works without configured Hello, reports correlation, and prese
 
 test('copy import is single-flight and ignores late replies after Lock All', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByText('Диагностика Windows Hello', { exact: true }).click();
   await page.evaluate(() => (window as any).helloTest.defer());
   await page.getByRole('button', { name: 'Проверить тестовый файл', exact: true }).click();
@@ -634,7 +634,7 @@ test('copy import is single-flight and ignores late replies after Lock All', asy
 
 test('one-account recovery produces one report and requires no manual password or account entry', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', {name:'Настройки',exact:true}).click();
+  await page.getByRole('link', { name: 'Настройки',exact:true}).click();
   await page.getByText('Диагностика Windows Hello', {exact:true}).click();
   const hello=page.getByRole('region',{name:'Windows Hello',exact:true});
   await hello.getByRole('button',{name:'Проверить восстановление после удаления ключей Hello',exact:true}).click();
@@ -649,7 +649,7 @@ test('one-account recovery produces one report and requires no manual password o
 test('recovery respects saved tests and late results are redacted on Lock All', async ({ page }) => {
   await page.goto('/shell.html');
   await page.evaluate(()=>(window as any).helloTest.combinedState('recovery-ready'));
-  await page.getByRole('button',{name:'Настройки',exact:true}).click();
+  await page.getByRole('link', { name: 'Настройки',exact:true}).click();
   await page.getByText('Диагностика Windows Hello', {exact:true}).click();
   const button=page.getByRole('button',{name:'Проверить восстановление после удаления ключей Hello',exact:true});
   await expect(button).toBeDisabled();

@@ -31,6 +31,7 @@ const files: SafeFile[] = Array.from({ length: 10000 }, (_, i) => ({
       created_at: "2026-10-06T00:00:00.000Z",
       current: true,
     },
+    { id: `older${i}`, size: "1024", created_at: "2026-09-01T00:00:00.000Z", current: false },
   ],
 }));
 let unlocked = true;
@@ -56,6 +57,7 @@ let explorerFiles: SafeFile[] | null = null;
 const queries: SafeQuery[] = [];
 const changes: SafeChange[] = [];
 let revision = 0;
+let nextChangeFailure: string | null = null;
 const fixture = new URLSearchParams(location.search).get("explorer");
 if (fixture) {
   const id = (value: number) => value.toString(16).padStart(32, "0");
@@ -198,6 +200,7 @@ const api: FileSafeApi = {
     }
   },
   async change(_token, _snapshot, change) {
+    if (nextChangeFailure) { const code = nextChangeFailure; nextChangeFailure = null; throw { code }; }
     changes.push(change);
     if (change.kind === "folder") folders.push({ id: (1000 + revision).toString(16).padStart(32, "0"), parent_id: change.parent_id, name: change.name });
     if (change.kind === "folder_edit") folders = folders.map((f) => f.id === change.folder_id ? { ...f, name: change.name } : f);
@@ -230,6 +233,7 @@ const api: FileSafeApi = {
 };
 Object.assign(window, {
   uiTest: {
+    failNextChange(code: string) { nextChangeFailure = code; },
     queries() { return queries; },
     previewCalls() { return previewCalls; },
     delayPreview() { delayPreview = true; },

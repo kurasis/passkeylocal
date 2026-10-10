@@ -24,8 +24,12 @@ import { ThemeMenu } from './theme.tsx';
 import { configureNativeClose, desktop, nativeActivity, subscribeNativeLock, fileSafe } from '@platform';
 import { DesktopBackupStatus } from './desktop.tsx';
 import { FileSafe } from './file-safe.tsx';
+import { Modal } from './modal.tsx';
+import { DraftContext, useDraftRegistry } from './drafts.tsx';
+import { Navigation, sectionFromUrl, sectionHref, type Section } from './navigation.ts';
 
-type Tab = 'vault' | 'favorites' | 'backups' | 'settings';
+type Tab = Section['tab'];
+type Route = Section & { view: VaultView };
 
 const DEFAULT_PREFS: Preferences = { lockIntervalMs: DEFAULT_LOCK_INTERVAL_MS, language: 'auto', theme: 'color', onboardingBackupVerified: false };
 
@@ -37,8 +41,10 @@ export function App() {
   const [status, setStatus] = useState<BackupStatus | null>(null);
   const [persistence, setPersistence] = useState('unavailable');
   const [unhealthy, setUnhealthy] = useState(false);
-  const [tab, setTab] = useState<Tab>('vault');
-  const [module, setModule] = useState<'passwords' | 'files'>('passwords');
+  const initialSection = useMemo(() => { const section = sectionFromUrl(location.href); return !fileSafe ? { ...section, module: 'passwords' as const } : section; }, []);
+  const [tab, setTab] = useState<Tab>(initialSection.tab);
+  const [module, setModule] = useState<'passwords' | 'files'>(initialSection.module);
+  const navigation = useRef<Navigation<Route> | null>(null);
   const [view, setView] = useState<VaultView>({ name: 'list' });
   const [notice, setNotice] = useState<string | null>(null);
   const [fatal, setFatal] = useState<string | null>(null);
@@ -54,6 +60,22 @@ export function App() {
 
   const lang = prefs.language === 'auto' ? deviceLanguage() : prefs.language;
   const t = useMemo(() => translator(lang), [lang]);
+  const drafts = useDraftRegistry(t('discardDraftConfirm'));
+  const confirmNavigation = useRef(drafts.confirmLeave);
+  confirmNavigation.current = drafts.confirmLeave;
+  const navigate = (route: Route) => {
+    if (route.module === module && route.tab === tab && JSON.stringify(route.view) === JSON.stringify(view)) return true;
+    return navigation.current?.push(route, route) ?? false;
+  };
+  const go = (next: VaultView) => navigate({ module, tab, view: next });
+  const goSection = (next: Section) => navigate({ ...next, view: { name: 'list' } });
+  useEffect(() => {
+    const apply = (route: Route) => { setModule(route.module); setTab(route.tab); setView(route.view); };
+    navigation.current = new Navigation<Route>(apply, () => confirmNavigation.current(), { ...initialSection, view: { name: 'list' } }, initialSection);
+    const pop = (event: PopStateEvent) => { const section = sectionFromUrl(location.href); navigation.current?.pop(event, { ...section, module: fileSafe ? section.module : 'passwords', view: { name: 'list' } }); };
+    window.addEventListener('popstate', pop);
+    return () => { window.removeEventListener('popstate', pop); navigation.current = null; };
+  }, [initialSection]);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -62,6 +84,11 @@ export function App() {
   useEffect(() => {
     if (prefs.theme === 'auto') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = prefs.theme;
+    const sync = () => document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--bg').trim());
+    sync();
+    const media = matchMedia('(prefers-color-scheme: dark)');
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
   }, [prefs.theme]);
 
   const loadUnlocked = useCallback(async () => {
@@ -100,24 +127,25 @@ export function App() {
     setStatus(null);
     setView({ name: 'list' });
     setTab('vault');
+    navigation.current?.reset({ module, tab: 'vault', view: { name: 'list' } }, { module, tab: 'vault' });
     setNotice(null);
     setPhase('loading');
     void refresh();
-  }, [client, refresh]);
+  }, [client, refresh, module]);
 
   useEffect(() => subscribeNativeLock(lockNow), [lockNow]);
   useEffect(() => configureNativeClose(async () => {
-    if (phase !== 'unlocked') return true;
+    if (phase !== 'unlocked' && !drafts.hasUnsaved()) return true;
     const epoch = client.epoch;
-    const o = await client.call('overview');
+    const o = phase === 'unlocked' ? await client.call('overview') : null;
     if (client.epoch !== epoch) return false;
-    if (view.name === 'edit' || o.unsaved) return new Promise<boolean>((resolve) => {
+    if (drafts.hasUnsaved() || o?.unsaved) return new Promise<boolean>((resolve) => {
       closeResolve.current = resolve;
       setClosePrompt(true);
     });
     lockNow();
     return true;
-  }), [phase, view, client, t, lockNow]);
+  }), [phase, view, client, t, lockNow, drafts.hasUnsaved]);
 
   useEffect(() => {
     if (!desktop) return;
@@ -129,11 +157,11 @@ export function App() {
       }
       if (phase !== 'unlocked') return;
       if (event.ctrlKey && event.key.toLowerCase() === 'f') {
-        event.preventDefault(); setTab('vault'); setView({ name: 'list' });
+        event.preventDefault(); if (!goSection({ module: 'passwords', tab: 'vault' })) return;
         requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[type="search"]')?.focus());
       }
       if (event.ctrlKey && event.key.toLowerCase() === 'n' && !overview?.readOnly) {
-        event.preventDefault(); setTab('vault'); setView({ name: 'edit', uuid: null });
+        event.preventDefault(); navigate({ module: 'passwords', tab: 'vault', view: { name: 'edit', uuid: null } });
       }
       if (event.ctrlKey && event.key.toLowerCase() === 's') {
         event.preventDefault(); document.querySelector<HTMLFormElement>('main form')?.requestSubmit();
@@ -141,7 +169,7 @@ export function App() {
     };
     window.addEventListener('keydown', shortcut);
     return () => window.removeEventListener('keydown', shortcut);
-  }, [phase, overview, lockNow, module]);
+  }, [phase, overview, lockNow, module, tab, view]);
 
   const autoLock = useRef<AutoLock | null>(null);
   useEffect(() => {
@@ -247,7 +275,7 @@ export function App() {
         <DesktopBackupStatus />
         {tab !== 'backups' && <BackupStatusBanner status={status} />}
         {(tab === 'vault' || tab === 'favorites') && (
-          <VaultScreens overview={overview} favoritesOnly={tab === 'favorites'} view={view} go={setView} reload={reload} />
+          <VaultScreens overview={overview} favoritesOnly={tab === 'favorites'} view={view} go={go} reload={reload} />
         )}
         {tab === 'backups' && <BackupsTab status={status} persistence={persistence} storageUnhealthy={unhealthy} onChanged={() => void reload()} />}
         {tab === 'settings' && <SettingsTab prefs={prefs} setPref={setPref} onPasswordChanged={() => void reload()} />}
@@ -260,14 +288,16 @@ export function App() {
 
   return (
     <I18nContext.Provider value={{ t, lang }}>
+      <DraftContext.Provider value={drafts}>
       <AppContext.Provider value={api}>
         <div className={`app ${unlocked ? 'workspace' : 'access-layout'}${desktop ? ' desktop-app' : ''}${module === 'files' ? ' file-safe-app' : ''}`}>
+          <a className="skip-link" href="#main-content" onClick={(event) => { event.preventDefault(); document.getElementById('main-content')?.focus(); }}>{t('skipToContent')}</a>
           <header className="topbar">
             <div className="brand"><span className="brand-mark"><Icon name="vault" /></span><span>{t('appName')}<small>{t('brandSubtitle')}</small></span></div>
             <div className="topbar-actions">
               {desktop && fileSafe && <div className="module-navigation" role="navigation" aria-label={lang === 'ru' ? 'Хранилища' : 'Vault modules'}>
-            <button type="button" className="secondary" aria-current={module === 'passwords' ? 'page' : undefined} onClick={() => setModule('passwords')}>{lang === 'ru' ? 'Пароли' : 'Passwords'}</button>
-            <button type="button" className="secondary" aria-current={module === 'files' ? 'page' : undefined} onClick={() => setModule('files')}>{lang === 'ru' ? 'Файловый сейф' : 'File Safe'}</button>
+            <a className="secondary nav-link" href={sectionHref({ module: 'passwords', tab })} aria-current={module === 'passwords' ? 'page' : undefined} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); goSection({ module: 'passwords', tab }); }}>{lang === 'ru' ? 'Пароли' : 'Passwords'}</a>
+            <a className="secondary nav-link" href={sectionHref({ module: 'files', tab: 'vault' })} aria-current={module === 'files' ? 'page' : undefined} onClick={(event) => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); goSection({ module: 'files', tab: 'vault' }); }}>{lang === 'ru' ? 'Файловый сейф' : 'File Safe'}</a>
             <button type="button" className="secondary" onClick={() => { lockNow(); void fileSafe?.lockAll(); }}>{lang === 'ru' ? 'Заблокировать всё' : 'Lock all'}</button>
           </div>}
               <span className="privacy-chip"><Icon name="shield" />{t('localOnly')}</span>
@@ -288,15 +318,15 @@ export function App() {
             </Banner>
           )}
 
-          <main>{body}</main>
-          {desktop && closePrompt && <div className="desktop-close-overlay"><section className="card stack desktop-close-dialog" role="dialog" aria-modal="true" aria-labelledby="desktop-close-title">
+          <main id="main-content" tabIndex={-1}>{body}</main>
+          {desktop && closePrompt && <Modal className="desktop-close-dialog" labelledBy="desktop-close-title" busy={closing} close={() => { closeResolve.current?.(false); closeResolve.current = null; setClosePrompt(false); }}>
             <h2 id="desktop-close-title">{t('desktopCloseTitle')}</h2><p>{t('desktopCloseExplain')}</p>
-            <button type="button" disabled={closing} autoFocus onClick={async () => {
+            <button type="button" disabled={closing} onClick={async () => {
               const epoch = client.epoch;
               setClosing(true);
               try {
-                const o = await client.call('overview');
-                if (o.unsaved) await client.call('retrySave');
+                const o = phase === 'unlocked' ? await client.call('overview') : null;
+                if (o?.unsaved) await client.call('retrySave');
                 if (draftSave.current && !(await draftSave.current())) return;
                 if (client.epoch !== epoch) return;
                 const done = closeResolve.current; closeResolve.current = null;
@@ -307,17 +337,17 @@ export function App() {
             <button type="button" className="danger" disabled={closing} onClick={() => {
               const done = closeResolve.current; closeResolve.current = null; lockNow(); done?.(true);
             }}>{t('desktopDiscardClose')}</button>
-            <button type="button" className="secondary" disabled={closing} onClick={() => {
+            <button type="button" className="secondary" data-dialog-cancel disabled={closing} onClick={() => {
               closeResolve.current?.(false); closeResolve.current = null; setClosePrompt(false);
             }}>{t('cancel')}</button>
-          </section></div>}
+          </Modal>}
           {notice && (
             <div className="toast" role="status">
               {notice}
             </div>
           )}
           {unlocked && (
-            <nav className="tabbar workspace-navigation" aria-label="Main">
+            <nav className="tabbar workspace-navigation" aria-label={t('workspaceLabel')}>
               <span className="nav-heading">{t('workspaceLabel')}</span>
               {(
                 [
@@ -327,24 +357,25 @@ export function App() {
                   ['settings', t('navSettings')]
                 ] as const
               ).map(([id, label]) => (
-                <button
+                <a
+                  className="nav-link" href={sectionHref({ module: 'passwords', tab: id })}
                   key={id}
-                  type="button"
                   aria-current={tab === id ? 'page' : undefined}
-                  onClick={() => {
-                    setTab(id);
-                    setView({ name: 'list' });
-                    if (id === 'backups') void reload();
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                    event.preventDefault();
+                    if (goSection({ module: 'passwords', tab: id }) && id === 'backups') void reload();
                   }}
                 >
                   <Icon name={({ vault: 'vault', favorites: 'star', backups: 'backup', settings: 'settings' } as Record<Tab, IconName>)[id]} /><span>{label}</span>
-                </button>
+                </a>
               ))}
               <div className="nav-note"><Icon name="shield" /><strong>{t('localOnly')}</strong><span>{t(desktop ? 'desktopPrivacy' : 'navPrivacy')}</span></div>
             </nav>
           )}
         </div>
       </AppContext.Provider>
+      </DraftContext.Provider>
     </I18nContext.Provider>
   );
 }

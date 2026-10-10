@@ -23,7 +23,7 @@ test('safe admission is quiet and action notices sit beside its title in the sha
   await expect(page.locator('.file-safe-feedback')).toHaveCount(0);
   const identity = await page.context().newPage();
   await identity.goto('/shell.html');
-  const passwordNavigation = identity.locator('.tabbar button').first();
+  const passwordNavigation = identity.locator('.tabbar a').first();
   await expect(passwordNavigation).toBeVisible();
   for (const theme of ['color', 'light', 'dark']) {
     await page.setViewportSize({ width: 1440, height: 1000 });

@@ -1,11 +1,12 @@
 /** Unlocked vault screens: list and search, entry detail, edit, history, recycle bin. */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EntryInput, EntryView, SearchHit } from '@passkey-local/vault-adapter';
 import { useT } from '../i18n.ts';
 import type { EntryDetail, HistoryItem, Overview } from '../protocol.ts';
-import { Banner, Busy, PasswordInput, TextField, copyText, errorText, openExternal, urlPolicy, useApp, useFormatDate } from './common.tsx';
+import { Banner, Busy, PasswordInput, TextField, copyText, errorText, openExternal, urlPolicy, useApp, useFormatDate, desktopAutoFocus } from './common.tsx';
 import { Icon } from './icons.tsx';
+import { useDraftGuard } from './drafts.tsx';
 
 export type VaultView =
   | { name: 'list' }
@@ -62,19 +63,21 @@ function EntryList(props: Props & { recycle?: boolean }) {
 
   useEffect(() => {
     if (!query.trim()) {
+      setError(null);
       setHits(null);
       return;
     }
     let live = true;
     const epoch = client.epoch;
+    setError(null);
     client.call('search', { query, options: opts }).then(
       (h) => live && client.epoch === epoch && setHits(h),
-      () => live && setHits([])
+      () => { if (live && client.epoch === epoch) { setHits(null); setError(t('searchFailed')); } }
     );
     return () => {
       live = false;
     };
-  }, [query, opts, client, props.overview.generation]);
+  }, [query, opts, client, props.overview.generation, t]);
 
   const byUuid = useMemo(() => new Map(props.overview.entries.map((e) => [e.uuid, e])), [props.overview.entries]);
   const tags = useMemo(() => [...new Set(props.overview.entries.flatMap((e) => e.tags))].sort(), [props.overview.entries]);
@@ -133,7 +136,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
             <div className="search-field">
             <Icon name="search" />
             <input
-              type="search"
+              type="search" name="vault-search"
               aria-label={t('search')}
               placeholder={t('search')}
               value={query}
@@ -166,7 +169,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
           )}
           {!hits && (
             <div className="filters">
-              <select aria-label={t('allGroups')} value={group} onChange={(e) => setGroup(e.target.value)}>
+              <select name="vault-group-filter" aria-label={t('allGroups')} value={group} onChange={(e) => setGroup(e.target.value)}>
                 <option value="">{t('allGroups')}</option>
                 {groups.map((g) => (
                   <option key={g.uuid} value={g.uuid}>
@@ -176,7 +179,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
                 ))}
               </select>
               {tags.length > 0 && (
-                <select aria-label={t('tags')} value={tag} onChange={(e) => setTag(e.target.value)}>
+                <select name="vault-tag-filter" aria-label={t('tags')} value={tag} onChange={(e) => setTag(e.target.value)}>
                   <option value="">{t('allTags')}</option>
                   {tags.map((x) => (
                     <option key={x} value={x}>
@@ -185,7 +188,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
                   ))}
                 </select>
               )}
-              <select aria-label={t('sortBy')} value={sort} onChange={(e) => setSort(e.target.value as 'title' | 'modified')}>
+              <select name="vault-sort" aria-label={t('sortBy')} value={sort} onChange={(e) => setSort(e.target.value as 'title' | 'modified')}>
                 <option value="title">{t('sortTitle')}</option>
                 <option value="modified">{t('sortModified')}</option>
               </select>
@@ -196,7 +199,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
       {rows.length === 0 ? (
         <div className="empty"><span className="empty-symbol"><Icon name={props.favoritesOnly ? 'star' : 'vault'} /></span><h2>{hits ? t('noResults') : t('noEntries')}</h2><p>{hits ? t('searchHint') : props.recycle ? t('recycleNote') : props.favoritesOnly ? t('favoritesHint') : t('emptyHint')}</p></div>
       ) : (
-        <ul className="list entries">
+        <ul className="list entries efficient-list">
           {rows.map(({ entry, hit }) => (
             <li key={`${entry.uuid}-${hit?.historyIndex ?? 'c'}`}>
               <button
@@ -243,7 +246,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
                 void addGroup();
               }}
             >
-              <input aria-label={t('groupName')} placeholder={t('groupName')} value={newGroup} onChange={(e) => setNewGroup(e.target.value)} autoFocus />
+              <input aria-label={t('groupName')} placeholder={t('groupName')} value={newGroup} onChange={(e) => setNewGroup(e.target.value)} autoFocus={desktopAutoFocus(true)} name="group-name" autoComplete="off" />
               <button type="submit">{t('save')}</button>
             </form>
           )}
@@ -453,11 +456,15 @@ function Edit(props: Props & { uuid: string | null }) {
   const groups = props.overview.groups.filter((g) => !g.isRecycleBin && !g.inRecycleBin);
   const currentGroup = props.uuid ? props.overview.entries.find((e) => e.uuid === props.uuid)?.groupUuid : undefined;
   const [groupUuid, setGroupUuid] = useState<string>(currentGroup ?? groups[0]?.uuid ?? '');
+  const original = useRef<EntryInput | null>(props.uuid ? null : EMPTY);
+  const originalGroup = useRef(groupUuid);
+  const { markSaved } = useDraftGuard(Boolean(input && original.current && (JSON.stringify(input) !== JSON.stringify(original.current) || tagText !== original.current.tags.join(', ') || groupUuid !== originalGroup.current)));
 
   useEffect(() => {
     if (!props.uuid) return;
     client.call('entryForEdit', { uuid: props.uuid }).then(
       (v) => {
+        original.current = v;
         setInput(v);
         setTagText(v.tags.join(', '));
       },
@@ -476,6 +483,7 @@ function Edit(props: Props & { uuid: string | null }) {
         .filter(Boolean);
       const res = await client.call('saveEntry', { uuid: props.uuid, input: { ...input, tags }, groupUuid: groupUuid || undefined });
       await props.reload();
+      markSaved();
       props.go({ name: 'detail', uuid: res.uuid });
       return true;
     } catch (e) {
@@ -502,8 +510,8 @@ function Edit(props: Props & { uuid: string | null }) {
           void save();
         }}
       >
-        <TextField label={t('title')} value={input.title} onChange={(v) => set({ title: v })} autoFocus />
-        <TextField label={t('username')} value={input.username} onChange={(v) => set({ username: v })} secretish />
+        <TextField name="entry-title" label={t('title')} value={input.title} onChange={(v) => set({ title: v })} autoFocus />
+        <TextField name="entry-username" label={t('username')} value={input.username} onChange={(v) => set({ username: v })} secretish />
         <PasswordInput label={t('password')} value={input.password} onChange={(v) => set({ password: v })} autoComplete="new-password" name="entry-password" />
         <button type="button" className="secondary" onClick={async () => set({ password: (await client.call('generatePassword', {})).value })}>
           {t('generate')}
@@ -511,7 +519,7 @@ function Edit(props: Props & { uuid: string | null }) {
         {groups.length > 1 && (
           <label className="field">
             {t('group')}
-            <select value={groupUuid} onChange={(e) => setGroupUuid(e.target.value)}>
+            <select name="entry-group" value={groupUuid} onChange={(e) => setGroupUuid(e.target.value)}>
               {groups.map((g) => (
                 <option key={g.uuid} value={g.uuid}>
                   {'\u2003'.repeat(g.depth)}
@@ -526,24 +534,24 @@ function Edit(props: Props & { uuid: string | null }) {
         </button>
         {more && (
           <>
-            <TextField label={t('url')} value={input.url} onChange={(v) => set({ url: v })} type="url" secretish />
-            <TextField label={t('notes')} value={input.notes} onChange={(v) => set({ notes: v })} multiline />
-            <TextField label={t('tagsHint')} value={tagText} onChange={setTagText} />
+            <TextField name="entry-url" label={t('url')} value={input.url} onChange={(v) => set({ url: v })} type="url" secretish />
+            <TextField name="entry-notes" label={t('notes')} value={input.notes} onChange={(v) => set({ notes: v })} multiline />
+            <TextField name="entry-tags" label={t('tagsHint')} value={tagText} onChange={setTagText} />
             <div className="field">
               <label>
                 {t('expires')}
-                <input type="date" value={dateInputValue(input.expiresAt)} onChange={(e) => set({ expiresAt: e.target.value ? new Date(`${e.target.value}T00:00:00Z`) : null })} />
+                <input type="date" name="entry-expiry" value={dateInputValue(input.expiresAt)} onChange={(e) => set({ expiresAt: e.target.value ? new Date(`${e.target.value}T00:00:00Z`) : null })} />
               </label>
             </div>
             <fieldset className="stack">
               <legend>{t('customFields')}</legend>
               {input.customFields.map((f, i) => (
                 <div key={i} className="card stack">
-                  <TextField label={t('fieldName')} value={f.name} onChange={(v) => set({ customFields: input.customFields.map((x, j) => (j === i ? { ...x, name: v } : x)) })} />
+                  <TextField name="custom-field-name" label={t('fieldName')} value={f.name} onChange={(v) => set({ customFields: input.customFields.map((x, j) => (j === i ? { ...x, name: v } : x)) })} />
                   {f.protected ? (
                     <PasswordInput label={t('fieldValue')} value={f.value} onChange={(v) => set({ customFields: input.customFields.map((x, j) => (j === i ? { ...x, value: v } : x)) })} autoComplete="off" />
                   ) : (
-                    <TextField label={t('fieldValue')} value={f.value} onChange={(v) => set({ customFields: input.customFields.map((x, j) => (j === i ? { ...x, value: v } : x)) })} />
+                    <TextField name="custom-field-value" label={t('fieldValue')} value={f.value} onChange={(v) => set({ customFields: input.customFields.map((x, j) => (j === i ? { ...x, value: v } : x)) })} />
                   )}
                   <label className="check">
                     <input type="checkbox" checked={f.protected} onChange={(e) => set({ customFields: input.customFields.map((x, j) => (j === i ? { ...x, protected: e.target.checked } : x)) })} /> {t('secretField')}
@@ -593,7 +601,7 @@ function History(props: Props & { uuid: string }) {
       <h1>{t('historyTitle')}</h1>
       <p className="muted">{t('historyExplain')}</p>
       {items && items.length === 0 && <p className="empty">{t('historyEmpty')}</p>}
-      <ul className="list">
+      <ul className="list efficient-list">
         {items?.map((h) => (
           <li key={h.index}>
             <button type="button" className="row" onClick={() => props.go({ name: 'historyItem', uuid: props.uuid, index: h.index })}>

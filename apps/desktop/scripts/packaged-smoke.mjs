@@ -85,7 +85,7 @@ try {
   await page.reload();
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   const helloEnrollmentBoundary = await page.evaluate(async () => {
     const invoke = window.__TAURI_INTERNALS__.invoke;
     const token = await invoke('session_begin');
@@ -104,7 +104,7 @@ try {
   await page.reload();
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await expect(page.getByText('Windows Hello is off for this vault.', { exact: true })).toBeVisible();
   const enrollmentMode = page.getByLabel('Keep this connection', { exact: true });
   await expect(enrollmentMode).toHaveValue('session');
@@ -345,9 +345,9 @@ try {
   await page.reload();
   await page.getByLabel('Master password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await expect(interval).toHaveValue('86400000');
-  await page.getByRole('button', { name: 'Vault', exact: true }).click();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
   await page.getByRole('button', { name: 'Add entry', exact: true }).click();
   await page.getByRole('textbox', { name: 'Title', exact: true }).fill('Synthetic Windows smoke');
   await page.getByLabel('Username or email', { exact: true }).fill('synthetic-user');
@@ -363,7 +363,7 @@ try {
   assert(helloDenied, 'Unproved Hello provider cannot yield secrets');
   // Exercise the installed file-safe UI while the password database is locked.
   powershell(`[void](New-Object -ComObject WScript.Shell).AppActivate(${child.pid})`);
-  await page.getByRole('button', { name: 'File Safe', exact: true }).click();
+  await page.getByRole('link', { name: 'File Safe', exact: true }).click();
   const safePassword = 'synthetic-independent-file-safe-2026';
   await page.getByLabel('File-safe master password', { exact: true }).fill(safePassword);
   await page.getByLabel('Repeat password', { exact: true }).fill(safePassword);
@@ -441,7 +441,7 @@ try {
   page.on('pageerror', () => errors.push('pageerror'));
   await previewContext.route('**/*', (route) => { const url = new URL(route.request().url()); if (['tauri.localhost', 'ipc.localhost', 'localhost', '127.0.0.1'].includes(url.hostname) || url.protocol === 'tauri:') return route.continue(); foreignRequests++; return route.abort(); });
   powershell(`[void](New-Object -ComObject WScript.Shell).AppActivate(${child.pid})`);
-  await page.getByRole('button', { name: 'File Safe', exact: true }).click();
+  await page.getByRole('link', { name: 'File Safe', exact: true }).click();
   await page.getByLabel('File-safe master password', { exact: true }).fill(safePassword);
   await page.getByRole('button', { name: 'Unlock file safe', exact: true }).click();
   const installedWorker = join(process.env.LOCALAPPDATA, 'PassKey Local', 'passkey-text-worker.exe');
@@ -472,9 +472,9 @@ try {
   const fileSafeTextPreview = { status: 'PASS', workerSha256: workerHash, scope: 'actual installed native selected-version authentication, LPAC UTF-8/BOM-free inert UI and lock redaction; context-menu rename', input: 'public synthetic UTF-8 canary', noActiveElements: true };
   const fileSafeFeedback = { status: 'PASS', scope: 'installed password admission shows no saved notice; native folder action places saved feedback beside the safe title' };
 
-  await page.getByRole('button', { name: 'Passwords', exact: true }).click();
+  await page.getByRole('link', { name: 'Passwords', exact: true }).click();
   await page.getByLabel('Master password', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'File Safe', exact: true }).click();
+  await page.getByRole('link', { name: 'File Safe', exact: true }).click();
   await page.getByRole('button', { name: 'Lock file safe', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Lock all', exact: true }).click();
   await page.getByLabel('File-safe master password', { exact: true }).waitFor();
@@ -484,7 +484,7 @@ try {
   await page.getByRole('button', { name: 'Open folder: Synthetic file-safe folder', exact: true }).waitFor();
   await page.getByRole('button', { name: 'Lock file safe', exact: true }).click();
   await page.getByLabel('File-safe master password', { exact: true }).waitFor();
-  await page.getByRole('button', { name: 'Passwords', exact: true }).click();
+  await page.getByRole('link', { name: 'Passwords', exact: true }).click();
   const saved = new Uint8Array(await readFile(join(data, 'current.kdbx')));
   const opened = await openVault(saved, password);
   assert.equal(listEntries(opened.db).filter((e) => !e.inRecycleBin).length, 1);

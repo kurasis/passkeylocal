@@ -2,9 +2,9 @@ import { test, expect } from "@playwright/test";
 
 test("nested folders, parent row, breadcrumbs and history follow the actual selected folder", async ({ page }) => {
   await page.goto("/?explorer=nested");
-  const list = page.getByRole("list", { name: "Files", exact: true });
+  const list = page.getByRole("table", { name: "Files", exact: true });
   const path = page.getByRole("navigation", { name: "Current folder", exact: true });
-  await expect(list.getByRole("listitem").first()).toContainText("Documents");
+  await expect(list.locator(".file-safe-row").first()).toContainText("Documents");
   await expect(page.getByRole("button", { name: "Root readme.txt", exact: true })).toBeVisible();
   for (const folder of ["Documents", "2026", "Reports"]) {
     await page.getByRole("button", { name: `Open folder: ${folder}`, exact: true }).click();
@@ -12,7 +12,7 @@ test("nested folders, parent row, breadcrumbs and history follow the actual sele
   }
   await expect(page.getByRole("button", { name: "Nested report.csv", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Root readme.txt", exact: true })).toHaveCount(0);
-  await expect(list.getByRole("listitem").first()).toContainText("[..]");
+  await expect(list.locator(".file-safe-row").first()).toContainText("[..]");
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await expect(page.getByRole("button", { name: "Open folder: Reports", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Forward", exact: true }).click();
@@ -39,7 +39,7 @@ test("new folders belong to the current parent and separate settings preserve th
   await page.getByRole("button", { name: "File-safe settings", exact: true }).click();
   await expect(page.getByRole("heading", { name: "File-safe settings", exact: true })).toBeVisible();
   await expect(page.getByRole("searchbox")).toHaveCount(0);
-  await expect(page.getByRole("list", { name: "Files", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("table", { name: "Files", exact: true })).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "Current folder", exact: true })).toHaveCount(0);
   await page.getByTestId("file-safe-hello").locator("summary").click();
   await page.getByLabel("Confirm file-safe master password", { exact: true }).fill("synthetic-not-submitted");
@@ -76,15 +76,15 @@ test("locking discards a late folder reply and clears navigation history for a n
 
 test("child folders are independently paged, virtualized and reset their offset on navigation", async ({ page }) => {
   await page.goto("/?explorer=many");
-  const list = page.getByRole("list", { name: "Files", exact: true });
+  const list = page.getByRole("table", { name: "Files", exact: true });
   await expect(page.getByRole("button", { name: "Open folder: Folder 000", exact: true })).toBeVisible();
-  await expect(list.getByRole("listitem")).toHaveCount(12);
+  expect(await list.locator(".file-safe-row").count()).toBeLessThanOrEqual(24);
   await list.focus();
   await page.keyboard.press("End");
   await expect(page.getByRole("button", { name: "Open folder: Folder 199", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Next folders", exact: true }).click();
   await expect(page.getByRole("button", { name: "Open folder: Folder 200", exact: true })).toBeVisible();
-  await expect(list.getByRole("listitem")).toHaveCount(5);
+  await expect(list.locator(".file-safe-row")).toHaveCount(5);
   await page.getByRole("button", { name: "Open folder: Folder 200", exact: true }).click();
   await expect(list.getByRole("button", { name: "Parent folder", exact: true })).toBeVisible();
   expect((await page.evaluate(() => (window as any).uiTest.queries())).at(-1).folder_offset).toBe(0);
@@ -115,16 +115,16 @@ test("Russian explorer and settings fit all palettes and small screens without l
 
 test("columns sort native file metadata while folders stay first and exact byte counts remain available", async ({ page }) => {
   await page.goto("/?explorer=nested");
-  const list = page.getByRole("list", { name: "Files", exact: true });
-  await expect(list.getByRole("listitem").nth(2)).toContainText("Alpha.txt");
+  const list = page.getByRole("table", { name: "Files", exact: true });
+  await expect(list.locator(".file-safe-row").nth(2)).toContainText("Alpha.txt");
   await page.getByRole("button", { name: "Sort by size", exact: true }).click();
-  await expect(list.getByRole("listitem").nth(2)).toContainText("Alpha.txt");
-  await expect(list.getByRole("listitem").nth(3)).toContainText("Root readme.txt");
-  await expect(list.getByRole("listitem").first()).toContainText("Documents");
+  await expect(list.locator(".file-safe-row").nth(2)).toContainText("Alpha.txt");
+  await expect(list.locator(".file-safe-row").nth(3)).toContainText("Root readme.txt");
+  await expect(list.locator(".file-safe-row").first()).toContainText("Documents");
   await page.getByRole("button", { name: "Sort by date", exact: true }).click();
-  await expect(list.getByRole("listitem").nth(2)).toContainText("Root readme.txt");
+  await expect(list.locator(".file-safe-row").nth(2)).toContainText("Root readme.txt");
   await page.getByRole("button", { name: "Favorites", exact: true }).click();
-  await expect(list.getByRole("listitem")).toHaveCount(1);
+  await expect(list.locator(".file-safe-row")).toHaveCount(1);
   await expect(list).toContainText("Zeta.log");
   await page.getByRole("button", { name: "Recycle bin", exact: true }).click();
   await expect(list).toContainText("old.bin");

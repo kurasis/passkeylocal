@@ -1,6 +1,8 @@
 /** Test-only client. No vault or biometric proof is claimed by this fixture. */
 import type { Preferences } from '../../../pwa/src/protocol.ts';
 export class VaultRequestError extends Error { code = 'SYNTHETIC'; detail = undefined; }
+let searchFailure = false;
+(window as any).searchTest = { fail() { searchFailure = true; } };
 let phase = 'unlocked';
 let hello = { state: 'off', mode: 'session', expiresAt: 123456789 };
 const helloCalls: string[] = [];
@@ -23,7 +25,7 @@ export class VaultClient {
       case 'backupStatus': return null;
       case 'biometricCredential': return null;
       case 'unlock': phase = 'unlocked'; return { warnings: [] };
-      case 'search': return [];
+      case 'search': if (searchFailure) throw new Error('Synthetic search failure'); return [];
       default: throw new Error(`Unexpected synthetic operation: ${operation}`);
     }
   }

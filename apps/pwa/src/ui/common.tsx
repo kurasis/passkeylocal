@@ -47,6 +47,24 @@ export function useFormatDate(): (iso: string | null | undefined) => string {
   };
 }
 
+export function formatFileSize(bytes: string, lang: string): string {
+  try {
+    const value = BigInt(bytes);
+    const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+    let scale = 1n, unit = 0;
+    while (unit < units.length - 1 && value >= scale * 1024n) { scale *= 1024n; unit++; }
+    const whole = value / scale;
+    const fraction = unit ? (value % scale) * 10n / scale : 0n;
+    const number = new Intl.NumberFormat(lang).format(whole);
+    const decimal = new Intl.NumberFormat(lang).formatToParts(1.1).find((part) => part.type === 'decimal')?.value ?? '.';
+    return `${number}${fraction ? `${decimal}${fraction}` : ''}\u00a0${units[unit]}`;
+  } catch { return '—'; }
+}
+
+export function desktopAutoFocus(requested?: boolean): boolean {
+  return Boolean(requested && globalThis.matchMedia?.('(pointer: fine)').matches);
+}
+
 export type HandoffOutcome = 'export-offered' | 'export-cancelled' | 'export-failed';
 
 /**
@@ -128,6 +146,7 @@ export function PasswordInput(props: {
   autoComplete: 'current-password' | 'new-password' | 'off';
   autoFocus?: boolean;
   name?: string;
+  error?: string | null;
 }) {
   const t = useT();
   const id = useId();
@@ -138,7 +157,7 @@ export function PasswordInput(props: {
       <div className="input-row">
         <input
           id={id}
-          name={props.name}
+          name={props.name ?? `password-${id}`}
           type={shown ? 'text' : 'password'}
           value={props.value}
           onChange={(e) => props.onChange(e.target.value)}
@@ -146,17 +165,21 @@ export function PasswordInput(props: {
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
-          autoFocus={props.autoFocus}
+          autoFocus={desktopAutoFocus(props.autoFocus)}
+          aria-invalid={props.error ? true : undefined}
+          aria-describedby={props.error ? `${id}-error` : undefined}
         />
         <button type="button" className="secondary" onClick={() => setShown((s) => !s)} aria-pressed={shown}>
           {shown ? t('hide') : t('show')}
         </button>
       </div>
+      {props.error && <p id={`${id}-error`} className="field-error" role="alert">{props.error}</p>}
     </div>
   );
 }
 
 export function TextField(props: {
+  name: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -168,12 +191,13 @@ export function TextField(props: {
   const id = useId();
   const common = {
     id,
+    name: props.name,
     value: props.value,
     autoCapitalize: 'off',
     autoCorrect: 'off',
     spellCheck: props.secretish ? false : undefined,
     autoComplete: 'off',
-    autoFocus: props.autoFocus
+    autoFocus: desktopAutoFocus(props.autoFocus)
   } as const;
   return (
     <div className="field">

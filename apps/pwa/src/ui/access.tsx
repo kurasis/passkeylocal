@@ -1,6 +1,6 @@
 /** Screens shown before a vault is unlocked, plus the onboarding backup drill. */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { BlobInfo } from '@passkey-local/vault-core';
 import { useT } from '../i18n.ts';
 import { ExportControl, RestoreControl, VerifyControl } from './backup-tools.tsx';
@@ -62,11 +62,16 @@ function CreateVault(props: { onCancel: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
   const problem = newPasswordProblem(pw, repeat, t);
+  const passwordProblem = newPasswordProblem(pw, pw, t);
+  const form = useRef<HTMLFormElement>(null);
   const spaces = pw !== pw.trim();
 
   const submit = async () => {
     setTouched(true);
-    if (problem) return;
+    if (problem) {
+      form.current?.querySelector<HTMLInputElement>(passwordProblem ? '[name="new-password"]' : '[name="repeat-password"]')?.focus();
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -76,6 +81,7 @@ function CreateVault(props: { onCancel: () => void }) {
       refresh();
     } catch (e) {
       setError(errorText(e, t));
+      form.current?.querySelector<HTMLInputElement>('[name="new-password"]')?.focus();
       setBusy(false);
     }
   };
@@ -86,16 +92,16 @@ function CreateVault(props: { onCancel: () => void }) {
       <h1>{t('createTitle')}</h1>
       <p>{t('createExplain')}</p>
       <form
+        ref={form}
         className="stack"
         onSubmit={(e) => {
           e.preventDefault();
           void submit();
         }}
       >
-        <PasswordInput label={t('masterPassword')} value={pw} onChange={setPw} autoComplete="new-password" autoFocus name="new-password" />
-        <PasswordInput label={t('repeatPassword')} value={repeat} onChange={setRepeat} autoComplete="new-password" name="repeat-password" />
+        <PasswordInput label={t('masterPassword')} value={pw} onChange={setPw} autoComplete="new-password" autoFocus name="new-password" error={touched ? passwordProblem ?? error : error} />
+        <PasswordInput label={t('repeatPassword')} value={repeat} onChange={setRepeat} autoComplete="new-password" name="repeat-password" error={touched && !passwordProblem && pw !== repeat ? t('passwordsDiffer') : null} />
         {spaces && <Banner kind="warn">{t('warnSpaces')}</Banner>}
-        {touched && problem && <Banner kind="error">{problem}</Banner>}
         <button
           type="button"
           className="secondary"
@@ -123,7 +129,6 @@ function CreateVault(props: { onCancel: () => void }) {
           {t('createVault')}
         </button>
         {busy && <Busy label={t('creating')} />}
-        {error && <Banner kind="error">{error}</Banner>}
         <button type="button" className="link" onClick={props.onCancel}>
           {t('back')}
         </button>

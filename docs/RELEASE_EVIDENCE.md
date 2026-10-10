@@ -1,5 +1,37 @@
 # Release evidence and gate status
 
+## Web interface audit fixes (2026-10-10)
+
+Resolved the shared UI audit findings listed in [the review](WEB_INTERFACE_REVIEW.md):
+RAM-only draft navigation/unload guards, private browser history with public
+section links, native modal inert/focus behavior, focused virtual table rows,
+search error recovery, distinct persistent error/cancel feedback, confirmed
+version restoration, localized dates/sizes, accessible validation and field
+names, pointer-aware autofocus, contrast and scroll containment, skip navigation
+and synchronized theme-color.
+
+Executed locally on Linux (Node 24.19.0, Chromium):
+
+- Workspace typecheck: PASS.
+- Workspace unit tests: 178 PASS (98 adapter, 40 core, 40 PWA).
+- Full isolated desktop UI harness: 71 PASS, including eight new accessibility,
+  draft, table, error feedback and version restoration regressions. Doubles are
+  not a physical Windows Hello test.
+- Production PWA browser suite with real CSP/headers: 10 PASS, including
+  validation/touch focus, guarded Back/navigation, history confidentiality,
+  theme-color/system changes, backup replacement, offline unlock and locking.
+- PWA and desktop frontend builds plus target isolation: PASS.
+- Fresh web-design-guidelines fetch: HTTP 200; applied to changed interface files.
+
+Initial GitHub general CI passed all ten jobs. Windows exposed a Linux-only
+path suffix in the static-test navigation exception; it now compares against
+`join(SRC, 'ui', 'navigation.ts')`, preserving the same single-file boundary
+on both systems. The focused static/privacy regressions passed after this fix.
+GitHub revalidation, Windows/MSVC, installed WebView2 smoke and publication are pending;
+no new hardware acceptance is claimed. Skill installation PR #38 passed all 11
+checks and merged as `6511d67033d2c33385da1e893dd53e05617c2f69`.
+
+
 ## Monthly backup reminders and shared safe feedback publication (2026-10-09)
 
 [PR #37](https://github.com/kurasis/passkeylocal/pull/37) merged as `bd359391d4a42a42fd3b0dbdec8e7af128972522`;
