@@ -23,7 +23,11 @@ Executed locally on Linux (Node 24.19.0, Chromium):
 - PWA and desktop frontend builds plus target isolation: PASS.
 - Fresh web-design-guidelines fetch: HTTP 200; applied to changed interface files.
 
-GitHub CI, Windows/MSVC, installed WebView2 smoke and publication are pending;
+Initial GitHub general CI passed all ten jobs. Windows exposed a Linux-only
+path suffix in the static-test navigation exception; it now compares against
+`join(SRC, 'ui', 'navigation.ts')`, preserving the same single-file boundary
+on both systems. The focused static/privacy regressions passed after this fix.
+GitHub revalidation, Windows/MSVC, installed WebView2 smoke and publication are pending;
 no new hardware acceptance is claimed. Skill installation PR #38 passed all 11
 checks and merged as `6511d67033d2c33385da1e893dd53e05617c2f69`.
 

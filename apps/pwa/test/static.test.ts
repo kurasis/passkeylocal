@@ -23,7 +23,7 @@ describe('source rules (SECURITY_AND_FORMAT.md 4 and 5)', () => {
       expect(s, f).not.toMatch(/localStorage|sessionStorage|location\.hash\s*=/);
       // The one navigation boundary serializes only allowlisted public sections
       // and random history keys. Its privacy/lock behavior is tested separately.
-      if (!f.endsWith('/ui/navigation.ts')) expect(s, f).not.toMatch(/history\.(push|replace)State/);
+      if (f !== join(SRC, 'ui', 'navigation.ts')) expect(s, f).not.toMatch(/history\.(push|replace)State/);
       expect(s, f).not.toMatch(/Math\.random/);
     }
   });
