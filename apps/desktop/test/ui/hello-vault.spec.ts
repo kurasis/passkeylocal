@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 test('Hello opt-in defaults to session, offers bounded remembered modes and unlocks only explicitly', async ({ page }) => {
   await page.goto('/shell.html');
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await expect(page.getByText('Windows Hello для этого хранилища отключён.', { exact: true })).toBeVisible();
   const mode = page.getByLabel('Срок действия привязки', { exact: true });
   await expect(mode).toHaveValue('session');
@@ -20,7 +20,7 @@ test('Hello opt-in defaults to session, offers bounded remembered modes and unlo
   await expect(page.getByText('Проверка отменена.', { exact: false })).toBeVisible();
   await expect(page.getByLabel('Мастер-пароль', { exact: true })).toBeVisible();
   await unlock.click();
-  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   await page.getByRole('button', { name: 'Отключить Hello и удалить его ключи', exact: true }).click();
   await expect(page.getByText('Windows Hello для этого хранилища отключён.', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => (window as any).helloVaultTest.calls)).toEqual(['enable', 'unlock', 'unlock', 'disable']);

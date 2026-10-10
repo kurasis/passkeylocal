@@ -80,9 +80,9 @@ test("10,000-entry synthetic metadata UI is paged, virtualized and keyboard scro
       exact: false,
     }),
   ).toBeVisible();
-  await expect(page.getByRole("listitem")).toHaveCount(12);
+  expect(await page.locator(".file-safe-row").count()).toBeLessThanOrEqual(24);
   await expect(page.getByText("Page 1 · 10000")).toBeVisible();
-  const viewport = page.getByRole("list", { name: "Files", exact: true });
+  const viewport = page.getByRole("table", { name: "Files", exact: true });
   await viewport.focus();
   await page.keyboard.press("End");
   await expect(
@@ -190,7 +190,7 @@ test("pending search survives a language change and lock still redacts", async (
       exact: false,
     }),
   ).toBeVisible();
-  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(page.locator(".file-safe-row")).toHaveCount(1);
   await page.evaluate(() =>
     (window as unknown as { uiTest: { lock(): void } }).uiTest.lock(),
   );

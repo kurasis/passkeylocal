@@ -1,5 +1,5 @@
 /** Windows-only file-safe workspace. Original bytes never enter this component. */
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { useLang, useT } from "../i18n.ts";
 import type { HelloMode, HelloVaultStatus } from '../hello-vault-protocol.ts';
 import type {
@@ -12,7 +12,9 @@ import type {
   SafeStatus,
   SafeImportItem,
 } from "../file-safe-protocol.ts";
-import { Banner } from "./common.tsx";
+import { AppContext, Banner, formatFileSize, useFormatDate } from "./common.tsx";
+import { DraftContext, useDraftScope, useDraftGuard } from "./drafts.tsx";
+import { Modal } from "./modal.tsx";
 import { Icon } from "./icons.tsx";
 import { TextPreview } from "./file-safe-preview.tsx";
 import { SafeMenu, type SafeMenuAction } from "./file-safe-menu.tsx";
@@ -278,6 +280,10 @@ const words = {
   },
 };
 export function FileSafe({ api }: { api: FileSafeApi }) {
+  const drafts = useDraftScope();
+  return <DraftContext.Provider value={drafts}><FileSafeWorkspace api={api} canLeave={drafts.confirmLeave} /></DraftContext.Provider>;
+}
+function FileSafeWorkspace({ api, canLeave }: { api: FileSafeApi; canLeave: () => boolean }) {
   const lang = useLang();
   const t = useT();
   const helloModeId = useId();
@@ -315,6 +321,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [messageKind, setMessageKind] = useState<"info" | "warn" | "error">("info");
   const [working, setWorking] = useState(false);
   const [admissionReady, setAdmissionReady] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -393,6 +400,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       redact();
       return;
     }
+    setMessageKind(["HELLO_CANCELLED", "CANCELLED", "STALE"].includes(code) ? "warn" : "error");
     setMessage(
       code === 'HELLO_CANCELLED' ? t('helloVaultCancelled')
       : code === 'HELLO_UNAVAILABLE' ? t('helloVaultUnavailable')
@@ -431,6 +439,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       if (live.current && epoch === generation.current) {
         redact();
         setStatus(null);
+        setMessageKind("error");
         setMessage(
           languageRef.current === "ru"
             ? "Файловый сейф недоступен. Хранилище паролей доступно."
@@ -487,15 +496,16 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     void reload();
   }, [token, reload]);
   useEffect(() => {
-    if (!message) return;
+    if (!message || messageKind !== "info") return;
     const timeout = setTimeout(() => setMessage(""), 6000);
     return () => clearTimeout(timeout);
-  }, [message]);
+  }, [message, messageKind]);
   const run = async (action: () => Promise<unknown>, success = w.saved) => {
-    if (working) return;
+    if (working) return false;
     const epoch = generation.current;
     setWorking(true);
     setMessage("");
+    setMessageKind("info");
     try {
       const result = await action();
       if (
@@ -503,10 +513,14 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         epoch === generation.current &&
         result !== false &&
         result !== null
-      )
+      ) {
         setMessage(typeof result === "string" ? result : success);
+        return true;
+      }
+      return false;
     } catch (error) {
       if (live.current && epoch === generation.current) fail(error);
+      return false;
     } finally {
       if (live.current) {
         setWorking(false);
@@ -527,8 +541,9 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const feedback = actionBusy
     ? `${w.working}${status?.progress.total ? ` ${status.progress.done} / ${status.progress.total}` : ""}`
     : message;
-  const notification = feedback && <div className="file-safe-feedback"><Banner kind="info">{feedback}</Banner></div>;
+  const notification = feedback && <div className="file-safe-feedback"><Banner kind={actionBusy ? "info" : messageKind}>{feedback}</Banner></div>;
   const showView = (next: "files" | "settings") => {
+    if (!canLeave()) return;
     setView(next);
     setSelected([]);
     setDetail(null);
@@ -557,7 +572,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
     redrawNavigation((value) => value + 1);
   };
   const navigate = (folder_id: string | null, mode: SafeQuery["mode"] = "files") => {
-    if (busy) return;
+    if (busy || !canLeave()) return;
     if (folder_id === page?.root_id) folder_id = null;
     const history = navigation.current;
     const current = history.entries[history.position];
@@ -569,7 +584,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const travel = (step: number) => {
     const history = navigation.current;
     const position = history.position + step;
-    if (busy || position < 0 || position >= history.entries.length) return;
+    if (busy || !canLeave() || position < 0 || position >= history.entries.length) return;
     const entry = history.entries[position];
     if (!entry) return;
     history.position = position;
@@ -615,16 +630,16 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
   const closeMenu = () => { const anchor = menu?.anchor; setMenu(null); anchor?.focus(); };
   const menuFile = page?.files.find((f) => menu?.kind === "file" && f.id === menu.id);
   const menuFolder = page?.folders.find((f) => menu?.kind === "folder" && f.id === menu.id);
-  const openDetails = (id: string, action = "") => { setDetailAction(action); setDetail(id); };
+  const openDetails = (id: string, action = "") => { if (!canLeave()) return; setDetailAction(action); setDetail(id); };
   const menuActions: SafeMenuAction[] = menuFile ? [
-    ...(menuFile.name.toLowerCase().endsWith(".txt") ? [{ label: w.previewTxt, run: () => { setDetail(null); setPreviewId(menuFile.id); } }] : []),
+    ...(menuFile.name.toLowerCase().endsWith(".txt") ? [{ label: w.previewTxt, run: () => { if (!canLeave()) return; setDetail(null); setPreviewId(menuFile.id); } }] : []),
     { label: w.details, run: () => openDetails(menuFile.id) },
     { label: w.rename, run: () => openDetails(menuFile.id, "rename") },
     { label: w.move, run: () => openDetails(menuFile.id, "move") },
     { label: menuFile.favorite ? w.unstar : w.favorite, run: () => { void change({ kind: "edit", edit: { file_id: menuFile.id, folder_id: menuFile.folder_id, name: menuFile.name, tags: menuFile.tags, notes: menuFile.notes, favorite: !menuFile.favorite } }); } },
     { label: w.history, run: () => openDetails(menuFile.id, "history") },
     { label: w.export, run: () => openDetails(menuFile.id, "export") },
-    { label: menuFile.deleted ? w.recover : w.delete, danger: !menuFile.deleted, run: () => { setDetail(null); void change({ kind: "trash", file_ids: [menuFile.id], deleted: !menuFile.deleted, permanent: false, confirm: false }); } },
+    { label: menuFile.deleted ? w.recover : w.delete, danger: !menuFile.deleted, run: () => { if (!canLeave()) return; setDetail(null); void change({ kind: "trash", file_ids: [menuFile.id], deleted: !menuFile.deleted, permanent: false, confirm: false }); } },
     ...(menuFile.deleted ? [{ label: w.permanent, danger: true, run: () => { setSelected([menuFile.id]); setRemoveAck(false); } }] : []),
   ] : menuFolder ? [
     { label: w.openFolder, run: () => navigate(menuFolder.id) },
@@ -645,7 +660,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         !tokenRef.current &&
         result?.status === "restored_locked"
       )
-        setMessage(w.restored);
+        { setMessageKind("info"); setMessage(w.restored); }
     } catch (error) {
       if (live.current) fail(error);
     } finally {
@@ -663,7 +678,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
         <input
           type="password"
           autoComplete="off"
-          value={backupPassword}
+          name="safe-backup-password" value={backupPassword}
           onChange={(e) => setBackupPassword(e.target.value)}
           maxLength={1024}
         />
@@ -722,7 +737,9 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
           onSubmit={(e) => {
             e.preventDefault();
             if (!status?.exists && password !== repeat) {
+              setMessageKind("error");
               setMessage(w.mismatched);
+              e.currentTarget.querySelector<HTMLInputElement>('[name="safe-repeat-password"]')?.focus();
               return;
             }
             if (!status || !admissionReady) return;
@@ -740,7 +757,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             <input
               type="password"
               autoComplete="off"
-              value={password}
+              name="safe-password" value={password}
               onChange={(e) => setPassword(e.target.value)}
               maxLength={1024}
               required
@@ -753,7 +770,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               <input
                 type="password"
                 autoComplete="off"
-                value={repeat}
+                name="safe-repeat-password" value={repeat}
                 onChange={(e) => setRepeat(e.target.value)}
                 maxLength={1024}
                 required
@@ -805,14 +822,14 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       </div>
       {previewFile && page && <TextPreview api={api} token={token} snapshot={page.snapshot_id} file={previewFile} lang={lang} close={() => setPreviewId(null)} lock={() => { redact(); void api.lock(); }} />}
       {menu && menuActions.length > 0 && <SafeMenu x={menu.x} y={menu.y} title={menuFile?.name ?? menuFolder?.name ?? ""} actions={menuActions.map((a) => ({ ...a, disabled: busy }))} close={closeMenu} />}
-      {folderDialog && <div className="desktop-close-overlay"><form className="card stack file-safe-dialog" role="dialog" aria-modal="true" aria-label={folderDialog.operation === "create" ? w.newChild : folderDialog.operation === "remove" ? w.removeFolder : w.rename} onKeyDown={(e) => { if (e.key === "Escape") setFolderDialog(null); }} onSubmit={(e) => {
+      {folderDialog && <Modal className="file-safe-dialog" busy={busy} label={folderDialog.operation === "create" ? w.newChild : folderDialog.operation === "remove" ? w.removeFolder : w.rename} close={() => setFolderDialog(null)} initialFocus={folderDialog.operation === "remove" ? "[data-dialog-cancel]" : "input"}><form className="stack" onSubmit={(e) => {
         e.preventDefault(); const d = folderDialog; setFolderDialog(null);
         void change(d.operation === "create" ? { kind: "folder", parent_id: d.folder.id, name: d.name } : d.operation === "rename" ? { kind: "folder_edit", folder_id: d.folder.id, name: d.name } : { kind: "folder_remove", folder_id: d.folder.id, confirm: true });
       }}>
         <h2>{folderDialog.folder.name}</h2>
-        {folderDialog.operation === "remove" ? <p>{w.removeFolderExplain}</p> : <label className="field">{w.folderName}<input autoFocus required maxLength={255} value={folderDialog.name} onChange={(e) => setFolderDialog({ ...folderDialog, name: e.target.value })} /></label>}
-        <div className="input-row"><button type="submit" disabled={busy} className={folderDialog.operation === "remove" ? "danger" : ""}>{folderDialog.operation === "create" ? w.folder : folderDialog.operation === "remove" ? w.removeFolder : w.rename}</button><button type="button" className="secondary" onClick={() => setFolderDialog(null)}>{w.closeDialog}</button></div>
-      </form></div>}
+        {folderDialog.operation === "remove" ? <p>{w.removeFolderExplain}</p> : <label className="field">{w.folderName}<input name="folder-name" autoComplete="off" required maxLength={255} value={folderDialog.name} onChange={(e) => setFolderDialog({ ...folderDialog, name: e.target.value })} /></label>}
+        <div className="input-row"><button type="submit" disabled={busy} className={folderDialog.operation === "remove" ? "danger" : ""}>{folderDialog.operation === "create" ? w.folder : folderDialog.operation === "remove" ? w.removeFolder : w.rename}</button><button type="button" className="secondary" data-dialog-cancel onClick={() => setFolderDialog(null)}>{w.closeDialog}</button></div>
+      </form></Modal>}
       {view === "files" && <>
 
 
@@ -851,7 +868,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               {w.folderName}
               <input
                 maxLength={255}
-                value={folderName}
+                name="safe-folder-name" autoComplete="off" value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}
               />
             </label>
@@ -891,25 +908,25 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             </nav>
           </div>
           <div className="file-safe-filters">
-            <label className="field">{w.search}<span className="search-field"><Icon name="search" /><input type="search" value={query.search} maxLength={256} onChange={(e) => {
-              setSelected([]); setDetail(null);
+            <label className="field">{w.search}<span className="search-field"><Icon name="search" /><input type="search" name="safe-search" autoComplete="off" spellCheck={false} value={query.search} maxLength={256} onChange={(e) => {
+              if (!canLeave()) return; setSelected([]); setDetail(null);
               setQuery((q) => ({ ...q, search: e.target.value, offset: 0 }));
             }} /></span></label>
-            <div className="file-safe-mobile-sort"><label htmlFor={sortId}>{w.sortBy}</label><select id={sortId} value={query.sort} onChange={(e) => { setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort: e.target.value as SafeQuery["sort"], offset: 0 })); }}><option value="name">{w.name}</option><option value="modified">{w.modified}</option><option value="size">{w.size}</option></select></div>
+            <div className="file-safe-mobile-sort"><label htmlFor={sortId}>{w.sortBy}</label><select id={sortId} value={query.sort} onChange={(e) => { if (!canLeave()) return; setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort: e.target.value as SafeQuery["sort"], offset: 0 })); }}><option value="name">{w.name}</option><option value="modified">{w.modified}</option><option value="size">{w.size}</option></select></div>
           </div>
           {page && (
             <>
               <FileSafeExplorer
                 files={page.files} folders={query.mode === "files" ? page.folders : []} parent={parent}
                 selected={selected} select={(id, checked) => setSelected((ids) => checked ? [...ids, id] : ids.filter((x) => x !== id))}
-                detail={(id) => { const file = page.files.find((f) => f.id === id); if (file?.name.toLowerCase().endsWith(".txt")) { setDetail(null); setPreviewId(id); } else { setPreviewId(null); setDetailAction(""); setDetail(id); } }} openFolder={navigate}
+                detail={(id) => { if (!canLeave()) return; const file = page.files.find((f) => f.id === id); if (file?.name.toLowerCase().endsWith(".txt")) { setDetail(null); setPreviewId(id); } else { setPreviewId(null); setDetailAction(""); setDetail(id); } }} openFolder={navigate}
                 context={(target, x, y, anchor) => { setMenu({ ...target, x, y, anchor }); }} sort={query.sort} busy={busy} lang={lang} labels={w}
-                setSort={(sort) => { setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort, offset: 0 })); }}
+                setSort={(sort) => { if (!canLeave()) return; setSelected([]); setDetail(null); setQuery((q) => ({ ...q, sort, offset: 0 })); }}
               />
               {query.mode === "files" && page.folders_total > 200 && <div className="input-row file-safe-folder-pages">
-                <button type="button" className="secondary" disabled={busy || !query.folder_offset} onClick={() => setQuery((q) => ({ ...q, folder_offset: Math.max(0, q.folder_offset - 200) }))}>{w.previousFolders}</button>
+                <button type="button" className="secondary" disabled={busy || !query.folder_offset} onClick={() => { if (canLeave()) setQuery((q) => ({ ...q, folder_offset: Math.max(0, q.folder_offset - 200) })); }}>{w.previousFolders}</button>
                 <span>{query.folder_offset + 1}–{Math.min(query.folder_offset + 200, page.folders_total)} / {page.folders_total}</span>
-                <button type="button" className="secondary" disabled={busy || query.folder_offset + 200 >= page.folders_total} onClick={() => setQuery((q) => ({ ...q, folder_offset: q.folder_offset + 200 }))}>{w.nextFolders}</button>
+                <button type="button" className="secondary" disabled={busy || query.folder_offset + 200 >= page.folders_total} onClick={() => { if (canLeave()) setQuery((q) => ({ ...q, folder_offset: q.folder_offset + 200 })); }}>{w.nextFolders}</button>
               </div>}
               <div className="input-row">
                 <button
@@ -917,6 +934,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
                   className="secondary"
                   disabled={!query.offset || busy}
                   onClick={() => {
+                    if (!canLeave()) return;
+                    setDetail(null);
                     setSelected([]);
                     setQuery((q) => ({
                       ...q,
@@ -935,6 +954,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
                   className="secondary"
                   disabled={query.offset + query.limit >= page.total || busy}
                   onClick={() => {
+                    if (!canLeave()) return;
+                    setDetail(null);
                     setSelected([]);
                     setQuery((q) => ({ ...q, offset: q.offset + q.limit }));
                   }}
@@ -953,15 +974,17 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
                 type="button"
                 className="secondary"
                 disabled={busy}
-                onClick={() =>
+                onClick={() => {
+                  if (!canLeave()) return;
+                  setDetail(null);
                   void change({
                     kind: "trash",
                     file_ids: selected,
                     deleted: query.mode !== "trash",
                     permanent: false,
                     confirm: false,
-                  })
-                }
+                  });
+                }}
               >
                 {query.mode === "trash" ? w.recover : w.delete} (
                 {selected.length})
@@ -982,6 +1005,8 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
                     className="danger"
                     disabled={busy || !removeAck}
                     onClick={() => {
+                      if (!canLeave()) return;
+                      setDetail(null);
                       void change({
                         kind: "trash",
                         file_ids: selected,
@@ -1009,7 +1034,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
               busy={busy}
               labels={w}
               change={change}
-              close={() => setDetail(null)}
+              close={() => { if (canLeave()) setDetail(null); }}
               replace={() => importFiles(false, current.id)}
               exportVersion={(version) =>
                 void run(
@@ -1079,7 +1104,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             type="number"
             min={1}
             max={100}
-            value={retention}
+            name="safe-backup-retention" autoComplete="off" value={retention}
             onChange={(e) => setRetention(Number(e.target.value))}
           />
         </label>
@@ -1155,7 +1180,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             <input
               type="password"
               autoComplete="off"
-              value={oldPassword}
+              name="safe-old-password" value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
               maxLength={1024}
             />
@@ -1165,7 +1190,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
             <input
               type="password"
               autoComplete="off"
-              value={newPassword}
+              name="safe-new-password" value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               maxLength={1024}
             />
@@ -1178,7 +1203,7 @@ export function FileSafe({ api }: { api: FileSafeApi }) {
       <label htmlFor={intervalId}>{w.interval}</label>
         <select
           id={intervalId}
-          value={status?.interval_ms ?? 120000}
+          name="safe-lock-interval" value={status?.interval_ms ?? 120000}
           onChange={(e) =>
             void run(() => api.interval(token, Number(e.target.value)))
           }
@@ -1217,6 +1242,10 @@ function FileDetails({
   exportVersion: (version: string | null) => void;
 }) {
   const section = useRef<HTMLElement>(null);
+  const lang = useLang();
+  const t = useT();
+  const formatDate = useFormatDate();
+  const [baseline, setBaseline] = useState(() => ({ name: file.name, tags: file.tags.join(", "), notes: file.notes, favorite: file.favorite, folder: file.folder_id }));
   useEffect(() => { if (!initialAction) return; const target = section.current?.querySelector<HTMLElement>(`[data-action="${initialAction}"]`); target?.scrollIntoView({ block: "nearest" }); target?.focus(); }, [initialAction]);
   const [name, setName] = useState(file.name);
   const [tags, setTags] = useState(file.tags.join(", "));
@@ -1224,6 +1253,16 @@ function FileDetails({
   const [favorite, setFavorite] = useState(file.favorite);
   const [folder, setFolder] = useState(file.folder_id);
   const [ack, setAck] = useState(false);
+  const { markSaved } = useDraftGuard(name !== baseline.name || tags !== baseline.tags || notes !== baseline.notes || favorite !== baseline.favorite || folder !== baseline.folder);
+  const app = useContext(AppContext);
+  const save = async () => {
+    const saved = await change({ kind: "edit", edit: { file_id: file.id, folder_id: folder, name,
+      tags: tags.split(",").map((value) => value.trim()).filter(Boolean), notes, favorite } });
+    if (saved !== true) return false;
+    markSaved(); setBaseline({ name, tags, notes, favorite, folder });
+    return true;
+  };
+  useEffect(() => app?.registerDraftSave(save), [app, save]);
   return (
     <section ref={section} className="card stack" aria-label={w.details}>
       <div className="input-row">
@@ -1234,28 +1273,12 @@ function FileDetails({
       </div>
       <form
         className="stack"
-        onSubmit={(e) => {
-          e.preventDefault();
-          change({
-            kind: "edit",
-            edit: {
-              file_id: file.id,
-              folder_id: folder,
-              name,
-              tags: tags
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean),
-              notes,
-              favorite,
-            },
-          });
-        }}
+        onSubmit={(e) => { e.preventDefault(); void save(); }}
       >
         <label className="field">
           {w.name}
           <input
-            data-action="rename"
+            data-action="rename" name="safe-file-name" autoComplete="off"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={255}
@@ -1264,7 +1287,7 @@ function FileDetails({
         </label>
         <label className="field">
           {w.move}
-          <select data-action="move" value={folder} onChange={(e) => setFolder(e.target.value)}>
+          <select data-action="move" name="safe-file-folder" value={folder} onChange={(e) => setFolder(e.target.value)}>
             {folders
               .filter((f, i, all) => all.findIndex((x) => x.id === f.id) === i)
               .map((f) => (
@@ -1277,7 +1300,7 @@ function FileDetails({
         <label className="field">
           {w.tags}
           <input
-            value={tags}
+            name="safe-file-tags" autoComplete="off" value={tags}
             maxLength={4096}
             onChange={(e) => setTags(e.target.value)}
           />
@@ -1285,7 +1308,7 @@ function FileDetails({
         <label className="field">
           {w.notes}
           <textarea
-            value={notes}
+            name="safe-file-notes" autoComplete="off" value={notes}
             maxLength={4096}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -1333,14 +1356,14 @@ function FileDetails({
       {file.versions.map((v) => (
         <div className="file-safe-version" key={v.id}>
           <span>
-            {v.created_at} · {v.size} B {v.current && `· ${w.current}`}
+            {formatDate(v.created_at)} · {formatFileSize(v.size, lang)} {v.current && `· ${w.current}`}
           </span>
           <button
             type="button"
             className="secondary"
             disabled={busy || v.current}
             onClick={() =>
-              change({
+              window.confirm(t("restoreVersionConfirm")) && change({
                 kind: "restore_version",
                 file_id: file.id,
                 version_id: v.id,

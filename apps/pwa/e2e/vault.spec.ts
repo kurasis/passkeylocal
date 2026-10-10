@@ -131,7 +131,7 @@ test('create, back up, add entry, app switch, inactivity lock, reload, offline u
   await page.getByRole('button', { name: 'Reveal: Password' }).click();
   await expect(page.getByText(MARKER_PASSWORD)).toBeVisible();
   await expect(page).toHaveTitle('PassKey Local');
-  expect(page.url()).toBe(`${ORIGIN}/`);
+  expect(page.url()).toBe(`${ORIGIN}/#/passwords/vault`);
 
   // Switching apps does not lock (user decision); only the inactivity interval does.
   await hidePage(page);
@@ -207,7 +207,7 @@ test('passkey PRF enrollment, offline unlock after reload, disable and password 
   } });
   await page.goto('/');
   await createAndVerifyVault(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Confirm master password for Face ID / passkey').fill(MASTER);
   await page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Disable Face ID / passkey' })).toBeVisible();
@@ -225,7 +225,7 @@ test('passkey PRF enrollment, offline unlock after reload, disable and password 
   await page.getByRole('button', { name: 'Unlock with Face ID / passkey' }).click();
   await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
   await context.setOffline(false);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Disable Face ID / passkey' }).click();
   await page.getByRole('button', { name: 'Lock', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
@@ -246,7 +246,7 @@ test('locking during passkey enrollment aborts it and keeps password unlock avai
   } });
   await page.goto('/');
   await createAndVerifyVault(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Confirm master password for Face ID / passkey').fill(MASTER);
   await page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true })).toBeDisabled();
@@ -268,7 +268,7 @@ test('a passkey provider without PRF cannot enable unlock; password still works'
   } });
   await page.goto('/');
   await createAndVerifyVault(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByLabel('Confirm master password for Face ID / passkey').fill(MASTER);
   await page.getByRole('button', { name: 'Enable Face ID / passkey', exact: true }).click();
   await expect(page.getByText('Secure passkey unlock is unavailable in this browser or passkey provider. Use your master password.')).toBeVisible();
@@ -289,9 +289,14 @@ test('three palettes persist while locked and unlocked, follow explicit choice, 
   await page.getByRole('button', { name: 'Theme', exact: true }).click();
   const popover = page.locator('.theme-popover');
   const backgrounds = new Set<string>();
+  const expectThemeColor = async () => {
+    await expect.poll(() => page.evaluate(() => document.querySelector('meta[name="theme-color"]')?.getAttribute('content')))
+      .toBe(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()));
+  };
   for (const [label, value] of [['Light', 'light'], ['Dark', 'dark'], ['Colorful', 'color']] as const) {
     await popover.getByText(label, { exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', value);
+    await expectThemeColor();
     backgrounds.add(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()));
   }
   expect(backgrounds.size).toBe(3);
@@ -304,7 +309,7 @@ test('three palettes persist while locked and unlocked, follow explicit choice, 
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await createAndVerifyVault(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   const appearance = page.locator('.appearance-card');
   await appearance.getByText('Dark', { exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -315,12 +320,14 @@ test('three palettes persist while locked and unlocked, follow explicit choice, 
   await page.getByRole('checkbox', { name: 'System', exact: true }).check();
   await expect(page.locator('html')).not.toHaveAttribute('data-theme');
   await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('dark');
+  await expectThemeColor();
   await page.emulateMedia({ colorScheme: 'light' });
   await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('light');
+  await expectThemeColor();
   await page.keyboard.press('Escape');
   await page.getByLabel('Master password').fill(MASTER);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
   for (const [label, value] of [['Цветная', 'color'], ['Светлая', 'light'], ['Тёмная', 'dark']] as const) {
     await appearance.getByText(label, { exact: true }).click();
@@ -355,7 +362,7 @@ test('replacing a backup finishes with saved status, closes the consumed preview
   await page.getByLabel('Password', { exact: true }).fill('synthetic restore secret');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Synthetic restored entry' })).toBeVisible();
-  await page.getByRole('button', { name: 'Backups', exact: true }).click();
+  await page.getByRole('link', { name: 'Backups', exact: true }).click();
   await page.getByRole('button', { name: 'Prepare encrypted backup' }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByTestId('save-backup').click();
@@ -380,6 +387,8 @@ test('replacing a backup finishes with saved status, closes the consumed preview
   await page.reload();
   await page.getByLabel('Master password').fill(MASTER);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Backups', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
   await expect(page.getByRole('button', { name: /Synthetic restored entry/ })).toBeVisible();
   await sec.assertClean();
 });
@@ -387,7 +396,7 @@ test('replacing a backup finishes with saved status, closes the consumed preview
 test('6, 12 and 24 hour inactivity choices persist and the 24 hour deadline locks', async ({ page }) => {
   await page.goto('/');
   await createAndVerifyVault(page);
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   const interval = page.getByRole('combobox', { name: 'Lock after inactivity', exact: true });
   for (const [label, value] of [['6 hours', '21600000'], ['12 hours', '43200000'], ['24 hours', '86400000']]) {
     await interval.selectOption({ label });
@@ -395,7 +404,7 @@ test('6, 12 and 24 hour inactivity choices persist and the 24 hour deadline lock
     await page.reload();
     await page.getByLabel('Master password').fill(MASTER);
     await page.getByRole('button', { name: 'Unlock', exact: true }).click();
-    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('link', { name: 'Settings', exact: true }).click();
     await expect(interval).toHaveValue(value!);
   }
   // Install the fake clock after the persistence reloads, then rearm on unlock.
@@ -403,7 +412,7 @@ test('6, 12 and 24 hour inactivity choices persist and the 24 hour deadline lock
   await page.getByRole('button', { name: 'Lock', exact: true }).click();
   await page.getByLabel('Master password').fill(MASTER);
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
-  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
   await page.getByRole('combobox', { name: 'Language', exact: true }).selectOption('ru');
   const ruInterval = page.getByRole('combobox', { name: 'Блокировать после бездействия', exact: true });
   for (const n of [6, 12, 24]) await expect(ruInterval.getByRole('option', { name: `${n} ч.`, exact: true })).toHaveCount(1);
@@ -411,4 +420,66 @@ test('6, 12 and 24 hour inactivity choices persist and the 24 hour deadline lock
   await expect(ruInterval).toBeVisible();
   await page.clock.fastForward(1000);
   await expect(page.getByRole('heading', { name: 'Хранилище заблокировано' })).toBeVisible();
+});
+
+test('invalid creation focuses the described error and touch devices avoid autofocus', async ({ page, browser }) => {
+  const sec = await watchSecurity(page);
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Create a new vault', exact: true }).click();
+  const password = page.getByLabel('Master password', { exact: true });
+  const repeat = page.getByLabel('Repeat master password', { exact: true });
+  await password.fill('short');
+  await repeat.fill('short');
+  await page.getByRole('button', { name: 'Create a new vault', exact: true }).click();
+  await expect(password).toBeFocused();
+  await expect(password).toHaveAttribute('aria-invalid', 'true');
+  const errorId = await password.getAttribute('aria-describedby');
+  expect(errorId).toBeTruthy();
+  await expect(page.locator(`[id="${errorId}"]`)).toBeVisible();
+  await password.fill(MASTER);
+  await repeat.fill(`${MASTER} mismatch`);
+  await page.getByRole('button', { name: 'Create a new vault', exact: true }).click();
+  await expect(repeat).toBeFocused();
+  await expect(repeat).toHaveAttribute('aria-invalid', 'true');
+  await sec.assertClean();
+  const touch = await browser.newContext({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+  const mobile = await touch.newPage();
+  await mobile.goto(`${ORIGIN}/`);
+  await mobile.getByRole('button', { name: 'Create a new vault', exact: true }).click();
+  await expect(mobile.getByLabel('Master password', { exact: true })).toBeVisible();
+  expect(await mobile.evaluate(() => document.activeElement?.tagName)).not.toBe('INPUT');
+  await touch.close();
+});
+
+test('draft navigation is guarded, browser history works and private values never enter URLs', async ({ page }) => {
+  const sec = await watchSecurity(page);
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await page.getByRole('button', { name: 'Add entry', exact: true }).click();
+  await page.getByLabel('Title', { exact: true }).fill(MARKER_TITLE);
+  await page.getByLabel('Username or email', { exact: true }).fill(MARKER_USER);
+  await page.getByLabel('Password', { exact: true }).fill(MARKER_PASSWORD);
+  let prompts = 0;
+  const reject = async (dialog: import('@playwright/test').Dialog) => { prompts++; await dialog.dismiss(); };
+  page.on('dialog', reject);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await expect(page.getByLabel('Title', { exact: true })).toHaveValue(MARKER_TITLE);
+  await page.evaluate(() => history.back());
+  await expect.poll(() => prompts).toBe(2);
+  await expect(page.getByLabel('Title', { exact: true })).toHaveValue(MARKER_TITLE);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('heading', { name: MARKER_TITLE, exact: true })).toBeVisible();
+  expect(prompts).toBe(2);
+  page.off('dialog', reject);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await expect(page).toHaveURL(/#\/passwords\/settings$/);
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: MARKER_TITLE, exact: true })).toBeVisible();
+  const serialized = await page.evaluate(() => location.href + JSON.stringify(history.state));
+  for (const value of [MARKER_TITLE, MARKER_USER, MARKER_PASSWORD]) expect(serialized).not.toContain(value);
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await page.goBack();
+  await expect(page.getByRole('heading', { name: 'Vault locked', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: MARKER_TITLE, exact: true })).toHaveCount(0);
+  await sec.assertClean();
 });

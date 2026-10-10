@@ -234,3 +234,11 @@ export async function testNativeHelloRecovery(_signal?: AbortSignal): Promise<He
   combinedState = 'no-test';
   return { ...combinedReport('no-test'), purpose: 'synthetic-kdbx-recovery', outcome: 'vault-recovery-passed', checks: [{ test: 'recovery-kdbx-password-open', status: 'passed' }, { test: 'recovery-kdbx-integrity', status: 'passed' }], recovery: { fixture: 'public-test', scope: 'public-synthetic-kdbx', entries: 2, history: 1, accountTest: 'excluded-by-owner' } };
 }
+
+// Exercise the actual close dialog without closing the isolated browser.
+let closeHandler = async () => true;
+export function configureNativeClose(handler: () => Promise<boolean>) {
+  closeHandler = handler;
+  return () => { closeHandler = async () => true; };
+}
+(window as any).closeTest = { request() { return closeHandler(); } };
