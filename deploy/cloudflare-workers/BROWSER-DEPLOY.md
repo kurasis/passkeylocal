@@ -56,6 +56,16 @@ Use this method to keep icon downloads without installing local programs:
    site icon. Verify that `GET /api/favicon` returns 405 with `Allow: POST`, not
    the app HTML. A method response alone does not prove upstream icon retrieval.
 
+### First build after connecting GitHub
+
+If the Builds page says **You can now push a commit to your Git repository to
+start your first build**, the connection is saved but deployment has not started.
+Push or merge the next change to the selected production branch (`main` here).
+A change inside `deploy/cloudflare-workers` also matches a build watch filter
+scoped to that root directory. Then open the new entry in **Builds → Production**
+and read its build/deploy log. A connected repository or successful Git push is
+not proof that the Cloudflare build or production deployment succeeded.
+
 Export and verify an encrypted backup before updating. GitHub connection and
 Cloudflare account actions must be performed by the owner in their browser;
 this repository does not claim they were performed. The exact extraction and
