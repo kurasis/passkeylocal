@@ -33,6 +33,9 @@ Use this method to keep icon downloads without installing local programs:
 `node package.mjs`. Keep the existing deploy command, root and Worker name.
 Save and trigger a new build. This selects the current version automatically;
 the old command would keep deploying the old archive even after new commits.
+Saving a changed build command does not replace the currently served deployment:
+start a new production build or push the next commit to `main`, then verify the
+served version before treating the change as published.
 
 1. Open the **existing Worker**, then **Settings → Build**. Connect GitHub and
    select repository `kurasis/passkeylocal`, production branch `main`.
