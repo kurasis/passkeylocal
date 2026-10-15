@@ -1,5 +1,20 @@
 # Release evidence and gate status
 
+## Hosted 0.1.3 publication confirmed (2026-10-15)
+
+After the owner saved `node package.mjs`, main commit `a614ed0` triggered
+Cloudflare build `7e8e7c55-ef2f-4ec1-b7b3-a2138f455cde`: SUCCESS. Fresh hosted
+probe [38778543897](https://github.com/kurasis/passkeylocal/actions/runs/38778543897)
+PASS: live shell bytes exactly match the 0.1.3 archive (SHA-256
+`5e778dc9c7a8e32bba5b61320c1465f719df9dcad218333d1191e61c8b44b720`,
+script `index-CBXfZ9LD.js`), CSP/no-cache preserved; API GET 405/Allow POST;
+GitHub icon POST 200 with a valid 6518-byte ICO and no-store. Retained
+[live report](../deploy/cloudflare-workers/cloudflare-check-0.1.3-live.json).
+This confirms public 0.1.3 deployment and one upstream icon download. Applying
+the waiting service-worker update and display in the owner's browser still
+require owner confirmation. No application or distribution bytes changed while
+recording this result; no new Windows/physical-device acceptance is claimed.
+
 ## Rebuild after hosted build-command change (2026-10-15)
 
 The owner reported replacing the Cloudflare Build command with `node package.mjs`.

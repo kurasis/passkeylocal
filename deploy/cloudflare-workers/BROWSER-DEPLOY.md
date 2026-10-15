@@ -79,9 +79,10 @@ and read its build/deploy log. A connected repository or successful Git push is
 not proof that the Cloudflare build or production deployment succeeded.
 
 Export and verify an encrypted backup before updating. GitHub connection and
-Cloudflare account actions must be performed by the owner in their browser;
-this repository does not claim they were performed. The exact extraction and
-Wrangler dry-run can be checked locally without a production deployment.
+Cloudflare settings remain under the owner's account control. Executed hosted
+builds and public endpoint/version checks are recorded separately in
+[release evidence](../../docs/RELEASE_EVIDENCE.md); account connection or a build
+status alone is not proof of display in a browser using an older offline shell.
 
 Sources:
 - https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
