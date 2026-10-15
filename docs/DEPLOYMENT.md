@@ -113,6 +113,10 @@ project is a Worker. To preserve its address, use the separate
 it and follow its Wrangler instructions. The static-only dashboard uploader
 cannot install the executable favicon handler. No migration to Pages is needed
 for an existing Worker.
+For a browser-only workflow, use the [static upload or Cloudflare-hosted GitHub
+build instructions](../deploy/cloudflare-workers/BROWSER-DEPLOY.md). Local
+Node.js/Wrangler installation is optional. Static upload alone does not install
+the favicon endpoint; the complete hosted build does.
 
 For an existing Pages site, open that project and choose **Create a new
 deployment**, then upload `passkeylocal-cloudflare-pages-0.1.2.zip`. Keep the
