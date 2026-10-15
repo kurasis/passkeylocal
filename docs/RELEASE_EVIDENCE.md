@@ -38,7 +38,17 @@ Added a manually dispatched, read-only hosted probe of the public shell and a
 fixed `github.com` favicon request; it uses no vault data/credentials and records
 HTTP status, selected headers, bounded raster validation and hashes. The local
 probe correctly reports `origin-unavailable` for HTTP 403. Hosted results and
-the owner's browser result are not yet known. It is not a proof of success.
+the owner's browser result were initially unknown. Hosted follow-up
+[38776875811](https://github.com/kurasis/passkeylocal/actions/runs/38776875811)
+passed: public shell HTTP 200 with the configured CSP; API GET 405/Allow POST;
+domain-only GitHub POST 200, 6518 bytes, valid bounded ICO, no-store. The exact
+served shell SHA-256 matches the original **0.1.2** package, not 0.1.3. The
+report's `version` identifies probe code; `servedApplicationVersionByExactShell`
+records observed deployment. This proves the deployed endpoint can retrieve that
+icon, not that the owner's browser displayed it or that 0.1.3 is deployed.
+[Retained report](../deploy/cloudflare-workers/cloudflare-check-0.1.3-before-update.json).
+The developer-network 403 is therefore specific to that access path and does
+not establish a general block on the application or a Free-plan restriction.
 
 The owner's Cloudflare build command explicitly extracts the immutable 0.1.2 ZIP.
 Updated instructions require changing that one field to `node package.mjs`;
