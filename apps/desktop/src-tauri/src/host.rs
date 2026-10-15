@@ -1016,6 +1016,7 @@ pub fn run() {
                 .first()
                 .ok_or("main window configuration unavailable")?;
             let window = tauri::WebviewWindowBuilder::from_config(app, config)?
+                .title(format!("PassKey Local ({})", env!("CARGO_PKG_VERSION")))
                 .data_directory(browser_profile)
                 .general_autofill_enabled(false)
                 .on_navigation(|url| {

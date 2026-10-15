@@ -1,5 +1,37 @@
 # Release evidence and gate status
 
+## Versioned application release 0.1.1 (2026-10-15)
+
+Compared main `15f54f00ab0e6de3016f3ad3c83ead53fdc93f9b` with the previous
+published installer source `1867c6dd8aafa21cc25bfd32bebbc8070fa69a4e`:
+all application/package trees and the npm lock match. No prior implemented
+application changes were absent from the published build; no open PRs existed.
+
+The new application version is 0.1.1 in PWA/desktop packages, both lockfiles,
+Tauri configuration and the native package. Native and document titles show
+`PassKey Local (0.1.1)` without vault content. Packaging/CI names derive from
+the checked version; cached installers from earlier versions cannot be selected.
+The owner preference to state versions in filenames and download handoffs is
+persisted in AGENTS.md. Stable identifiers and encrypted formats are unchanged.
+
+Executed locally: workspace typecheck, both frontend builds and target isolation,
+10 production PWA browser scenarios (version title while unlocked/locked), one
+shared desktop shell/layout scenario (version title), Cargo formatting, packaging
+JavaScript syntax, synchronized version validation and an isolated negative
+fixture rejecting a mismatched PWA version: PASS. Current web-design-guidelines
+were fetched (HTTP 200); the changed title exposes public version data only.
+A manually dispatched, main-only release workflow prepares archives with a
+read-only token, validates successful original Windows provenance and matching
+application trees, hashes the immutable payload, and uses a separate publication
+job that never runs downloaded binaries. Published versions cannot be overwritten;
+desktop releases remain a separate experimental channel. Direct upload from the
+cloud workspace returned HTTP 400, so publication uses GitHub's scoped workflow
+token instead of requesting personal credentials.
+Release workflow YAML and Python syntax parsed successfully; an isolated
+negative fixture rejected a changed release manifest before any publication.
+Windows/MSVC, actual installed-window verification and release publication are
+pending. No new physical Windows Hello acceptance is claimed.
+
 ## Web interface audit fixes (2026-10-10)
 
 Resolved the shared UI audit findings listed in [the review](WEB_INTERFACE_REVIEW.md):

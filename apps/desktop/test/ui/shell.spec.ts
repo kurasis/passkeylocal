@@ -4,6 +4,7 @@ test('Russian desktop header, module buttons, sidebar and content never overlap'
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/shell.html');
+  await expect(page).toHaveTitle('PassKey Local (synthetic-test)');
   await page.getByRole('link', { name: 'Настройки', exact: true }).click();
   for (const [width, zoom] of [[1311, 1], [900, 1], [1311, 1.25], [1920, 1], [640, 1], [320, 1]]) {
     await page.setViewportSize({ width, height: 780 });
