@@ -29,8 +29,16 @@ cloud workspace returned HTTP 400, so publication uses GitHub's scoped workflow
 token instead of requesting personal credentials.
 Release workflow YAML and Python syntax parsed successfully; an isolated
 negative fixture rejected a changed release manifest before any publication.
-Windows/MSVC, actual installed-window verification and release publication are
-pending. No new physical Windows Hello acceptance is claimed.
+PR #41 passed all 11 checks and merged as
+`fb620abc80802fa163a934cd9d69e02c12577c0a`. Windows CI 38723410687
+verified the installed native/document title and installer 0.1.1; general CI
+38723410665 passed. Publication prepare job 38725574107 successfully checked
+source provenance and archive hashes. Its upload job failed because GitHub changed
+a draft tag to `untagged-*` after editing target metadata. Publication now uploads
+by immutable release ID and includes the intended tag in both metadata updates.
+A synthetic regression resumed an untagged draft, uploaded through its immutable
+ID, checked hashes and retained the explicit publication tag: PASS. Release
+publication remains pending until the corrected job succeeds. No new physical Windows Hello acceptance is claimed.
 
 ## Web interface audit fixes (2026-10-10)
 
