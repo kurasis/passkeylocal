@@ -25,12 +25,12 @@ TAG = f"desktop-v{VERSION}"
 OUT = Path("release-output")
 
 
-def api(path, payload=None):
+def api(path, payload=None, *, method="PATCH"):
     args = ["gh", "api", f"repos/{REPO}/{path}"]
     if payload is None:
         return json.loads(run(*args))
     result = subprocess.check_output(
-        [*args, "--method", "PATCH", "--input", "-"],
+        [*args, "--method", method, "--input", "-"],
         input=json.dumps(payload), text=True,
     )
     return json.loads(result)
@@ -149,8 +149,14 @@ Cloudflare Pages archive: `passkeylocal-cloudflare-pages-{VERSION}.zip`; upload 
 Experimental unsigned Windows build with official bundled WebView2 runtime. Successful installed-app verification and source/hash provenance: run {manifest['windowsRun']}, tested source `{manifest['testedSource']}`. See original JSON reports inside the Windows archive for hosted-runner evidence and remaining physical/standard-user/offline acceptance limits. SHA-256 files accompany both archives.
 """)
     if not existing:
-        run("gh", "release", "create", TAG, "--repo", REPO, "--draft", "--prerelease", "--latest=false", "--target", manifest["targetCommit"], "--title", f"PassKey Local {VERSION}", "--notes-file", str(notes))
-        existing = [r for r in api("releases?per_page=100") if r["tag_name"] == TAG]
+        # GitHub may immediately replace a draft's tag with untagged-*. Keep
+        # the immutable ID returned by creation instead of searching by tag.
+        created = api("releases", {"tag_name": TAG, "target_commitish": manifest["targetCommit"],
+            "name": f"PassKey Local {VERSION}", "body": notes.read_text(),
+            "draft": True, "prerelease": True, "make_latest": "false"}, method="POST")
+        if not isinstance(created.get("id"), int) or created.get("draft") is not True:
+            raise ValueError("Release creation did not return a draft identity")
+        existing = [created]
     release_id = existing[0]["id"]
     api(f"releases/{release_id}", {"tag_name": TAG, "target_commitish": manifest["targetCommit"], "body": notes.read_text(), "name": f"PassKey Local {VERSION}", "make_latest": "false"})
     # Draft tags can temporarily become untagged-*; upload by immutable ID.
