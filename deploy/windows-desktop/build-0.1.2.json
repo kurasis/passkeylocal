@@ -1,0 +1,19 @@
+{
+  "version": "0.1.2",
+  "signing": "unsigned",
+  "webview2": "Evergreen offline installer bundled; clean-machine runtime test NOT RUN",
+  "packagedSmoke": "PASS on elevated hosted Windows runner; see packaged-smoke.json for evidence and limits",
+  "cargoLock": "127300a26b7e5962796e727f3da358c908f5f792be23b55967fd18b74bce3725",
+  "fileSafeInterface": "folder explorer with nested paths/history and separate settings",
+  "npmLock": "48b52ce40e69b2ebca986ced0375d3523df7eafd0714eb135880e956834cb163",
+  "fileSafe": "experimental native streaming storage and independent Python recovery",
+  "windowsHelloDiagnostics": "WinRT availability check, HWND-owned consent test and fixed Windows sign-in settings action",
+  "sha256": "6d5fd7a4ccd6318ceebb5a680f36274313e926c51f5d189d55fd5c7fd2a28634",
+  "product": "PassKey Local",
+  "fileSafePreview": "experimental isolated UTF-8 TXT up to 8 MiB; actual hosted LPAC proof and installed read/lock smoke; PDF/images unavailable; standard-user/exhaustive isolation acceptance pending",
+  "windowsHello": "experimental independent opt-in PRF/TPM password-vault and file-safe unlock; file-safe physical acceptance pending",
+  "architecture": "x86_64-pc-windows-msvc",
+  "rust": "rustc 1.90.0 (1159e78c4 2025-09-14)",
+  "node": "v22.23.3",
+  "sourceCommit": "d6fbc64bf2ec02af6a12bfb9b34db46a33117f1b"
+}

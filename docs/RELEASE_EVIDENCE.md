@@ -17,7 +17,10 @@ Five synthetic unit regressions exercise fresh creation, untagged retry, refusal
 to overwrite a published version, rejection of changed payloads before API writes,
 and structured POST serialization: PASS. Python syntax: PASS. Application,
 package and npm-lock trees are unchanged, so the already tested Windows installer
-remains the correct release input. Publication retry is pending.
+remains the correct release input. Publisher fix PR #45 merged as
+`12bf0ec38f98283a8f65bd3e5bbd975187a23aca`. Retry workflow 38742227906
+passed, including the five synthetic publisher regressions; release 0.1.2 was
+published and downloaded successfully.
 
 ## Optional website icons 0.1.2 (2026-10-15)
 
@@ -52,9 +55,20 @@ a fresh icon-enabled, domain-only KDBX exactly matches the complete browser mode
 and leaves its input unchanged: PASS (using the supported source PYTHONPATH).
 Native Clippy initially requested a simpler Boolean spelling for the private-IP
 filter; it was rewritten equivalently and all-target Clippy with warnings denied
-passes locally. Windows-specific CI is still pending; no live Pages deployment,
-real-site/native network test or physical iPhone test is claimed. Current web-design-guidelines and Cloudflare
+passes locally. PR #44 passed all 11 checks and merged as
+`affd6989e5889d14ef71fc4864070ee71f9c5109`. Windows CI 38737098387
+completed installed title/version 0.1.2 and packaging; general CI 38737098333
+passed. No live Pages deployment, native favicon-network test or physical
+iPhone test is claimed. Current web-design-guidelines and Cloudflare
 advanced-mode/direct-upload documentation fetched successfully.
+
+Publication workflow 38742227906 published [release 0.1.2](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.2).
+Public archives and sidecars were downloaded and matched the manifest, installer
+SHA/version/native title, and all 12 local production PWA files, including
+the Pages Worker/routes. A public GitHub favicon ICO (6,518 bytes) was accepted
+and normalized by the actual shared decoder in Chromium (1,369-byte PNG); this
+is a format/decoder check, not deployed/native networking acceptance.
+[Release notes](releases/0.1.2.md) and [versioned download folders](../deploy/).
 
 ## Versioned application release 0.1.1 (2026-10-15)
 
