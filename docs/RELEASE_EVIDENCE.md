@@ -20,6 +20,15 @@ shared desktop shell/layout scenario (version title), Cargo formatting, packagin
 JavaScript syntax, synchronized version validation and an isolated negative
 fixture rejecting a mismatched PWA version: PASS. Current web-design-guidelines
 were fetched (HTTP 200); the changed title exposes public version data only.
+A manually dispatched, main-only release workflow prepares archives with a
+read-only token, validates successful original Windows provenance and matching
+application trees, hashes the immutable payload, and uses a separate publication
+job that never runs downloaded binaries. Published versions cannot be overwritten;
+desktop releases remain a separate experimental channel. Direct upload from the
+cloud workspace returned HTTP 400, so publication uses GitHub's scoped workflow
+token instead of requesting personal credentials.
+Release workflow YAML and Python syntax parsed successfully; an isolated
+negative fixture rejected a changed release manifest before any publication.
 Windows/MSVC, actual installed-window verification and release publication are
 pending. No new physical Windows Hello acceptance is claimed.
 
