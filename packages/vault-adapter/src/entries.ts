@@ -130,7 +130,9 @@ function fieldsFor(db: Kdbx, input: EntryInput): Map<string, string | kdbxweb.Pr
   const m = new Map<string, string | kdbxweb.ProtectedValue>();
   m.set('Title', val(input.title, mp.title));
   m.set('UserName', val(input.username, mp.userName));
-  m.set('Password', K.ProtectedValue.fromString(input.password));
+  // kdbxweb reloads an empty protected value as plain empty text. Emit that
+  // representation explicitly; nonempty passwords always remain protected.
+  m.set('Password', input.password ? K.ProtectedValue.fromString(input.password) : '');
   m.set('URL', val(input.url, mp.url));
   m.set('Notes', val(input.notes, mp.notes));
   for (const f of input.customFields) m.set(f.name, val(f.value, f.protected));

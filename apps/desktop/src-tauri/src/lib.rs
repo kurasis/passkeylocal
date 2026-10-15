@@ -1,3 +1,4 @@
+pub mod favicon;
 pub mod file_safe;
 pub mod filesystem;
 pub mod hello;

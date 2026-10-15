@@ -19,6 +19,7 @@
     "allow-retry-backup",
     "allow-backup-retention",
     "allow-open-external",
+    "allow-fetch-favicon",
     "allow-native-activity",
     "allow-hello-enrollment",
     "allow-hello-enroll",

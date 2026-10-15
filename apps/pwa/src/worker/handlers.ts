@@ -41,10 +41,14 @@ import {
 import type { Args, EntryDetail, Op, Preferences, Result, SafeError } from '../protocol.ts';
 import { BiometricVault } from './biometric.ts';
 import type { HelloVault } from '../hello-vault-protocol.ts';
+import { FaviconCache, FAVICON_KEY, encode64 } from './favicon-cache.ts';
+import { faviconDomain } from '../favicon/domain.ts';
+import { safeRaster } from '../favicon/image.ts';
 
 type KdbxEntry = ReturnType<typeof findEntry>;
 
 const DEFAULT_PREFERENCES: Preferences = {
+  faviconsEnabled: false,
   lockIntervalMs: DEFAULT_LOCK_INTERVAL_MS,
   language: 'auto',
   theme: 'color',
@@ -93,6 +97,7 @@ export class VaultWorkerHandlers {
   private readonly storage: VaultStore;
   private candidate: RestoreCandidate | null = null;
   private readonly biometric: BiometricVault;
+  private readonly icons: FaviconCache;
 
   private readonly hello: HelloVault | null;
 
@@ -101,6 +106,7 @@ export class VaultWorkerHandlers {
     this.storage = storage;
     this.controller = controller;
     this.biometric = new BiometricVault(storage, controller);
+    this.icons = new FaviconCache(storage);
   }
 
   private session(): UnlockedSession {
@@ -120,6 +126,23 @@ export class VaultWorkerHandlers {
   }
 
   private readonly ops: { [O in Op]: (args: Args<O>) => Promise<Result<O>> | Result<O> } = {
+    favicon: async ({ uuid }) => {
+      const s = this.session();
+      if (await this.storage.getPreference('faviconsEnabled') !== true) return { domain: null, png: null, refresh: false };
+      const e = findEntry(s.db, uuid);
+      const domain = faviconDomain(text(e.fields.get('Title')), text(e.fields.get('URL')));
+      if (!domain || !s.db.meta.customData.has(FAVICON_KEY)) return { domain: null, png: null, refresh: false };
+      return { domain, ...await this.icons.get(s, domain) };
+    },
+    storeFavicon: async ({ uuid, domain, png }) => {
+      const s = this.session();
+      const e = findEntry(s.db, uuid);
+      if (await this.storage.getPreference('faviconsEnabled') !== true) return;
+      if (domain !== faviconDomain(text(e.fields.get('Title')), text(e.fields.get('URL'))) ||
+        (png !== null && (!(png instanceof Uint8Array) || png.length > 8192 || !safeRaster(png)))) throw new VaultError('INVALID_INPUT', 'favicon');
+      await this.icons.put(s, domain, png);
+    },
+    clearFaviconCache: async () => { this.session(); await this.icons.clear(); },
     helloVaultStatus: () => this.hello?.status() ?? { state: 'off', mode: null, expiresAt: null },
     enableHelloVault: ({ password, mode }) => { if (!this.hello) throw new StorageError('UNAVAILABLE'); return this.hello.enable(password, mode); },
     unlockHelloVault: () => { if (!this.hello) throw new StorageError('UNAVAILABLE'); return this.hello.unlock(); },
@@ -272,6 +295,9 @@ export class VaultWorkerHandlers {
       const theme = await this.storage.getPreference<string>('theme');
       if (theme === 'light' || theme === 'dark' || theme === 'color' || theme === 'auto') out.theme = theme;
       out.onboardingBackupVerified = (await this.storage.getPreference<boolean>('onboardingBackupVerified')) === true;
+      out.faviconsEnabled = (await this.storage.getPreference<boolean>('faviconsEnabled')) === true;
+      // An older/imported vault needs an explicit enable before adding a cache key.
+      if (this.controller.current && !this.controller.current.db.meta.customData.has(FAVICON_KEY)) out.faviconsEnabled = false;
       return out;
     },
     setPreference: async ({ key, value }) => {
@@ -279,9 +305,20 @@ export class VaultWorkerHandlers {
         (key === 'lockIntervalMs' && isLockInterval(value)) ||
         (key === 'language' && (value === 'auto' || value === 'en' || value === 'ru')) ||
         (key === 'theme' && (value === 'auto' || value === 'color' || value === 'light' || value === 'dark')) ||
+        (key === 'faviconsEnabled' && typeof value === 'boolean') ||
         (key === 'onboardingBackupVerified' && typeof value === 'boolean');
       if (!valid) throw new VaultError('INVALID_INPUT', 'preference');
+      if (key === 'faviconsEnabled' && value === true) {
+        const s = this.session();
+        if (!s.db.meta.customData.has(FAVICON_KEY)) {
+          const raw = crypto.getRandomValues(new Uint8Array(32));
+          const value = encode64(raw);
+          raw.fill(0);
+          await s.change((db) => db.meta.customData.set(FAVICON_KEY, { value, lastModified: new Date() }));
+        }
+      }
       await this.storage.setPreference(key, value);
+      if (key === 'faviconsEnabled' && value === false) await this.icons.clear();
     }
   };
 }

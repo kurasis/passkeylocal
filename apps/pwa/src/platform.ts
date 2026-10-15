@@ -2,6 +2,7 @@
 export function bindStorageBridge(_worker: Worker): () => void { return () => {}; }
 export function subscribeNativeLock(_lock: () => void): () => void { return () => {}; }
 export const desktop = false;
+export { browserFavicon as fetchFavicon } from './favicon/transport.ts';
 export async function pickNativeFile(): Promise<File | null> { return null; }
 export async function exportNativeFile(_file: { bytes: Uint8Array; fileName: string }): Promise<'export-offered' | 'export-cancelled' | 'export-failed'> { return 'export-failed'; }
 export function openNativeExternal(_url: string): void { /* Browser adapter uses window.open. */ }

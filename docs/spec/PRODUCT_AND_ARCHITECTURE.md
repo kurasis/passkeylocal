@@ -30,7 +30,7 @@ Do not expose incomplete versions of these features. In particular, WebAuthn aut
 
 ## 2. Product experience
 
-Use a calm, modern mobile layout: system font, clear spacing, restrained color, light/dark themes, large touch targets, readable contrast, safe-area support, and reduced-motion support. Use locally bundled icons or generated initials. Never fetch service logos or favicons using stored URLs.
+Use a calm, modern mobile layout: system font, clear spacing, restrained color, light/dark themes, large touch targets, readable contrast, safe-area support, and reduced-motion support. Use locally bundled icons or generated initials by default. Owner-authorized optional website icons (2026-10-15) are the sole exception: use the domain from Website first, or a bare-domain Title only when Website is empty; follow [the favicon boundary](../FAVICONS.md). Never send full stored URLs, credentials or other entry content.
 
 Primary navigation: **Vault / Favorites / Backups / Settings**. Search stays easy to reach. History is an entry-level screen, not a developer console. A desktop layout may use a list/detail split view.
 

@@ -153,7 +153,7 @@ Clipboard writes require an explicit action. Never read the system clipboard aut
 
 Render imported content as text, never raw HTML or Markdown with HTML enabled. Avoid `dangerouslySetInnerHTML`. Treat URLs, custom field names, titles, filenames and terminal output as untrusted. Do not execute `javascript:`, `data:`, file paths, auto-type instructions, field-reference expansion, plugin commands, or embedded XML instructions.
 
-Clickable entry URLs allow HTTPS; an HTTP link needs a clear warning. Reject embedded username/password URL credentials and other schemes. Open deliberate external navigation with `noopener noreferrer` and never append vault data to the address. Do not prefetch, preview or resolve stored URLs.
+Clickable entry URLs allow HTTPS; an HTTP link needs a clear warning. Reject embedded username/password URL credentials and other schemes. Open deliberate external navigation with `noopener noreferrer` and never append vault data to the address. Do not prefetch, preview or resolve stored URLs. The owner-authorized, off-by-default favicon feature may resolve only the validated public hostname derived from Website or a bare-domain Title, as specified in [FAVICONS.md](../FAVICONS.md).
 
 Deploy response headers using the static host's real header configuration. Start from:
 
@@ -162,7 +162,7 @@ Content-Security-Policy:
   default-src 'none';
   script-src 'self' 'wasm-unsafe-eval';
   style-src 'self';
-  img-src 'self';
+  img-src 'self' blob:;
   font-src 'self';
   connect-src 'self';
   worker-src 'self';
@@ -178,7 +178,7 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
 
 This is a baseline to test, not a claim that every bundler/library already works under it. Use external stylesheets instead of broadly allowing inline styles. If WASM needs `wasm-unsafe-eval`, retain that narrowly scoped allowance; never widen to general `unsafe-eval`. Avoid blob workers; load a bundled worker URL. Blob URLs used only for user-initiated encrypted downloads are not a reason to loosen script-src. Serve appropriate JS/WASM MIME types, HTTPS and HSTS where operationally appropriate. Set worker/script headers too; verify headers on actual deployed responses, not just development mode.
 
-No analytics, ads, remote fonts, crash-reporting SDKs, external script tags, remotely fetched configuration, breach checks or favicon services. No application request carries record content, master passwords, keys, queries or backup bytes. Build tooling and the host may make separate infrastructure requests, which must be identified in network tests. Browser-initiated service-worker update traffic must not be confused with vault synchronization.
+No analytics, ads, remote fonts, crash-reporting SDKs, external script tags, remotely fetched configuration or breach checks. Optional website icons, explicitly requested by the owner on 2026-10-15, are the only domain-disclosure exception: a validated public hostname may be sent to its website directly (Windows) or to the same-origin Cloudflare Pages icon endpoint (PWA). No third-party icon directory is used. No application request carries usernames, passwords, keys, queries, full stored URLs, other record content or backup bytes. Keep this feature off by default; persist only encrypted cache content and opaque identifiers; retain generated initials on failure. Build tooling and the host may make separate infrastructure requests, which must be identified in network tests. Browser-initiated service-worker update traffic must not be confused with vault synchronization.
 
 `connect-src 'self'`, HTTPS, hashes downloaded from the same host, and a user-confirmed update do not defend against a hostile origin that can replace both code and policy. Document that dependency, use a dedicated stable origin, protect host/DNS/build credentials, review release diffs, and keep independent offline recovery files. Do not describe service-worker caching as a permanent trusted-code pin.
 

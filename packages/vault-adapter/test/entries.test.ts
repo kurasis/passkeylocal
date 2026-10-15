@@ -23,6 +23,20 @@ import {
 import { PASSWORD, entryInput } from './helpers.ts';
 
 describe('DATA-08 history', () => {
+  test('a domain-only entry round-trips with an empty password and protects a later password', async () => {
+    const { db } = createVault({ password: PASSWORD });
+    const input = entryInput({ title: 'synthetic-icon-fixture.com', username: '', password: '', url: '', notes: '' });
+    const id = createEntry(db, input);
+    const first = await openVault((await serializeVerified(db)).bytes, PASSWORD);
+    expect(readEntry(first.db, id).password).toBe('');
+    expect(updateEntry(first.db, id, input)).toBe(false);
+    expect(updateEntry(first.db, id, { ...input, password: 'synthetic secret' })).toBe(true);
+    const second = await openVault((await serializeVerified(first.db)).bytes, PASSWORD);
+    expect(readEntry(second.db, id).password).toBe('synthetic secret');
+    expect(readEntry(second.db, id, 0).password).toBe('');
+    const field = toRecoveryModel(second.db).entries[0]!.fields.find((f) => f.name === 'Password');
+    expect(field).toMatchObject({ protected: true, value: 'synthetic secret' });
+  });
   test('a real change stores the full previous state once; a no-op save stores nothing', () => {
     const { db } = createVault({ password: PASSWORD });
     const id = createEntry(db, entryInput({ password: 'v1', tags: ['work'] }));

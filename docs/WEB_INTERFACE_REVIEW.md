@@ -46,3 +46,25 @@ browser-dependent; passwords and file metadata are never autosaved in plaintext.
 
 See [the release ledger](RELEASE_EVIDENCE.md) for executed validation and
 publication status.
+
+## Optional Website Icons — 0.1.2
+
+Reviewed the changed `apps/pwa/src/ui/favicons.tsx`, `vault.tsx`, `tabs.tsx` and
+`App.tsx` using the repository skill and freshly fetched upstream guidelines
+(SHA-256 `d246b026f4f29b5823a9cc857f9edf3d2507002e055e32040cadeaf3b38e0234`).
+
+- `apps/pwa/src/ui/favicons.tsx:93` — fixed-size decorative local images use empty
+  alt text; the original entry label remains the accessible name. Generated
+  initials cover missing, invalid, offline and disabled states. Nearby-row
+  observation and a shared three-slot queue avoid eager requests for long lists.
+- `apps/pwa/src/ui/tabs.tsx:147` — the checkbox has a clickable label and linked
+  disclosure; pending key creation disables duplicate actions and announces work.
+  Cache clearing reports its outcome beside the control. Existing shared cards,
+  buttons, focus rings and theme colors are reused.
+- `apps/pwa/src/ui/App.tsx:242` — settings reflect persisted results, check the
+  worker epoch and expose failed saves through the existing recovery interface.
+- Stored domains and icon state stay out of navigation URLs. Browser networking
+  remains same-origin. External preconnects are intentionally unnecessary.
+
+No remaining findings in the affected interface scope. Physical iPhone rendering
+and live host behavior are separate platform acceptance checks, not this review.

@@ -762,6 +762,41 @@ fn hello_revoke(window: WebviewWindow) -> Result<Value> {
     hello::revoke()
 }
 #[tauri::command]
+async fn fetch_favicon(
+    window: WebviewWindow,
+    app: tauri::AppHandle,
+    domain: String,
+) -> Result<Option<Vec<u8>>> {
+    trusted(&window)?;
+    if !crate::favicon::public_domain(&domain) {
+        return Err(Error::new("INVALID_STATE"));
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<NativeState>();
+        let token = state
+            .active
+            .lock()
+            .map_err(|_| Error::new("UNAVAILABLE"))?
+            .clone()
+            .ok_or(Error::new("INVALID_STATE"))?;
+        state.check(&token)?;
+        if store(&state)?.dispatch(
+            &token,
+            "getPreference",
+            serde_json::json!({ "key": "faviconsEnabled" }),
+        )? != Value::Bool(true)
+        {
+            return Err(Error::new("INVALID_STATE"));
+        }
+        let bytes = crate::favicon::download(&domain);
+        state.check(&token)?;
+        Ok(bytes)
+    })
+    .await
+    .map_err(|_| Error::new("UNAVAILABLE"))?
+}
+
+#[tauri::command]
 fn open_external(window: WebviewWindow, url: String) -> Result<()> {
     focused(&window)?;
     if url.len() > 4096 {
@@ -907,6 +942,7 @@ pub fn run() {
             retry_backup,
             backup_retention,
             open_external,
+            fetch_favicon,
             hello_enrollment,
             hello_enroll,
             hello_status,

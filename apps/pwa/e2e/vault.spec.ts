@@ -486,3 +486,119 @@ test('draft navigation is guarded, browser history works and private values neve
   await expect(page.getByRole('heading', { name: MARKER_TITLE, exact: true })).toHaveCount(0);
   await sec.assertClean();
 });
+
+const ICON_DOMAIN = 'synthetic-icon-fixture.com';
+const ICON_TITLE = 'synthetic-title-fixture.com';
+const ICON_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMIMVj1HwAEOAIuIYFLowAAAABJRU5ErkJggg==', 'base64');
+
+async function addIconEntry(page: Page, title = ICON_TITLE, website = `https://${ICON_DOMAIN}/private?marker=do-not-send`) {
+  await page.getByRole('button', { name: 'Add entry' }).click();
+  await page.getByLabel('Title', { exact: true }).fill(title);
+  await page.getByRole('button', { name: /^More: website/ }).click();
+  await page.getByLabel('Website address', { exact: true }).fill(website);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Add entry' })).toBeVisible();
+}
+
+test('optional website icons: URL priority, encrypted cache, offline re-unlock, clear and disable', async ({ page, context }) => {
+  const sec = await watchSecurity(page);
+  const domains: string[] = [];
+  await page.route('**/api/favicon', async (route) => {
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().url()).not.toContain('?');
+    const body = route.request().postDataJSON();
+    expect(Object.keys(body)).toEqual(['domain']);
+    domains.push(body.domain);
+    await route.fulfill({ status: 200, body: ICON_PNG, headers: { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store' } });
+  });
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await addIconEntry(page);
+  const avatar = page.locator('.entries .avatar');
+  await expect(avatar).toHaveText('S');
+  expect(domains).toEqual([]);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  const enable = page.getByRole('checkbox', { name: 'Download website icons' });
+  await expect(enable).not.toBeChecked();
+  await enable.check();
+  await expect(enable).toBeChecked();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect(avatar.locator('img')).toBeVisible();
+  expect(domains).toEqual([ICON_DOMAIN]);
+  expect(await avatar.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(32);
+  const atRest = await persistedText(page);
+  expect(atRest).not.toContain(ICON_DOMAIN);
+  expect(atRest).not.toContain('iVBORw0KGgo');
+  expect(atRest).not.toContain('do-not-send');
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await expect(avatar).toHaveCount(0);
+  await context.setOffline(true);
+  await page.reload();
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await expect(avatar.locator('img')).toBeVisible();
+  expect(domains).toHaveLength(1);
+  await context.setOffline(false);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('button', { name: 'Clear downloaded icons' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Icon cache cleared.' })).toBeVisible();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect(avatar.locator('img')).toBeVisible();
+  expect(domains).toEqual([ICON_DOMAIN, ICON_DOMAIN]);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await enable.uncheck();
+  await expect(enable).not.toBeChecked();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect(avatar).toHaveText('S');
+  expect(domains).toHaveLength(2);
+  await sec.assertClean();
+});
+
+test('title-domain fallback, domain deduplication and failed icons keep initials', async ({ page }) => {
+  const requested: string[] = [];
+  await page.route('**/api/favicon', async (route) => {
+    requested.push(route.request().postDataJSON().domain);
+    await route.fulfill({ status: 404, headers: { 'Cache-Control': 'no-store' } });
+  });
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await addIconEntry(page, ICON_DOMAIN, '');
+  await addIconEntry(page, 'Synthetic second entry', `https://${ICON_DOMAIN}/other`);
+  await addIconEntry(page, 'Synthetic ordinary title', '');
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Download website icons' }).check();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect.poll(() => requested).toEqual([ICON_DOMAIN]);
+  await expect(page.locator('.entries .avatar img')).toHaveCount(0);
+  // A cached miss prevents a repeated request when returning to the list.
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect(page.locator('.entries .avatar')).toHaveCount(3);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  expect(requested).toEqual([ICON_DOMAIN]);
+});
+
+test('locking cancels pending icon fetches and late responses cannot repopulate the vault', async ({ page }) => {
+  let started = false;
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => { release = resolve; });
+  await page.route('**/api/favicon', async (route) => {
+    started = true;
+    await pending;
+    await route.fulfill({ status: 200, body: ICON_PNG }).catch(() => {});
+  });
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await addIconEntry(page);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Download website icons' }).check();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect.poll(() => started).toBe(true);
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  release();
+  await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
+  await expect(page.locator('.entries img')).toHaveCount(0);
+  expect(await persistedText(page)).not.toContain(ICON_DOMAIN);
+});

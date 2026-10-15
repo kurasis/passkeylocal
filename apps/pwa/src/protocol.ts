@@ -68,6 +68,9 @@ export interface BackupCheckSummary {
 }
 
 export interface Requests {
+  favicon: [{ uuid: string }, { domain: string | null; png: Uint8Array | null; refresh: boolean }];
+  storeFavicon: [{ uuid: string; domain: string; png: Uint8Array | null }, void];
+  clearFaviconCache: [void, void];
   helloVaultStatus: [void, import('./hello-vault-protocol.ts').HelloVaultStatus];
   enableHelloVault: [{ password: string; mode: import('./hello-vault-protocol.ts').HelloMode }, import('./hello-vault-protocol.ts').HelloVaultStatus];
   unlockHelloVault: [void, { warnings: PasswordWarning[] }];
@@ -121,6 +124,7 @@ export interface BiometricCredential {
 }
 
 export interface Preferences {
+  faviconsEnabled: boolean;
   lockIntervalMs: number;
   language: 'auto' | 'en' | 'ru';
   theme: 'auto' | 'color' | 'light' | 'dark';

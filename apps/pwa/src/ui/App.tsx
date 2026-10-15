@@ -31,7 +31,7 @@ import { Navigation, sectionFromUrl, sectionHref, type Section } from './navigat
 type Tab = Section['tab'];
 type Route = Section & { view: VaultView };
 
-const DEFAULT_PREFS: Preferences = { lockIntervalMs: DEFAULT_LOCK_INTERVAL_MS, language: 'auto', theme: 'color', onboardingBackupVerified: false };
+const DEFAULT_PREFS: Preferences = { faviconsEnabled: false, lockIntervalMs: DEFAULT_LOCK_INTERVAL_MS, language: 'auto', theme: 'color', onboardingBackupVerified: false };
 
 export function App() {
   const client = useMemo(() => new VaultClient(), []);
@@ -239,9 +239,22 @@ export function App() {
 
   const api: AppApi = useMemo(() => ({ client, notify: setNotice, refresh: () => void refresh(), lockNow, registerDraftSave }), [client, refresh, lockNow, registerDraftSave]);
 
-  const setPref = (key: keyof Preferences, value: unknown) => {
-    setPrefs((p) => ({ ...p, [key]: value }));
-    client.call('setPreference', { key, value }).catch((e: unknown) => setNotice(errorText(e, t)));
+  const setPref = async (key: keyof Preferences, value: unknown) => {
+    const epoch = client.epoch;
+    if (key !== 'faviconsEnabled') setPrefs((p) => ({ ...p, [key]: value }));
+    try {
+      await client.call('setPreference', { key, value });
+      if (client.epoch !== epoch) return;
+      if (key === 'faviconsEnabled') {
+        setPrefs((p) => ({ ...p, faviconsEnabled: value === true }));
+        await loadUnlocked();
+      }
+    } catch (e) {
+      if (client.epoch === epoch) {
+        setNotice(errorText(e, t));
+        if (key === 'faviconsEnabled') await loadUnlocked().catch(() => {});
+      }
+    }
   };
 
   const reload = async () => {
@@ -275,7 +288,7 @@ export function App() {
         <DesktopBackupStatus />
         {tab !== 'backups' && <BackupStatusBanner status={status} />}
         {(tab === 'vault' || tab === 'favorites') && (
-          <VaultScreens overview={overview} favoritesOnly={tab === 'favorites'} view={view} go={go} reload={reload} />
+          <VaultScreens overview={overview} favoritesOnly={tab === 'favorites'} faviconsEnabled={prefs.faviconsEnabled} view={view} go={go} reload={reload} />
         )}
         {tab === 'backups' && <BackupsTab status={status} persistence={persistence} storageUnhealthy={unhealthy} onChanged={() => void reload()} />}
         {tab === 'settings' && <SettingsTab prefs={prefs} setPref={setPref} onPasswordChanged={() => void reload()} />}

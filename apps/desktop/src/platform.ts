@@ -3,6 +3,11 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export const desktop = true;
+export async function fetchFavicon(domain: string, signal: AbortSignal): Promise<Uint8Array | null> {
+  if (signal.aborted) return null;
+  const bytes = await invoke<number[] | null>('fetch_favicon', { domain });
+  return signal.aborted || !bytes ? null : new Uint8Array(bytes);
+}
 
 export function bindStorageBridge(worker: Worker): () => void {
   let live = true;

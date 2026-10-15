@@ -28,8 +28,17 @@ describe('source rules (SECURITY_AND_FORMAT.md 4 and 5)', () => {
     }
   });
 
-  it('makes no network requests and loads no remote code', () => {
+  it('restricts optional networking to the domain-only favicon boundary', () => {
     for (const [f, s] of all) {
+      if (f === join(SRC, 'favicon', 'domain.ts')) {
+        expect(s, f).not.toMatch(/\bfetch\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon/);
+        continue; // Pure URL normalization includes an HTTPS scheme literal.
+      }
+      if (f === join(SRC, 'favicon', 'transport.ts')) {
+        expect(s, f).not.toMatch(/XMLHttpRequest|WebSocket|EventSource|sendBeacon|https?:\/\//);
+        expect(s, f).toContain("fetch('/api/favicon'");
+        continue; // The single tested same-origin, credential-free POST boundary.
+      }
       if (f.endsWith('service-worker.js')) continue; // same-origin asset cache only
       expect(s, f).not.toMatch(/\bfetch\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon|https?:\/\/(?!example\.test)/);
     }
