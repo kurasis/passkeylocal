@@ -4,7 +4,7 @@ import { openStorage, VaultController } from '@passkey-local/vault-core';
 import { faviconDomain, publicDomain } from '../src/favicon/domain.ts';
 import { safeRaster } from '../src/favicon/image.ts';
 import { browserFavicon } from '../src/favicon/transport.ts';
-import { FaviconCache, FAVICON_KEY, decode64 } from '../src/worker/favicon-cache.ts';
+import { FaviconCache, FAVICON_KEY, decode64, encode64 } from '../src/worker/favicon-cache.ts';
 import { VaultWorkerHandlers } from '../src/worker/handlers.ts';
 import { faviconRequest } from '../server/favicon-worker.ts';
 
@@ -111,6 +111,33 @@ describe('optional encrypted per-vault favicon cache', () => {
     await cache.clear();
     expect(await storage.getPreference('faviconCache')).toBeNull();
   });
+
+  it('retries legacy misses after upgrading while preserving downloaded icons', async () => {
+    const storage = await openStorage({ indexedDB: new IDBFactory() });
+    const controller = new VaultController(storage);
+    const h = new VaultWorkerHandlers(storage, controller);
+    await h.handle('create', { password: PW });
+    await h.handle('setPreference', { key: 'faviconsEnabled', value: true });
+    const s = controller.current!, cache = new FaviconCache(storage);
+    await cache.put(s, 'found.com', PNG);
+    await cache.put(s, 'missing.com', null);
+    // Recreate the encrypted row written before miss/error classification existed.
+    const raw = decode64(s.db.meta.customData.get(FAVICON_KEY)!.value!);
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+    raw.fill(0);
+    const e = await storage.getPreference<{ version: number; id: string; iv: string; ciphertext: string }>('faviconCache');
+    const additionalData = new TextEncoder().encode('PassKey Local favicon cache v1');
+    const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: decode64(e!.iv), additionalData }, key, decode64(e!.ciphertext));
+    const rows = JSON.parse(new TextDecoder().decode(plaintext));
+    for (const row of rows) delete row.missPolicy;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData }, key, new TextEncoder().encode(JSON.stringify(rows)));
+    await storage.setPreference('faviconCache', { ...e, iv: encode64(iv), ciphertext: encode64(new Uint8Array(ciphertext)) });
+    expect(await cache.get(s, 'missing.com')).toEqual({ png: null, refresh: true });
+    expect(await cache.get(s, 'found.com')).toEqual({ png: PNG, refresh: false });
+    await cache.put(s, 'missing.com', null);
+    expect(await cache.get(s, 'missing.com')).toEqual({ png: null, refresh: false });
+  });
 });
 
 describe('Cloudflare favicon endpoint and browser transport', () => {
@@ -154,7 +181,35 @@ describe('Cloudflare favicon endpoint and browser transport', () => {
       expect(await browserFavicon('127.0.0.1', new AbortController().signal)).toBeNull();
       expect(mock).toHaveBeenCalledTimes(1);
       mock.mockResolvedValue(new Response(new Uint8Array(65_537)));
+      await expect(browserFavicon(DOMAIN, new AbortController().signal)).rejects.toThrow();
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it('does not mistake a blocked, missing or broken endpoint for a cacheable absent icon', async () => {
+    const mock = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', mock);
+    try {
+      for (const status of [403, 404, 429, 500, 503]) {
+        mock.mockResolvedValue(new Response(null, { status }));
+        await expect(browserFavicon(DOMAIN, new AbortController().signal), String(status)).rejects.toThrow();
+      }
+      mock.mockResolvedValue(new Response('<!doctype html><html>SPA fallback, not an icon</html>'));
+      await expect(browserFavicon(DOMAIN, new AbortController().signal)).rejects.toThrow();
+      mock.mockResolvedValue(new Response(null, { status: 404, headers: { 'X-PassKey-Favicon': 'missing' } }));
       expect(await browserFavicon(DOMAIN, new AbortController().signal)).toBeNull();
     } finally { vi.unstubAllGlobals(); }
+  });
+
+  it('distinguishes confirmed absent icons from temporary upstream failures', async () => {
+    const missing = await faviconRequest(request(), vi.fn<typeof fetch>().mockImplementation(async () => new Response(null, { status: 404 })));
+    expect(missing.status).toBe(404);
+    expect(missing.headers.get('X-PassKey-Favicon')).toBe('missing');
+    for (const status of [403, 429, 500, 503]) {
+      const response = await faviconRequest(request(), vi.fn<typeof fetch>().mockImplementation(async () => new Response(null, { status })));
+      expect(response.status, String(status)).toBe(503);
+      expect(response.headers.has('X-PassKey-Favicon')).toBe(false);
+    }
+    const network = await faviconRequest(request(), vi.fn<typeof fetch>().mockRejectedValue(new Error('synthetic network failure')));
+    expect(network.status).toBe(503);
   });
 });

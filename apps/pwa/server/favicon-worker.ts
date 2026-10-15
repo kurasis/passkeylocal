@@ -30,6 +30,7 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
   catch { return unavailable(); }
   if (!domain) return unavailable();
   const signal = AbortSignal.timeout(8000);
+  let temporaryFailure = false;
   for (const path of ['/favicon.ico', '/apple-touch-icon.png']) {
     try {
       // Fixed HTTPS paths, no redirect following: never forward stored URLs or credentials.
@@ -37,6 +38,7 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
         redirect: 'manual', credentials: 'omit', referrerPolicy: 'no-referrer', signal,
         cache: 'no-store', headers: { Accept: 'image/png,image/x-icon,image/vnd.microsoft.icon' }
       });
+      if (!response.ok && response.status !== 404 && response.status !== 410 && response.status >= 400) temporaryFailure = true;
       if (!response.ok || Number(response.headers.get('content-length')) > MAX_ICON_BYTES) {
         await response.body?.cancel(); continue;
       }
@@ -54,9 +56,11 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
       } finally { await stream.cancel().catch(() => {}); }
       const icon = bytes.slice(0, size);
       if (!overflow && safeRaster(icon)) return new Response(icon, { headers: { ...headers, 'Content-Type': 'application/octet-stream' } });
-    } catch { /* Missing, blocked or unsupported icon keeps generated initials. */ }
+    } catch { temporaryFailure = true; }
   }
-  return unavailable();
+  return temporaryFailure
+    ? new Response(null, { status: 503, headers })
+    : new Response(null, { status: 404, headers: { ...headers, 'X-PassKey-Favicon': 'missing' } });
 }
 
 export default {

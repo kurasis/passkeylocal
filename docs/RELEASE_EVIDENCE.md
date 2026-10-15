@@ -1,5 +1,51 @@
 # Release evidence and gate status
 
+## PWA icon retry fix 0.1.3 (2026-10-15)
+
+The owner reported missing icons after successful Cloudflare Worker deployment
+of 0.1.2 (`Workers Builds: broad-king-e230`, commit `c3e7faa`, build
+`28f3d1c2-52bd-4495-8861-ad1169de096c`). A successful deployment did not prove
+upstream icon retrieval. From this development environment, `passkeylocal.top`
+returns HTTP 403, `Your request was blocked.`, for the shell and API alike.
+This alone does not establish the behavior seen by the owner's browser.
+
+Confirmed code defect: every non-OK endpoint response or HTML/static fallback
+could become a one-day icon miss. Two new unit tests and a production browser
+retry regression failed on the previous implementation. Browser transport now
+caches only explicit endpoint misses; transient/WAF/missing-endpoint/invalid
+responses throw a retryable error without writing a miss. The endpoint
+distinguishes temporary upstream failure (503) from missing/unsupported icons
+(404 plus `X-PassKey-Favicon: missing`). Legacy negative cache rows are retried
+after upgrade; valid cached PNGs remain readable. No KDBX format change.
+
+Executed locally: 189 JS tests (99 adapter, 40 core, 50 PWA), workspace typecheck,
+14 production Chromium scenarios, both frontend builds/target isolation and
+synchronized version check: PASS. The new browser scenario verifies 503 then a
+successful image on the next list visit without clearing the cache. Added unit
+coverage includes unmarked 404, 403/429/500/503, HTML fallback, explicit confirmed
+misses, temporary upstream errors and legacy-negative-cache migration preserving
+hits. The actual compiled endpoint also passes missing/outage distinction checks.
+All existing PWA lifecycle, backup, password/passkey/offline checks pass.
+
+Public GitHub, Google and Yandex ICO files fetched over verified HTTPS were
+accepted and normalized by the actual shared decoder in Chromium (32px PNGs,
+1369/1615/1963 bytes): PASS. Scoped web-design-guidelines review of the unchanged
+avatar/controls preserves decorative alt/aria handling, explicit dimensions,
+lazy loading, stable initials and labeled controls. Native Rust behavior,
+installed Windows UI and physical device checks were not rerun for this web fix.
+
+Added a manually dispatched, read-only hosted probe of the public shell and a
+fixed `github.com` favicon request; it uses no vault data/credentials and records
+HTTP status, selected headers, bounded raster validation and hashes. The local
+probe correctly reports `origin-unavailable` for HTTP 403. Hosted results and
+the owner's browser result are not yet known. It is not a proof of success.
+
+The owner's Cloudflare build command explicitly extracts the immutable 0.1.2 ZIP.
+Updated instructions require changing that one field to `node package.mjs`;
+otherwise newer source commits still deploy old bytes. All 0.1.2 release/archive
+bytes remain unchanged. New 0.1.3 packages and checksums are in the deployment
+folders; this change does not publish a Windows release.
+
 ## Browser-only Cloudflare deployment correction (2026-10-15)
 
 The owner rejected local software installation as an unnecessary burden for a
