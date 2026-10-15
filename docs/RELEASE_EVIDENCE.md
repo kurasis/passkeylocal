@@ -38,7 +38,13 @@ a draft tag to `untagged-*` after editing target metadata. Publication now uploa
 by immutable release ID and includes the intended tag in both metadata updates.
 A synthetic regression resumed an untagged draft, uploaded through its immutable
 ID, checked hashes and retained the explicit publication tag: PASS. Release
-publication remains pending until the corrected job succeeds. No new physical Windows Hello acceptance is claimed.
+publication passed in workflow 38726053466: [release 0.1.1](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.1).
+Both versioned archives and checksums were downloaded from the public release;
+SHA-256, ZIP integrity, exact source/installed title `0.1.1` and all ten web
+production entries were verified. Original reports/screenshots are preserved in
+[Windows downloads](../deploy/windows-desktop/); [release notes](releases/0.1.1.md).
+Windows archive SHA-256: `c232e1b890e44bee4b4b81e29a576886e64db03f05c97b43dcdd05e2eb61c737`.
+Web archive SHA-256: `1a34d313fb61fa0eb88f79c9593697b9afbbe7920a7c58c078ac6d80f85b6ba7`. No new physical Windows Hello acceptance is claimed.
 
 ## Web interface audit fixes (2026-10-10)
 
