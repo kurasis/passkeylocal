@@ -2,6 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
+const APP_VERSION: string = createRequire(import.meta.url)('../package.json').version;
 
 // Synthetic data only.
 const MASTER = 'synthetic e2e master passphrase 2026';
@@ -130,7 +132,7 @@ test('create, back up, add entry, app switch, inactivity lock, reload, offline u
   await expect(page.getByText(MARKER_PASSWORD)).toHaveCount(0);
   await page.getByRole('button', { name: 'Reveal: Password' }).click();
   await expect(page.getByText(MARKER_PASSWORD)).toBeVisible();
-  await expect(page).toHaveTitle('PassKey Local');
+  await expect(page).toHaveTitle(`PassKey Local (${APP_VERSION})`);
   expect(page.url()).toBe(`${ORIGIN}/#/passwords/vault`);
 
   // Switching apps does not lock (user decision); only the inactivity interval does.
@@ -138,6 +140,7 @@ test('create, back up, add entry, app switch, inactivity lock, reload, offline u
   await expect(page.getByRole('heading', { name: MARKER_TITLE })).toBeVisible();
   await page.clock.fastForward('02:01');
   await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
+  await expect(page).toHaveTitle(`PassKey Local (${APP_VERSION})`);
   const lockedHtml = await page.content();
   expect(lockedHtml).not.toContain(MARKER_TITLE);
   expect(lockedHtml).not.toContain(MARKER_PASSWORD);

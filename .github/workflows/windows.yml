@@ -47,6 +47,13 @@ jobs:
           npm ci
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pip install --require-hashes -r tools/vault-recovery/requirements.lock -r tools/vault-recovery/requirements-dev.lock
+      - name: Read synchronized application version
+        id: version
+        shell: pwsh
+        run: |
+          $version = & node apps/desktop/scripts/check-version.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "version=$version" >> $env:GITHUB_OUTPUT
       - name: Prepare pinned signed libsodium build inputs over HTTPS
         shell: pwsh
         run: apps/desktop/scripts/prepare-sodium.ps1
@@ -130,13 +137,13 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: Windows-smoke-diagnostics-${{ github.sha }}
+          name: Windows-smoke-diagnostics-${{ steps.version.outputs.version }}-${{ github.sha }}
           path: apps/desktop/artifacts/smoke-failure.*
           if-no-files-found: ignore
           retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: PassKey-Local-Windows-x64-${{ github.sha }}-unsigned
+          name: PassKey-Local-Windows-x64-${{ steps.version.outputs.version }}-${{ github.sha }}-unsigned
           path: apps/desktop/artifacts/
           if-no-files-found: error
           retention-days: 30

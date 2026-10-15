@@ -79,7 +79,7 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.lang = lang;
-    document.title = 'PassKey Local';
+    document.title = `PassKey Local (${__APP_VERSION__})`;
   }, [lang]);
   useEffect(() => {
     if (prefs.theme === 'auto') delete document.documentElement.dataset.theme;

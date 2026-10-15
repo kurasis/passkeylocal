@@ -20,7 +20,9 @@ assert(!existsSync(join(data, 'current.kdbx')), 'Smoke must not use an existing 
 const safeData = join(process.env.LOCALAPPDATA, 'com.passkeylocal.file-safe');
 assert(!existsSync(join(safeData, 'ACTIVE.json')), 'File-safe smoke must not use existing user data');
 const release = resolve('apps/desktop/src-tauri/target/x86_64-pc-windows-msvc/release');
-const installers = readdirSync(join(release, 'bundle/nsis')).filter((name) => name.endsWith('-setup.exe'));
+const version = JSON.parse(await readFile('apps/desktop/package.json', 'utf8')).version;
+const expectedTitle = `PassKey Local (${version})`;
+const installers = readdirSync(join(release, 'bundle/nsis')).filter((name) => name.endsWith(`_${version}_x64-setup.exe`));
 assert.equal(installers.length, 1, 'One installer must be tested');
 await promisify(execFile)(join(release, 'bundle/nsis', installers[0]), ['/S'], { timeout: 180000 });
 const exe = join(process.env.LOCALAPPDATA, 'PassKey Local', 'passkey-local-desktop.exe');
@@ -67,7 +69,8 @@ try {
   assert.equal(privacy.browserPrivacyVerified, true, 'Password saving and autofill disabled with native readback');
   const nativeWindow = JSON.parse(powershell(`Get-Process -Id ${child.pid} -ErrorAction Stop | Select-Object MainWindowHandle,MainWindowTitle,Responding | ConvertTo-Json`));
   assert.notEqual(nativeWindow.MainWindowHandle, 0, 'A visible native main window must exist');
-  assert.equal(nativeWindow.MainWindowTitle, 'PassKey Local');
+  assert.equal(nativeWindow.MainWindowTitle, expectedTitle);
+  await expect(page).toHaveTitle(expectedTitle);
   assert.equal(nativeWindow.Responding, true);
   await page.getByRole('button', { name: 'Create a new vault', exact: true }).click();
   await page.getByLabel('Master password', { exact: true }).fill(password);
@@ -493,6 +496,7 @@ try {
   await mkdir('apps/desktop/artifacts', { recursive: true });
   await page.screenshot({ path: 'apps/desktop/artifacts/windows-locked-smoke.png' });
   await writeFile('apps/desktop/artifacts/packaged-smoke.json', JSON.stringify({
+    version, windowTitle: nativeWindow.MainWindowTitle,
     sourceCommit: process.env.GITHUB_SHA, runtime: await page.evaluate(() => navigator.userAgent),
     installer: 'per-user silent install completed on hosted runner', installedExecutableSha256: installedHash,
     automation: 'Temporary app-scoped HKLM WebView2 debugging policy; elevated hosted runner; no product debug switch',
