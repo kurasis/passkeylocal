@@ -1,5 +1,24 @@
 # Release evidence and gate status
 
+## Fresh release draft publication fix (2026-10-15)
+
+Application PR #44 passed all 11 checks and merged as
+`affd6989e5889d14ef71fc4864070ee71f9c5109`. Windows workflow
+38737098387 verified the installed application/version/title and installer hash.
+Publication prepare job 38741516311 successfully validated exact tested source
+and archived both outputs. Its publish job created a draft, then failed because
+an immediate lookup by tag returned no match (`IndexError`). A later API read
+found the empty same-version draft; no release assets were published.
+
+Fresh draft creation now uses a structured API POST and keeps its returned
+immutable release ID. It does not depend on immediate tag/list visibility.
+Same-version untagged drafts remain resumable; published releases remain immutable.
+Five synthetic unit regressions exercise fresh creation, untagged retry, refusal
+to overwrite a published version, rejection of changed payloads before API writes,
+and structured POST serialization: PASS. Python syntax: PASS. Application,
+package and npm-lock trees are unchanged, so the already tested Windows installer
+remains the correct release input. Publication retry is pending.
+
 ## Optional website icons 0.1.2 (2026-10-15)
 
 Owner-authorized, off-by-default domain-only icon downloads supersede the
