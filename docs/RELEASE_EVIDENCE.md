@@ -1,5 +1,32 @@
 # Release evidence and gate status
 
+## Browser-only Cloudflare deployment correction (2026-10-15)
+
+The owner rejected local software installation as an unnecessary burden for a
+browser upload workflow. Added a clearly labeled static-only 0.1.2 ZIP for the
+existing Worker uploader and an alternative that connects the existing Worker
+to GitHub so Cloudflare runs the complete deployment itself. Local CLI setup
+is optional. The static package does **not** install the favicon endpoint;
+documentation states that new icon downloads require the complete deployment
+or an already functioning endpoint. No disabled feature is presented as working.
+
+Static archive: 225,756 bytes, ten files, SHA-256
+`12892c19072685cb126aeb6a9e80e53b113c608b358f6adc3bb04459bf62a7c5`.
+CRC and checksum PASS; every retained file equals the original verified Pages
+0.1.2 release; `_worker.js` and `_routes.json` excluded; every service-worker
+precache path remains present. Repeated deterministic packaging PASS. Existing
+application code, complete distribution archives and versions are unchanged.
+
+The documented Cloudflare-side build command was executed against the complete
+Workers ZIP and its extracted configuration passed an actual Wrangler 4.151.0
+dry-run with the required ASSETS binding and `--keep-vars`. Official Cloudflare
+Workers Builds configuration/build-image sources were read successfully from
+`cloudflare/cloudflare-docs`; the image documents preinstalled Python/Node/npm.
+GitHub connection, static dashboard upload, remote build and live deployment on
+the owner's account remain unexecuted. No account access or automatic remote
+deployment is claimed. No application/native test rerun was needed for this
+packaging/instructions-only change.
+
 ## Cloudflare uploader clarification (2026-10-15)
 
 The owner supplied dashboard screenshots rejecting the 0.1.2 archive with

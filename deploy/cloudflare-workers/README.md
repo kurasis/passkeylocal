@@ -1,5 +1,11 @@
 # Cloudflare Workers package — application 0.1.2
 
+**Browser-only deployment:** [instructions without installing programs on your PC](BROWSER-DEPLOY.md).
+Use Cloudflare's GitHub build integration for the complete app with new icon
+downloads. The [separate static-only 0.1.2 ZIP](passkeylocal-cloudflare-workers-static-0.1.2.zip)
+fits the dashboard's static upload screen but cannot install the icon endpoint.
+The local CLI instructions below are optional, not a prerequisite for hosting.
+
 [Download passkeylocal-cloudflare-workers-0.1.2.zip](https://github.com/kurasis/passkeylocal/raw/refs/heads/main/deploy/cloudflare-workers/passkeylocal-cloudflare-workers-0.1.2.zip).
 
 230,823 bytes; SHA-256

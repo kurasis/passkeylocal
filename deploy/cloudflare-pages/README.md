@@ -13,6 +13,9 @@ browser vault storage. No replacement archive is needed to select Pages.
 If your current site is already a **Worker**, use the separate
 [Workers package for application 0.1.2](../cloudflare-workers/) instead of
 creating another site; that package uses Wrangler to connect the API handler.
+For an existing Worker, [browser-only upload/build instructions](../cloudflare-workers/BROWSER-DEPLOY.md)
+explain both static ZIP upload and the complete GitHub-connected deployment
+without installing anything on the owner's PC.
 
 Archive: 226,982 bytes; SHA-256 `1ec5828b25574df4daf07f375d41a6fe6b8908822779bc74a43af272acad7429`. Verify with `sha256sum -c passkeylocal-cloudflare-pages-0.1.2.zip.sha256`. All 12 entries match verified production output and sit at the ZIP root. Keep `_worker.js` and `_routes.json`: these add the optional same-origin icon endpoint. Cloudflare supports this advanced-mode Worker in dashboard drag-and-drop and Wrangler; no separate service URL/build command is needed. Only `/api/favicon` invokes the endpoint; it uses the hosting account's Functions quota. A host without that endpoint still runs the vault, cached icons and initials.
 
