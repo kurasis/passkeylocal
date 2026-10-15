@@ -36,13 +36,13 @@ pub fn public_domain(domain: &str) -> bool {
 
 fn public_v4(ip: Ipv4Addr) -> bool {
     let [a, b, c, _] = ip.octets();
-    !matches!(a, 0 | 10 | 127 | 224..=255)
-        && !(a == 100 && (64..=127).contains(&b))
-        && !(a == 169 && b == 254)
-        && !(a == 172 && (16..=31).contains(&b))
-        && !(a == 192 && (b == 168 || b == 0 && c <= 2 || b == 88 && c == 99))
-        && !(a == 198 && ((18..=19).contains(&b) || b == 51 && c == 100))
-        && !(a == 203 && b == 0 && c == 113)
+    !(matches!(a, 0 | 10 | 127 | 224..=255)
+        || a == 100 && (64..=127).contains(&b)
+        || a == 169 && b == 254
+        || a == 172 && (16..=31).contains(&b)
+        || a == 192 && (b == 168 || b == 0 && c <= 2 || b == 88 && c == 99)
+        || a == 198 && ((18..=19).contains(&b) || b == 51 && c == 100)
+        || a == 203 && b == 0 && c == 113)
 }
 
 pub fn public_ip(ip: IpAddr) -> bool {

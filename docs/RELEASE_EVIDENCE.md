@@ -25,9 +25,16 @@ domain/IP validation and bounded encrypted cache persistence across restart: PAS
 An initial new E2E run was interrupted for an incorrect Website label; the next
 run exposed the empty-password defect above. Subsequent checks caught a
 controlled-checkbox timing regression, now limited to the icon opt-in while
-appearance/language controls retain synchronous feedback. Final reruns and Windows-specific
-checks are pending; no live Pages deployment, real-site/native network test or
-physical iPhone test is claimed. Current web-design-guidelines and Cloudflare
+appearance/language controls retain synchronous feedback. Final production PWA
+rerun: all 13 scenarios PASS, including encrypted icon persistence, offline
+re-unlock, domain priority/deduplication, cache clear/disable and pending-fetch
+lock. Two final layout/contrast scenarios PASS. Independent Python CLI export of
+a fresh icon-enabled, domain-only KDBX exactly matches the complete browser model
+and leaves its input unchanged: PASS (using the supported source PYTHONPATH).
+Native Clippy initially requested a simpler Boolean spelling for the private-IP
+filter; it was rewritten equivalently and all-target Clippy with warnings denied
+passes locally. Windows-specific CI is still pending; no live Pages deployment,
+real-site/native network test or physical iPhone test is claimed. Current web-design-guidelines and Cloudflare
 advanced-mode/direct-upload documentation fetched successfully.
 
 ## Versioned application release 0.1.1 (2026-10-15)
