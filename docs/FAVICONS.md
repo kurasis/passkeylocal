@@ -96,6 +96,14 @@ new requests fall back to initials. No Cloudflare deployment is claimed by local
 tests. Real-site availability, iPhone installed-PWA rendering and native Windows
 requests require platform checks; synthetic browser tests do not prove these.
 
+This output targets **Pages**, not Workers' static-files dashboard uploader.
+The warning "Pages _routes.json is not supported" requires checking the selected
+product, not deleting invocation-route metadata. See [deployment troubleshooting](DEPLOYMENT.md#cloudflare-upload-says-pages-_routesjson-is-not-supported)
+for the Pages dashboard path and the Pages Wrangler alternative. Workers needs
+an explicitly configured script entry, assets binding and invocation routing.
+The separate [Workers distribution](../deploy/cloudflare-workers/) supplies
+that configuration without changing the released 0.1.2 application bytes.
+
 ## Sources and Verification
 
 - [Cloudflare Pages advanced mode](https://developers.cloudflare.com/pages/functions/advanced-mode/)

@@ -1,5 +1,51 @@
 # Release evidence and gate status
 
+## Cloudflare uploader clarification (2026-10-15)
+
+The owner supplied dashboard screenshots rejecting the 0.1.2 archive with
+"Pages _routes.json is not supported". The full screenshot confirms **Upload
+static files to update your Worker**, which explicitly supports static assets
+only. Documentation now distinguishes Pages Direct Upload from Workers
+static-assets upload, preserves the complete Pages package, and supplies a
+separate Workers/Wrangler distribution for the existing Worker and hostname.
+No uploader success, live deployment or successful icon request is claimed.
+
+Rechecked the tracked 0.1.2 ZIP: 226,982 bytes, SHA-256
+`1ec5828b25574df4daf07f375d41a6fe6b8908822779bc74a43af272acad7429`,
+12 entries, CRC check PASS. Invocation routes equal
+`{"version":1,"include":["/api/favicon"],"exclude":[]}`; the worker is a compiled
+ES module and neither deployment file appears in the service-worker precache.
+Application code and the original release archives are unchanged; the Workers
+ZIP is an additional hosting layout for application 0.1.2, not a new app release.
+It relocates the exact released module outside public assets, explicitly binds
+ASSETS and uses selective Worker-first routing for `/api/favicon`. The generator
+verifies the original checksum and emits a deterministic ZIP and checksum.
+
+Wrangler 4.151.0 installed outside the repository; actual configuration dry-run
+PASS. Local Workers runtime checks PASS: exact released bytes plus CSP,
+nosniff/no-referrer on seven shell/JS/CSS/manifest/icon responses; no-cache on
+shell/sw.js and immutable hashed assets; API GET 405/Allow POST/no-store (not
+SPA HTML), cross-origin POST 403, local-domain POST 404. Archive CRC and exact
+byte equality for every relocated source file PASS; Pages metadata, emulator
+state and dependencies are absent from public assets/archive. Deployment helper
+rejects missing, placeholder and malformed Worker names. Live upstream icon
+fetch, account deployment and native/physical device checks were not rerun.
+The helper also passed an isolated synthetic CLI invocation from a directory
+containing spaces, with exact Worker name and `--keep-vars` arguments and no
+network/deployment. Final archive: 16 files, 230,823 bytes, SHA-256
+`6336f8beabbfbc7173136df263e6e5b9211ddc6be7258b6bf766b121068cd4ee`.
+Two final generator runs produced the same checksum. No app version bump is
+needed because the released application bytes are unchanged.
+
+Current Cloudflare Pages direct-upload, advanced-mode, routing and Pages-to-Workers
+migration documentation was read from the official `cloudflare/cloudflare-docs`
+GitHub production sources (observed branch SHA
+`c52c88dd4afec5db429fc92734b2f91563bde5df`). Those sources confirm Pages dashboard
+support for `_worker.js`, Pages invocation routes and the separate Workers
+script/assets configuration. Direct `developers.cloudflare.com` documentation
+requests returned HTTP 403 in this environment; the official GitHub source was
+accessible. The dashboard UI itself and the owner's account were not accessed.
+
 ## Fresh release draft publication fix (2026-10-15)
 
 Application PR #44 passed all 11 checks and merged as

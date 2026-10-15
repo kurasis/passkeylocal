@@ -1,8 +1,10 @@
 # Deployment
 
-The PWA is a static site. Anything that can serve files over HTTPS with custom
-response headers works (for example Cloudflare Pages or Netlify, which read
-`_headers`). There is no server-side code and no backend.
+The vault PWA is a static site. Anything that can serve files over HTTPS with
+custom response headers works (for example Cloudflare Pages or Netlify, which
+read `_headers`). Optional website icon downloads added in 0.1.2 use a separate
+same-origin endpoint; the distributed ZIP includes its Cloudflare Pages handler.
+The vault itself needs no backend or account.
 
 ## Requirements
 
@@ -97,3 +99,58 @@ quota. A plain static server without the endpoint still supports the entire
 vault, cached icons and generated initials, but cannot download new icons.
 See [website icons](FAVICONS.md) for privacy, supported formats and verification
 limits. The application does not automatically deploy this code to a live host.
+
+## Cloudflare upload says "Pages _routes.json is not supported"
+
+The **0.1.2** archive is a **Pages** deployment, not a Workers static-assets
+upload. This warning is a reason to check which product's uploader is open;
+it is not evidence that the JSON is malformed. Pages and Workers share the
+**Workers & Pages** dashboard area but have different deployment formats.
+
+If the heading says **Upload static files to update your Worker**, the existing
+project is a Worker. To preserve its address, use the separate
+[Workers package for application 0.1.2](../deploy/cloudflare-workers/), extract
+it and follow its Wrangler instructions. The static-only dashboard uploader
+cannot install the executable favicon handler. No migration to Pages is needed
+for an existing Worker.
+
+For an existing Pages site, open that project and choose **Create a new
+deployment**, then upload `passkeylocal-cloudflare-pages-0.1.2.zip`. Keep the
+existing hostname. For a new site, use **Create application**, select the
+**Pages** option (the dashboard may label its link **Looking to deploy Pages?
+Get started**), then **Drag and drop your files** / **Direct Upload** and
+**Deploy site**. Do not choose the Workers **Upload your static files** flow.
+An existing Git-integrated Pages project uses its Git workflow or Wrangler;
+Cloudflare does not support dashboard drag-and-drop for that project type.
+
+Keep `_worker.js`, `_routes.json` and `_headers` at the ZIP root alongside
+`index.html`. Do not remove metadata merely to silence the warning. Removing
+`_routes.json` loses the restriction that only `/api/favicon` invokes a
+Function. Uploading `_worker.js` as an ordinary Workers asset does not connect
+the executable endpoint. Moving to Workers requires an explicit script entry,
+assets binding and routing configuration; it is a separate deployment change.
+
+If the **Pages** uploader still rejects the complete archive, use Pages'
+documented CLI path instead. Extract the ZIP into a directory first (Wrangler
+does not accept a ZIP). From that directory, with Node/npm installed:
+
+```sh
+npx wrangler@4 login
+npx wrangler@4 pages deploy . --project-name YOUR_EXISTING_PAGES_PROJECT --branch main
+```
+
+Replace the project name and use the project's actual production branch.
+These are deployment instructions, not a command executed against the owner's
+account during development. Do not delete an existing project or change its
+hostname to work around an uploader error: browser vault storage belongs to
+the origin. Export and verify an encrypted backup before any deliberate move.
+
+After deployment, check the real response headers as described above and test
+opt-in icon loading in the browser. A `GET /api/favicon` should return **405**
+with `Allow: POST` and `Cache-Control: no-store`; HTML or a static JavaScript
+file at that URL indicates the endpoint is not connected. This method check
+alone does not prove a successful upstream icon download.
+
+Sources: [Pages Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/),
+[Pages invocation routes](https://developers.cloudflare.com/pages/functions/routing/#functions-invocation-routes),
+and [migration from Pages to Workers](https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/).
