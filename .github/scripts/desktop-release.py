@@ -6,6 +6,8 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import urllib.parse
+import urllib.request
 import zipfile
 
 
@@ -130,7 +132,10 @@ def publish():
         expected.add(name)
     if {p.name for p in OUT.iterdir()} != expected:
         raise ValueError("Unexpected publication files")
-    existing = [r for r in api("releases?per_page=100") if r["tag_name"] == TAG]
+    releases = api("releases?per_page=100")
+    existing = [r for r in releases if r["tag_name"] == TAG or (r["draft"] and r["name"] == f"PassKey Local {VERSION}")]
+    if len(existing) > 1:
+        raise ValueError("Ambiguous release drafts; refusing publication")
     if existing and not existing[0]["draft"]:
         raise ValueError("Never overwrite a published release")
     notes = Path("release-notes.md")
@@ -147,8 +152,22 @@ Experimental unsigned Windows build with official bundled WebView2 runtime. Succ
         run("gh", "release", "create", TAG, "--repo", REPO, "--draft", "--prerelease", "--latest=false", "--target", manifest["targetCommit"], "--title", f"PassKey Local {VERSION}", "--notes-file", str(notes))
         existing = [r for r in api("releases?per_page=100") if r["tag_name"] == TAG]
     release_id = existing[0]["id"]
-    api(f"releases/{release_id}", {"target_commitish": manifest["targetCommit"], "body": notes.read_text(), "name": f"PassKey Local {VERSION}", "make_latest": "false"})
-    run("gh", "release", "upload", TAG, "--repo", REPO, "--clobber", *[str(OUT / name) for name in sorted(expected)])
+    api(f"releases/{release_id}", {"tag_name": TAG, "target_commitish": manifest["targetCommit"], "body": notes.read_text(), "name": f"PassKey Local {VERSION}", "make_latest": "false"})
+    # Draft tags can temporarily become untagged-*; upload by immutable ID.
+    previous = api(f"releases/{release_id}/assets")
+    for name in sorted(expected):
+        for asset in previous:
+            if asset["name"] == name:
+                run("gh", "api", f"repos/{REPO}/releases/assets/{asset['id']}", "--method", "DELETE")
+        path = OUT / name
+        url = f"https://uploads.github.com/repos/{REPO}/releases/{release_id}/assets?{urllib.parse.urlencode({'name': name})}"
+        headers = {"Authorization": f"Bearer {os.environ['GH_TOKEN']}", "Content-Type": "application/octet-stream", "Content-Length": str(path.stat().st_size), "User-Agent": "PassKeyLocal-Release"}
+        with path.open("rb") as stream:
+            request = urllib.request.Request(url, data=stream, headers=headers, method="POST")
+            with urllib.request.urlopen(request, timeout=600) as response:
+                uploaded_asset = json.load(response)
+        if uploaded_asset["name"] != name or uploaded_asset["size"] != path.stat().st_size:
+            raise ValueError("Asset upload response mismatch")
     uploaded = api(f"releases/{release_id}/assets")
     if {a["name"] for a in uploaded} != expected:
         raise ValueError("Release upload is incomplete; keeping draft")
@@ -158,7 +177,7 @@ Experimental unsigned Windows build with official bundled WebView2 runtime. Succ
             raise ValueError("Release upload size mismatch")
         if asset.get("digest") and asset["digest"] != f"sha256:{digest(path)}":
             raise ValueError("Release upload digest mismatch")
-    published = api(f"releases/{release_id}", {"draft": False, "prerelease": True, "make_latest": "false"})
+    published = api(f"releases/{release_id}", {"tag_name": TAG, "draft": False, "prerelease": True, "make_latest": "false"})
     print(published["html_url"])
 
 
