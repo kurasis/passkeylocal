@@ -5,7 +5,7 @@ export const FAVICON_KEY = 'LocalVault.FaviconCacheKey';
 const SLOT = 'faviconCache';
 const AAD = new TextEncoder().encode('PassKey Local favicon cache v1');
 const MAX_TEXT = 65_536;
-type Row = { domain: string; png: string | null; at: number };
+type Row = { domain: string; png: string | null; at: number; missPolicy?: number };
 type Envelope = { version: 1; id: string; iv: string; ciphertext: string };
 export const encode64 = (b: Uint8Array): string => {
   let text = '';
@@ -56,14 +56,14 @@ export class FaviconCache {
     try { png = row?.png ? decode64(row.png) : null; } catch { /* Disposable cache. */ }
     const valid = png && safeRaster(png);
     return { png: valid ? png : null,
-      refresh: !row || !!row.png && !valid || Date.now() - row.at > (row.png ? 30 : 1) * 86_400_000 };
+      refresh: !row || !row.png && row.missPolicy !== 2 || !!row.png && !valid || Date.now() - row.at > (row.png ? 30 : 1) * 86_400_000 };
   }
 
   put(s: UnlockedSession, domain: string, png: Uint8Array | null): Promise<void> {
     const operation = this.queue.catch(() => {}).then(async () => {
       const { id, key } = await this.material(s);
       const rows = (await this.read(s, id, key)).filter((r) => r.domain !== domain);
-      rows.push({ domain, png: png ? encode64(png) : null, at: Date.now() });
+      rows.push({ domain, png: png ? encode64(png) : null, at: Date.now(), ...png ? {} : { missPolicy: 2 } });
       while (rows.length > 64 || JSON.stringify(rows).length > MAX_TEXT) rows.shift();
       const plaintext = new TextEncoder().encode(JSON.stringify(rows));
       try {

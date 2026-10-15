@@ -55,7 +55,7 @@ process.exit(result.status ?? 1);
 `);
 writeFileSync(`${output}/README.md`, readFileSync(`${root}UPLOAD.md`, 'utf8').replaceAll('__VERSION__', version));
 writeFileSync(`${output}/source.json`, JSON.stringify({ version,
-  source: `https://github.com/kurasis/passkeylocal/releases/download/desktop-v${version}/passkeylocal-cloudflare-pages-${version}.zip`,
+  source: `https://github.com/kurasis/passkeylocal/raw/refs/heads/main/deploy/cloudflare-pages/passkeylocal-cloudflare-pages-${version}.zip`,
   pagesSha256: expected, wranglerVersion: '4.151.0',
   applicationBytes: 'unchanged; only Pages deployment layout converted to Workers'
 }, null, 2) + '\n');

@@ -67,6 +67,15 @@ is local auxiliary state, not part of backup completeness or vault recovery.
 Missing cached data simply downloads again when enabled and online. Clear and
 disable overwrite the preference with null; neither claims physical secure erasure.
 
+Starting in 0.1.3, the browser only persists a miss when the endpoint explicitly
+returns `404` with `X-PassKey-Favicon: missing`. Unmarked 404s (including missing
+deployments), WAF/rate-limit/server errors and HTML/static fallback responses
+are retryable failures, not negative-cache entries. Returning to the list retries
+them. The endpoint returns 503 for temporary upstream failures and never forwards
+upstream cookies or error details. Legacy negative-cache rows are rechecked once
+after upgrading; valid cached icons remain usable offline. This fixes delayed
+recovery after a static upload or an endpoint outage without changing KDBX data.
+
 ## Network Boundary and Hosting
 
 Windows uses a fixed native command scoped to the local main window, active

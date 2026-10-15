@@ -560,7 +560,7 @@ test('title-domain fallback, domain deduplication and failed icons keep initials
   const requested: string[] = [];
   await page.route('**/api/favicon', async (route) => {
     requested.push(route.request().postDataJSON().domain);
-    await route.fulfill({ status: 404, headers: { 'Cache-Control': 'no-store' } });
+    await route.fulfill({ status: 404, headers: { 'Cache-Control': 'no-store', 'X-PassKey-Favicon': 'missing' } });
   });
   await page.goto('/');
   await createAndVerifyVault(page);
@@ -601,4 +601,27 @@ test('locking cancels pending icon fetches and late responses cannot repopulate 
   await expect(page.getByRole('heading', { name: 'Vault locked' })).toBeVisible();
   await expect(page.locator('.entries img')).toHaveCount(0);
   expect(await persistedText(page)).not.toContain(ICON_DOMAIN);
+});
+
+test('a temporary icon endpoint failure retries on the next list visit without clearing the cache', async ({ page }) => {
+  let calls = 0;
+  await page.route('**/api/favicon', async (route) => {
+    calls++;
+    await route.fulfill(calls === 1
+      ? { status: 503, headers: { 'Cache-Control': 'no-store' } }
+      : { status: 200, body: ICON_PNG, headers: { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store' } });
+  });
+  await page.goto('/');
+  await createAndVerifyVault(page);
+  await addIconEntry(page);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Download website icons' }).check();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect.poll(() => calls).toBe(1);
+  // Wait for the failed request to settle before leaving the list.
+  await page.waitForTimeout(200);
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect(page.locator('.entries .avatar img')).toBeVisible();
+  expect(calls).toBe(2);
 });

@@ -1,4 +1,4 @@
-# Deploy application 0.1.2 using only the browser
+# Deploy application 0.1.3 using only the browser
 
 No Node.js, terminal or Wrangler installation is required on the owner's PC.
 Do not install anything on the running website either. Cloudflare can run the
@@ -6,10 +6,10 @@ deployment tools in its own build environment.
 
 ## Static ZIP: the existing upload screen
 
-[Download the static-only application 0.1.2 ZIP](https://github.com/kurasis/passkeylocal/raw/refs/heads/main/deploy/cloudflare-workers/passkeylocal-cloudflare-workers-static-0.1.2.zip).
+[Download the static-only application 0.1.3 ZIP](https://github.com/kurasis/passkeylocal/raw/refs/heads/main/deploy/cloudflare-workers/passkeylocal-cloudflare-workers-static-0.1.3.zip).
 
-225,756 bytes; SHA-256
-`12892c19072685cb126aeb6a9e80e53b113c608b358f6adc3bb04459bf62a7c5`.
+225,846 bytes; SHA-256
+`9a890b7ad0db22a6e49b1ff43f8b3097f203b8f3381f5e1c0af5702001fb051e`.
 
 On **Upload static files to update your Worker**, choose **Remove all**, upload
 this ZIP, then deploy. If the uploader requests a folder, extract the ZIP and
@@ -28,6 +28,12 @@ and behavior on the owner's account still require the owner's upload.
 
 Use this method to keep icon downloads without installing local programs:
 
+**Updating an existing 0.1.2 connection:** change only its **Build command** from
+`python -m zipfile -e passkeylocal-cloudflare-workers-0.1.2.zip build` to
+`node package.mjs`. Keep the existing deploy command, root and Worker name.
+Save and trigger a new build. This selects the current version automatically;
+the old command would keep deploying the old archive even after new commits.
+
 1. Open the **existing Worker**, then **Settings → Build**. Connect GitHub and
    select repository `kurasis/passkeylocal`, production branch `main`.
 2. Enter these fields in Cloudflare's build settings (these are remote build
@@ -36,12 +42,15 @@ Use this method to keep icon downloads without installing local programs:
    | Field | Value |
    | --- | --- |
    | Root directory | `deploy/cloudflare-workers` |
-   | Build command | `python -m zipfile -e passkeylocal-cloudflare-workers-0.1.2.zip build` |
+   | Build command | `node package.mjs` |
    | Deploy command | `npx --yes wrangler@4.151.0 deploy --config build/wrangler.json --name YOUR_EXISTING_WORKER_NAME --keep-vars` |
 
    Replace `YOUR_EXISTING_WORKER_NAME` with the exact name of the Worker you
-   opened, not its domain or URL. Use the complete Workers archive in the build
-   command, **not** the `workers-static` ZIP. Cloudflare's documented build image
+   opened, not its domain or URL. The build command verifies and packages the
+   latest versioned Pages
+   archive from this repository; it selects the current application version
+   automatically, rather than repeatedly extracting an old fixed-version ZIP.
+   Cloudflare's documented build image
    includes Python, Node.js and npm. Cloudflare handles deployment authentication;
    no credentials should be pasted into the repository or chat.
 3. For this existing production site, disable builds for non-production branches

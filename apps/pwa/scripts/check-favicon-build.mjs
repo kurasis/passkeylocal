@@ -26,6 +26,19 @@ try {
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.deepEqual(Buffer.from(await response.arrayBuffer()), png);
   assert.deepEqual(calls, ['https://synthetic-icon-fixture.com/favicon.ico']);
+  const request = () => new Request('https://vault.example.test/api/favicon', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ domain: 'synthetic-icon-fixture.com' })
+  });
+  globalThis.fetch = async () => new Response(null, { status: 404 });
+  const missing = await worker.fetch(request(), env);
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers.get('X-PassKey-Favicon'), 'missing');
+  globalThis.fetch = async () => new Response(null, { status: 503 });
+  const outage = await worker.fetch(request(), env);
+  assert.equal(outage.status, 503);
+  assert.equal(outage.headers.has('X-PassKey-Favicon'), false);
+  assert.equal(outage.headers.get('cache-control'), 'no-store');
   assert.equal(await (await worker.fetch(new Request('https://vault.example.test/'), env)).text(), 'synthetic shell');
-  console.log('PASS: compiled Pages favicon endpoint, fixed target, no-store, exact route, shell cache exclusion.');
+  console.log('PASS: compiled Pages favicon endpoint, confirmed miss/outage distinction, fixed target, no-store, exact route, shell cache exclusion.');
 } finally { globalThis.fetch = original; }
