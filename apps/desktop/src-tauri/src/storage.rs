@@ -697,6 +697,8 @@ impl Store {
             "theme",
             "onboardingBackupVerified",
             "biometricUnlock",
+            "faviconsEnabled",
+            "faviconCache",
         ]
         .contains(&key)
         {
@@ -732,6 +734,24 @@ impl Store {
                 .as_str()
                 .is_some_and(|v| ["auto", "color", "light", "dark"].contains(&v)),
             "onboardingBackupVerified" => value.is_boolean(),
+            "faviconsEnabled" => value.is_boolean(),
+            "faviconCache" => {
+                value.is_null()
+                    || (value.get("version").and_then(Value::as_u64) == Some(1)
+                        && value
+                            .get("id")
+                            .and_then(Value::as_str)
+                            .is_some_and(hash_valid)
+                        && value
+                            .get("iv")
+                            .and_then(Value::as_str)
+                            .is_some_and(|s| s.len() == 16)
+                        && value
+                            .get("ciphertext")
+                            .and_then(Value::as_str)
+                            .is_some_and(|s| (24..=87_408).contains(&s.len()))
+                        && value.as_object().is_some_and(|o| o.len() == 4))
+            }
             // Desktop does not accept browser password envelopes.
             "biometricUnlock" => value.is_null(),
             _ => false,
@@ -987,6 +1007,62 @@ mod tests {
         s.invalidate();
         assert!(s.dispatch(&t, "readHead", json!({})).is_err());
     }
+    #[test]
+    fn bounded_encrypted_favicon_preferences_survive_restart() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut s = Store::open(dir.path()).unwrap();
+        let token = s.begin();
+        let envelope = json!({"version":1,"id":"a".repeat(64),"iv":"A".repeat(16),"ciphertext":"B".repeat(87_408)});
+        s.dispatch(
+            &token,
+            "setPreference",
+            json!({"key":"faviconsEnabled","value":true}),
+        )
+        .unwrap();
+        s.dispatch(
+            &token,
+            "setPreference",
+            json!({"key":"faviconCache","value":envelope}),
+        )
+        .unwrap();
+        for bad in [
+            json!({"domain":"synthetic.com"}),
+            json!({"version":1,"id":"a".repeat(64),"iv":"A".repeat(16),"ciphertext":"B".repeat(87_409)}),
+        ] {
+            assert!(s
+                .dispatch(
+                    &token,
+                    "setPreference",
+                    json!({"key":"faviconCache","value":bad})
+                )
+                .is_err());
+        }
+        drop(s);
+        let mut s = Store::open(dir.path()).unwrap();
+        let token = s.begin();
+        assert_eq!(
+            s.dispatch(&token, "getPreference", json!({"key":"faviconCache"}))
+                .unwrap(),
+            envelope
+        );
+        assert_eq!(
+            s.dispatch(&token, "getPreference", json!({"key":"faviconsEnabled"}))
+                .unwrap(),
+            true
+        );
+        s.dispatch(
+            &token,
+            "setPreference",
+            json!({"key":"faviconCache","value":null}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.dispatch(&token, "getPreference", json!({"key":"faviconCache"}))
+                .unwrap(),
+            Value::Null
+        );
+    }
+
     #[test]
     fn long_inactivity_preferences_survive_restart() {
         for ms in [21600000_u64, 43200000, 86400000] {

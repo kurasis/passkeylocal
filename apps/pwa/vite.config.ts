@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type Plugin } from 'vite';
+import { build, defineConfig, type Plugin } from 'vite';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
@@ -22,7 +22,7 @@ function serviceWorker(): Plugin {
   return {
     name: 'passkey-local-sw',
     apply: 'build',
-    generateBundle(_opts, bundle) {
+    async generateBundle(_opts, bundle) {
       const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
       const hash = createHash('sha256');
       // The shell is cached under '/', never '/index.html': Cloudflare Pages
@@ -47,6 +47,17 @@ function serviceWorker(): Plugin {
         .replace("'__VERSION__'", JSON.stringify(`${pkg.version}-${hash.digest('hex').slice(0, 16)}`))
         .replace('__PRECACHE__', JSON.stringify([...assets].sort()));
       this.emitFile({ type: 'asset', fileName: 'sw.js', source: code });
+      // Endpoint code is deployment metadata, never a shell-precache asset.
+      const worker = await build({ configFile: false, publicDir: false, logLevel: 'silent',
+        build: { write: false, target: 'es2022', minify: true,
+          lib: { entry: fileURLToPath(new URL('./server/favicon-worker.ts', import.meta.url)), formats: ['es'], fileName: '_worker' } } });
+      const result = Array.isArray(worker) ? worker[0] : worker;
+      if (!result || !('output' in result)) throw new Error('Missing Pages worker output');
+      const chunk = result.output.find((item) => item.type === 'chunk');
+      if (!chunk || chunk.type !== 'chunk') throw new Error('Missing Pages worker chunk');
+      this.emitFile({ type: 'asset', fileName: '_worker.js', source: chunk.code });
+      this.emitFile({ type: 'asset', fileName: '_routes.json', source: JSON.stringify({ version: 1, include: ['/api/favicon'], exclude: [] }) });
+
     }
   };
 }

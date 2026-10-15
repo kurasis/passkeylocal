@@ -32,4 +32,4 @@ specification reading at [docs/spec/README.md](docs/spec/README.md).
   use `node apps/desktop/scripts/check-version.mjs` before packaging. Do not change
   vault formats or stable application/data-directory identifiers for a version bump.
 - Show the public application/version only in the window title, in the form
-  `PassKey Local (0.1.1)`; never include vault names, entry data or file paths.
+  `PassKey Local (0.1.2)`; never include vault names, entry data or file paths.

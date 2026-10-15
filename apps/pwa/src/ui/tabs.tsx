@@ -71,7 +71,7 @@ export function BackupsTab(props: {
   );
 }
 
-export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Preferences, value: unknown) => void; onPasswordChanged: () => void }) {
+export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Preferences, value: unknown) => void | Promise<void>; onPasswordChanged: () => void }) {
   const t = useT();
   const { client } = useApp();
   const [cur, setCur] = useState('');
@@ -80,6 +80,10 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: 'info' | 'warn' | 'error'; text: string } | null>(null);
   const [offline, setOffline] = useState<boolean | null>(null);
+  const [iconMessage, setIconMessage] = useState<{ kind: 'info' | 'error'; text: string } | null>(null);
+  const [clearingIcons, setClearingIcons] = useState(false);
+  const [changingIcons, setChangingIcons] = useState(false);
+  const [requestedIcons, setRequestedIcons] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (desktop) return setOffline(true);
@@ -139,6 +143,30 @@ export function SettingsTab(props: { prefs: Preferences; setPref: (key: keyof Pr
         </label>
         <p className="muted">{t('historyPolicy')}</p>
         <p className="muted">{offline ? t('offlineReady') : t('offlineNotReady')}</p>
+      </div>
+      <div className="card stack">
+        <h2>{t('faviconTitle')}</h2>
+        <p className="muted" id="favicon-privacy">{t('faviconPrivacy')}</p>
+        <label className="check">
+          <input type="checkbox" name="favicons-enabled" checked={requestedIcons ?? props.prefs.faviconsEnabled}
+            disabled={changingIcons || clearingIcons} aria-describedby="favicon-privacy" onChange={async (e) => {
+              const enabled = e.target.checked;
+              setRequestedIcons(enabled);
+              setChangingIcons(true);
+              try { await props.setPref('faviconsEnabled', enabled); }
+              finally { setChangingIcons(false); setRequestedIcons(null); }
+            }} />
+          {t('faviconEnable')}
+        </label>
+        <p className="muted">{t('faviconPriority')}</p>
+        {changingIcons && <Busy label={t('working')} />}
+        <button type="button" className="secondary" disabled={clearingIcons || changingIcons} onClick={async () => {
+          setClearingIcons(true); setIconMessage(null);
+          try { await client.call('clearFaviconCache'); setIconMessage({ kind: 'info', text: t('faviconCleared') }); }
+          catch (e) { setIconMessage({ kind: 'error', text: errorText(e, t) }); }
+          finally { setClearingIcons(false); }
+        }}>{clearingIcons ? t('working') : t('faviconClear')}</button>
+        {iconMessage && <Banner kind={iconMessage.kind}>{iconMessage.text}</Banner>}
       </div>
       {desktop ? <DesktopSettings /> : <BiometricSettings disabled={busy} />}
       <h2>{t('changePassword')}</h2>

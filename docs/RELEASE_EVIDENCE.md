@@ -1,5 +1,35 @@
 # Release evidence and gate status
 
+## Optional website icons 0.1.2 (2026-10-15)
+
+Owner-authorized, off-by-default domain-only icon downloads supersede the
+original blanket favicon prohibition; see [the exact boundary](FAVICONS.md).
+Website has priority; a bare-domain Title is used only when Website is empty.
+Windows uses a constrained native HTTPS loader; PWA uses the same-origin Pages
+advanced-mode endpoint included in its output. Both retain initials on failure.
+The random cache key is ordinary encrypted KDBX custom data, not a binary icon
+or a password-derived shortcut. Only encrypted auxiliary cache data persists.
+
+During new domain-only browser scenarios, empty-password entries exposed an
+existing kdbxweb round-trip mismatch (empty ProtectedValue becomes plain empty
+text). The writer now emits plain empty text explicitly for an empty Password;
+nonempty passwords remain ProtectedValue. Logical re-open verification remains
+strict. Added a regression for domain-only create, no-op save, later protected
+password and retained empty history. No independent recovery mapping was changed.
+
+Executed locally: 186 JavaScript unit checks (99 adapter, 40 core, 47 PWA)
+PASS; workspace typecheck PASS; both frontend builds and isolation PASS;
+compiled production Pages endpoint exercised with a synthetic upstream PASS;
+71 isolated desktop browser scenarios PASS; two native tests cover public
+domain/IP validation and bounded encrypted cache persistence across restart: PASS.
+An initial new E2E run was interrupted for an incorrect Website label; the next
+run exposed the empty-password defect above. Subsequent checks caught a
+controlled-checkbox timing regression, now limited to the icon opt-in while
+appearance/language controls retain synchronous feedback. Final reruns and Windows-specific
+checks are pending; no live Pages deployment, real-site/native network test or
+physical iPhone test is claimed. Current web-design-guidelines and Cloudflare
+advanced-mode/direct-upload documentation fetched successfully.
+
 ## Versioned application release 0.1.1 (2026-10-15)
 
 Compared main `15f54f00ab0e6de3016f3ad3c83ead53fdc93f9b` with the previous

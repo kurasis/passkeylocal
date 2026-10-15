@@ -83,3 +83,17 @@ from a backup file". Nothing moves automatically.
 
 No analytics, error reporting, remote fonts, CDNs, or remote configuration.
 Production builds contain no demo data or debug endpoints.
+
+
+## Optional website icons (0.1.2)
+
+The production Pages ZIP includes `_worker.js` and `_routes.json` for the
+same-origin `/api/favicon` endpoint. Keep both files when uploading. Cloudflare
+Pages supports advanced-mode `_worker.js` for dashboard drag-and-drop and Wrangler;
+no separate Worker URL, account for the application, or external icon directory
+is required. Only that route invokes a Function; static assets retain their
+normal headers and service-worker behavior. Functions use the host's request
+quota. A plain static server without the endpoint still supports the entire
+vault, cached icons and generated initials, but cannot download new icons.
+See [website icons](FAVICONS.md) for privacy, supported formats and verification
+limits. The application does not automatically deploy this code to a live host.

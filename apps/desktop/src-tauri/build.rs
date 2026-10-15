@@ -21,6 +21,7 @@ fn main() {
             "retry_backup",
             "backup_retention",
             "open_external",
+            "fetch_favicon",
             "native_activity",
             "hello_enrollment",
             "hello_enroll",

@@ -9,7 +9,7 @@ const helloCalls: string[] = [];
 let cancelHello = false;
 (window as any).helloVaultTest = { calls: helloCalls, cancel() { cancelHello = true; } };
 
-const prefs: Preferences = { language: 'ru', theme: 'color', lockIntervalMs: 86400000, onboardingBackupVerified: true };
+const prefs: Preferences = { faviconsEnabled: false, language: 'ru', theme: 'color', lockIntervalMs: 86400000, onboardingBackupVerified: true };
 export class VaultClient {
   epoch = 0;
   async call(operation: string, args?: { key?: keyof Preferences; value?: never }) {

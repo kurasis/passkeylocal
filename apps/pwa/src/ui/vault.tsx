@@ -7,6 +7,7 @@ import type { EntryDetail, HistoryItem, Overview } from '../protocol.ts';
 import { Banner, Busy, PasswordInput, TextField, copyText, errorText, openExternal, urlPolicy, useApp, useFormatDate, desktopAutoFocus } from './common.tsx';
 import { Icon } from './icons.tsx';
 import { useDraftGuard } from './drafts.tsx';
+import { EntryAvatar, FaviconProvider } from './favicons.tsx';
 
 export type VaultView =
   | { name: 'list' }
@@ -19,6 +20,7 @@ export type VaultView =
 interface Props {
   overview: Overview;
   favoritesOnly: boolean;
+  faviconsEnabled?: boolean;
   view: VaultView;
   go: (v: VaultView) => void;
   reload: () => Promise<void>;
@@ -40,11 +42,6 @@ export function VaultScreens(props: Props) {
     case 'recycle':
       return <EntryList {...props} recycle />;
   }
-}
-
-function initials(title: string): string {
-  const s = title.trim();
-  return s ? [...s][0]!.toUpperCase() : '•';
 }
 
 function EntryList(props: Props & { recycle?: boolean }) {
@@ -199,7 +196,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
       {rows.length === 0 ? (
         <div className="empty"><span className="empty-symbol"><Icon name={props.favoritesOnly ? 'star' : 'vault'} /></span><h2>{hits ? t('noResults') : t('noEntries')}</h2><p>{hits ? t('searchHint') : props.recycle ? t('recycleNote') : props.favoritesOnly ? t('favoritesHint') : t('emptyHint')}</p></div>
       ) : (
-        <ul className="list entries efficient-list">
+        <FaviconProvider enabled={props.faviconsEnabled === true}><ul className="list entries efficient-list">
           {rows.map(({ entry, hit }) => (
             <li key={`${entry.uuid}-${hit?.historyIndex ?? 'c'}`}>
               <button
@@ -209,9 +206,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
                   props.go(hit?.historyIndex !== undefined ? { name: 'historyItem', uuid: entry.uuid, index: hit.historyIndex } : { name: 'detail', uuid: entry.uuid })
                 }
               >
-                <span className={`avatar avatar-tone-${(entry.title.codePointAt(0) ?? 0) % 4}`} aria-hidden="true">
-                  {initials(entry.title)}
-                </span>
+                <EntryAvatar entry={entry} />
                 <span className="row-text">
                   <span className="row-title">
                     {entry.title || '—'} {entry.favorite && <span aria-label={t('favorite')}>★</span>}
@@ -230,7 +225,7 @@ function EntryList(props: Props & { recycle?: boolean }) {
               </button>
             </li>
           ))}
-        </ul>
+        </ul></FaviconProvider>
       )}
       {!props.recycle && !hits && (
         <div className="stack actions">

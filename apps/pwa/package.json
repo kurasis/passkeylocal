@@ -2,12 +2,12 @@
   "name": "@passkey-local/pwa",
   "private": true,
   "license": "GPL-3.0-only",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "PassKey Local progressive web app (UI, vault worker, offline shell).",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json && vite build",
+    "build": "tsc -p tsconfig.json && vite build && node scripts/check-favicon-build.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "e2e": "playwright test"
