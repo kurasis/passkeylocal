@@ -1,0 +1,29 @@
+{
+  "version": "0.1.2",
+  "targetCommit": "12bf0ec38f98283a8f65bd3e5bbd975187a23aca",
+  "testedSource": "d6fbc64bf2ec02af6a12bfb9b34db46a33117f1b",
+  "windowsRun": "38737098387",
+  "installerSha256": "6d5fd7a4ccd6318ceebb5a680f36274313e926c51f5d189d55fd5c7fd2a28634",
+  "files": [
+    {
+      "name": "PassKey-Local-Windows-x64-0.1.2-unsigned.zip",
+      "sha256": "1b023eb11221babc7b78da1114003a6960a9218723e65dad968de43830d61a34",
+      "bytes": 220921517
+    },
+    {
+      "name": "PassKey-Local-Windows-x64-0.1.2-unsigned.zip.sha256",
+      "sha256": "75c67fdd8a0e093612c1d1253d3879169e530b29a49536e263c9854cc50c1d4d",
+      "bytes": 111
+    },
+    {
+      "name": "passkeylocal-cloudflare-pages-0.1.2.zip",
+      "sha256": "1ec5828b25574df4daf07f375d41a6fe6b8908822779bc74a43af272acad7429",
+      "bytes": 226982
+    },
+    {
+      "name": "passkeylocal-cloudflare-pages-0.1.2.zip.sha256",
+      "sha256": "0f5a82b132a12799cc7e654e0bb40a19b0abea1859725ab4ea09fa8772b813e7",
+      "bytes": 106
+    }
+  ]
+}
