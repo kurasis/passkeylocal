@@ -1,5 +1,15 @@
 # Release evidence and gate status
 
+## Rebuild after hosted build-command change (2026-10-15)
+
+The owner reported replacing the Cloudflare Build command with `node package.mjs`.
+Fresh hosted probe [38778227069](https://github.com/kurasis/passkeylocal/actions/runs/38778227069)
+passed the shell/method/GitHub-icon checks, but exact shell hashing still matched
+0.1.2. Saving settings alone had not established publication of 0.1.3. This
+documentation commit requests a new production build through the connected main
+branch; the resulting deployment/version must be checked separately. Application
+and versioned archive bytes are unchanged. No new app/native test run is claimed.
+
 ## PWA icon retry fix 0.1.3 (2026-10-15)
 
 The owner reported missing icons after successful Cloudflare Worker deployment
