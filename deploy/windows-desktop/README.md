@@ -1,6 +1,27 @@
 # Windows desktop releases
 
-Latest: **PassKey Local 0.1.2** — [release page](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.2), [download Windows x64 0.1.2 ZIP](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.2/PassKey-Local-Windows-x64-0.1.2-unsigned.zip), [SHA-256](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.2/PassKey-Local-Windows-x64-0.1.2-unsigned.zip.sha256). Versioned release assets are permanent; CI artifacts have separate retention.
+Latest: **PassKey Local 0.1.6** — [release page](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.6), [Windows x64 0.1.6 ZIP](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.6/PassKey-Local-Windows-x64-0.1.6-unsigned.zip), [SHA-256](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.6/PassKey-Local-Windows-x64-0.1.6-unsigned.zip.sha256).
+
+Extract the 0.1.6 ZIP and run `PassKey-Local-Windows-x64-0.1.6-unsigned-setup.exe`.
+Close the old application first; install over it without clearing local data.
+The title is **PassKey Local (0.1.6)**. This unsigned experimental installer
+includes the official offline WebView2 runtime; Node/Python are not required.
+
+0.1.6 fixes Google's canonical www icon redirect in Windows and PWA, retries
+old cached misses and preserves encrypted downloaded icons. Enable website icons
+in Settings and return to the list. [Release details](../../docs/releases/0.1.6.md).
+The PWA is updated separately at [passkeylocal.top](https://passkeylocal.top).
+
+Windows archive: 220,965,422 bytes; SHA-256 `35adfd1c5dabd3e3783171049a959d21c9f209d395bcd2938574fbe710918535`.
+Installer SHA-256: `7a88afc0baccb0595e9df2bbb4ce8c1e10ab96bf6cf600209482c361f1cb5827`.
+[Release manifest](release-0.1.6.json), [successful Windows checks and installed smoke](https://github.com/kurasis/passkeylocal/actions/runs/38884694022), [publication/source verification](https://github.com/kurasis/passkeylocal/actions/runs/38887155096).
+Original build/smoke/resource reports are inside the ZIP. Hosted elevated-runner
+checks do not establish physical Hello/favicon-network, standard-user or
+clean-machine/offline acceptance on the owner's device.
+
+## Previous 0.1.2 release
+
+Previous: **PassKey Local 0.1.2** — [release page](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.2), [download Windows x64 0.1.2 ZIP](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.2/PassKey-Local-Windows-x64-0.1.2-unsigned.zip), [SHA-256](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.2/PassKey-Local-Windows-x64-0.1.2-unsigned.zip.sha256). Versioned release assets are permanent; CI artifacts have separate retention.
 
 Extract `PassKey-Local-Windows-x64-0.1.2-unsigned.zip` and run `PassKey-Local-Windows-x64-0.1.2-unsigned-setup.exe`. Close the old application before installing. Existing application/data-directory identifiers and encrypted formats are unchanged. The experimental installer is unsigned and includes Microsoft's signed x64 WebView2 offline runtime; Node/Python are not required.
 

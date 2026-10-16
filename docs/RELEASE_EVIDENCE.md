@@ -1,5 +1,68 @@
 # Release evidence and gate status
 
+## Verified permanent 0.1.6 release (2026-10-16)
+
+Publisher [38887155096](https://github.com/kurasis/passkeylocal/actions/runs/38887155096)
+completed successfully and published [desktop-v0.1.6](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.6).
+Its prepare stage checked successful Windows run `38884694022`, exact source
+subtrees, installer/smoke versions and installer hash before producing archives.
+The publish stage verified immutable payload digests and every uploaded asset.
+
+Independently re-read the public release and downloaded its small manifest:
+release is published, version 0.1.6, tested/target source `f0fccd13bfd3a4ff08bdd41866d46db0fc1245ff`.
+All five expected assets are uploaded, with API sizes/SHA-256 digests matching
+the manifest (the manifest's own download hash matches its API digest too).
+Windows ZIP: 220,965,422 bytes, SHA-256
+`35adfd1c5dabd3e3783171049a959d21c9f209d395bcd2938574fbe710918535`.
+Installer SHA-256 recorded by the verified publisher:
+`7a88afc0baccb0595e9df2bbb4ce8c1e10ab96bf6cf600209482c361f1cb5827`.
+Retained [release manifest](../deploy/windows-desktop/release-0.1.6.json).
+The large installer was not redundantly downloaded/executed in this Linux
+workspace; installed verification is the original hosted Windows smoke.
+
+Release notes now describe this concrete icon fix, actual PWA deployment and
+separate native upgrade, retaining hosted elevated/physical acceptance limits.
+The Windows download folder points to 0.1.6; previous reports/archives remain
+unchanged under their original versions. This final change modifies only docs
+and public evidence; application/hosting archive bytes remain the tested ones.
+
+## Windows 0.1.6 build and installed smoke passed (2026-10-16)
+
+Native [Windows run 38884694022](https://github.com/kurasis/passkeylocal/actions/runs/38884694022)
+completed successfully for merged source `f0fccd13bfd3a4ff08bdd41866d46db0fc1245ff`.
+The full existing workflow gates passed, including Windows compilation/clippy,
+native tests, recovery interoperability, actual 5 GiB resource gate, isolated TXT
+worker proof, installer packaging and installed process/main-window smoke.
+The public version/title is 0.1.6. Duplicate PR-only runs were cancelled after
+main runs existed; no skipped duplicate is counted as a passed check.
+
+This is hosted Windows evidence, not new physical Hello or direct native
+favicon-network acceptance on the owner's computer. Versioned release publisher
+[38887155096](https://github.com/kurasis/passkeylocal/actions/runs/38887155096)
+was dispatched only after native success; publication is verified separately.
+
+## Hosted canonical Google icon verified in 0.1.6 (2026-10-16)
+
+[PR 57](https://github.com/kurasis/passkeylocal/pull/57) merged as `f0fccd1`.
+Cloudflare build `b28eee92-785f-4c5c-98ee-499cb0eb060d` succeeded. Read-only
+hosted probe [38884827866](https://github.com/kurasis/passkeylocal/actions/runs/38884827866)
+PASS: live SW `0.1.6-b7f9b4ca1caf9cef`; all nine HTML/SW/precache files match
+the tested archive exactly by SHA-256. HTML SHA-256:
+`ab0048a5776cd9df8e5ca17353fe59a17df98b59fa980502d9ab5597656d95d6`.
+
+Both public icon requests return 200/no-store with valid rasters: GitHub 6518
+bytes; Google 5430 bytes, SHA-256
+`6da5620880159634213e197fafca1dde0272153be3e4590818533fab8d040770`.
+The Google response hash equals the public sample successfully decoded by the
+shared normalizer in Chromium. API GET stays 405/Allow POST, CSP/no-cache are
+preserved. [Retained report](../deploy/cloudflare-workers/cloudflare-check-0.1.6-live.json).
+The development machine's direct domain request is proxy-blocked, so this is
+GitHub-hosted verification. It does not claim the owner's cached PWA or native
+EXE is already running the new code; those clients require their own update.
+General [CI 38884693950](https://github.com/kurasis/passkeylocal/actions/runs/38884693950)
+also completed successfully, including the full production-browser suite and
+independent recovery jobs. Native installer publication is recorded separately.
+
 ## Canonical favicon loading 0.1.6 (2026-10-16)
 
 The owner reported missing `google.com` icons in both the PWA and native EXE.
@@ -30,8 +93,8 @@ in Chromium on Google's actual 5430-byte ICO: valid 1615-byte PNG output PASS.
 That decoder check used a blank page; production CSP is covered separately by
 the synthetic end-to-end browser scenario, not inferred from the public sample.
 
-Current web-design-guidelines were fetched and applied: `apps/pwa/src/ui/favicons.tsx`
-passes for decorative images with empty alt, fixed dimensions and lazy loading;
+Current web-design-guidelines were fetched and applied: `apps/pwa/src/ui/favicons.tsx:96`
+— pass for decorative images with empty alt, fixed dimensions and lazy loading;
 the change adds no controls or layout. Existing fallback initials remain present.
 Hosted publication, Windows compilation/installer and physical target acceptance
 are recorded separately, not implied by the Linux/browser checks. No vault
