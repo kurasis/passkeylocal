@@ -1,5 +1,31 @@
 # Release evidence and gate status
 
+## Hosted PWA 0.1.5 publication confirmed (2026-10-16)
+
+The owner requested a retry after the authentication failure. Existing injected
+GitHub authentication succeeded without a new token or configuration change.
+[PR 55](https://github.com/kurasis/passkeylocal/pull/55) merged as `b228bc6`.
+Cloudflare production build `e43fc7dd-588b-419a-8519-06ff868e2950` succeeded;
+Worker version `f2dccd9b-7bfe-4684-8a2c-82831771aba4`.
+
+Hosted read-only probe [38878507716](https://github.com/kurasis/passkeylocal/actions/runs/38878507716)
+PASS. Live SW version is `0.1.5-0d7f124d7b9bcbea`. The HTML, SW and every
+precache member (nine unique files including the HTML/SW) match the tested
+0.1.5 Pages archive by SHA-256; HTML SHA-256 is
+`c145b1e9cec3bb3d023cb21523f6bc96a12de26002f825e6cc4da802099ce36e`.
+API GET returns 405/Allow POST; the public GitHub icon POST returns 200 with a
+valid 6518-byte raster and no-store. CSP/no-cache headers remain present.
+The three published 0.1.5 archives also pass CRC and their SHA-256 sidecars.
+Retained [live report](../deploy/cloudflare-workers/cloudflare-check-0.1.5-live.json).
+
+Direct requests from this development environment return a proxy-level 403, so
+verification used the GitHub-hosted probe rather than claiming local site access.
+No application or distribution bytes changed during this evidence update. Prior
+local 196-unit/15-browser results remain applicable; no redundant rerun was
+needed. Hosted general CI/native packaging are separate from this read-only
+probe. Physical iPhone/iPad cached-shell recovery and icon display remain for
+the owner to confirm; no site-data deletion is prescribed.
+
 ## Multi-tab hard-reload recovery 0.1.5 (2026-10-16)
 
 Follow-up review of the proposed hard-reload recovery found an additional case:
@@ -18,19 +44,21 @@ has a null controller and offers the waiting update while the original shell A
 retains its unsaved editor. The first CDP attempt used the automation reload
 path instead of a browser bypass reload; using the same CDP session's explicit
 bypass/cache-disabled reload and tolerating context replacement corrected the
-test harness. No product assertion was removed.
+test harness. No product assertion was removed. The hosted 0.1.4 browser job
+failed at that same navigation-context race (14 passed, one failed); 0.1.5
+already includes the context-replacement-safe polling correction.
 
 The inherited locked-only activation, exact ciphertext preservation, offline
 unlock after a failed incomplete install, progress/error controls and observer
 cleanup remain tested. The full 15-case production Chromium browser suite PASS
 for the final 0.1.5 build, including the actual null-controller recovery case.
-Hosted publication and SW/precache checks will be recorded after deployment.
-Publication attempted from `fix/pwa-hard-reload-update`: Git push was rejected
-with invalid credentials, and a repository API request returned HTTP 401
-`Bad credentials`. The 0.1.5 commit and archives remain local; no 0.1.5 PR,
-merge, hosted deployment or live precache verification is claimed. Restore the
-environment's GitHub connection before publishing. The existing main source
-still reports 0.1.4; that source observation does not establish the live version.
+Hosted publication and SW/precache checks subsequently PASS; see the entry above.
+The initial publication attempt returned invalid Git credentials / API HTTP 401.
+After the owner requested another attempt, authentication worked: commit
+`14f1745` was pushed and [PR 55](https://github.com/kurasis/passkeylocal/pull/55)
+merged as `b228bc6`. Cloudflare build `e43fc7dd-588b-419a-8519-06ff868e2950`
+completed successfully (Worker version `f2dccd9b-7bfe-4684-8a2c-82831771aba4`).
+This supersedes the initial authentication blocker.
 The prior scoped web-design-guidelines review still applies: this follow-up
 changes only discovery logic and versions. Native EXE release/physical device
 acceptance remains separate.
