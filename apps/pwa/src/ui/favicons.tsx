@@ -37,6 +37,8 @@ export function FaviconProvider({ enabled, children }: { enabled: boolean; child
         if (!live() || signal.aborted) return null;
         const png = bytes ? await normalizeIcon(bytes) : null;
         if (!live() || signal.aborted) return null;
+        // A decoder failure is not proof that the website has no icon.
+        if (bytes && !png) return null;
         await client.call('storeFavicon', { uuid: entry.uuid, domain, png });
         return live() ? png : null;
       } catch { return null; }

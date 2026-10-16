@@ -27,7 +27,8 @@ export function safeRaster(bytes: Uint8Array): boolean {
 
 export async function normalizeIcon(bytes: Uint8Array): Promise<Uint8Array | null> {
   if (!safeRaster(bytes)) return null;
-  const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)]));
+  const type = bytes[0] === 0x89 ? 'image/png' : 'image/x-icon';
+  const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type }));
   try {
     const image = new Image();
     image.src = url;

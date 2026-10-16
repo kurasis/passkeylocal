@@ -1,5 +1,43 @@
 # Release evidence and gate status
 
+## Canonical favicon loading 0.1.6 (2026-10-16)
+
+The owner reported missing `google.com` icons in both the PWA and native EXE.
+Read-only inspection observed `https://google.com/favicon.ico` return 301 to
+`https://www.google.com/favicon.ico`, whose response is a 5430-byte ICO. Both
+downloaders previously rejected all redirects. Two new endpoint regression
+cases failed against the previous logic: wrong fallback target and unsupported
+redirects incorrectly marked as confirmed missing icons.
+
+PWA and native now allow only one exact HTTPS bare/`www` alias hop at the same
+fixed path. No automatic redirects are enabled; Windows separately validates
+and pins public DNS for the alias. Miss policy 3 retries old absent rows without
+discarding valid encrypted icons. Decode failure is no longer a cacheable miss;
+decoder blobs declare their PNG/ICO type. Hosted probe scope includes Google
+and GitHub, with domains explicitly identified in the public report.
+
+Executed locally: 199 JS tests (99 adapter, 40 core, 60 PWA), all 16 production
+Chromium scenarios, workspace typecheck, PWA build and compiled endpoint check,
+desktop frontend/isolation/version checks, Rust format/clippy and 151 native
+Linux tests PASS. The explicit 5 GiB resource test remains ignored locally.
+The new browser case sends a synthetic 301 through the actual endpoint function,
+rejects a structurally plausible but undecodable PNG without poisoning cache,
+then renders a synthetic ICO as a 32px avatar on the next visit. Policy-migration
+tests cover both absent and v2 miss markers while preserving downloaded icons.
+All three 0.1.6 ZIPs pass CRC/SHA-256; Pages bytes equal the tested dist exactly.
+An additional one-off read-only public-sample check ran the shared normalizer
+in Chromium on Google's actual 5430-byte ICO: valid 1615-byte PNG output PASS.
+That decoder check used a blank page; production CSP is covered separately by
+the synthetic end-to-end browser scenario, not inferred from the public sample.
+
+Current web-design-guidelines were fetched and applied: `apps/pwa/src/ui/favicons.tsx`
+passes for decorative images with empty alt, fixed dimensions and lazy loading;
+the change adds no controls or layout. Existing fallback initials remain present.
+Hosted publication, Windows compilation/installer and physical target acceptance
+are recorded separately, not implied by the Linux/browser checks. No vault
+format, recovery mechanism or data identifier changes. Earlier published
+archives remain unchanged.
+
 ## Hosted PWA 0.1.5 publication confirmed (2026-10-16)
 
 The owner requested a retry after the authentication failure. Existing injected

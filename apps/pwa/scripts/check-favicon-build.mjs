@@ -30,6 +30,18 @@ try {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ domain: 'synthetic-icon-fixture.com' })
   });
+  const redirected = [];
+  globalThis.fetch = async (url, init) => {
+    redirected.push(url);
+    assert.equal(init.redirect, 'manual');
+    return redirected.length === 1
+      ? new Response(null, { status: 301, headers: { Location: 'https://www.synthetic-icon-fixture.com/favicon.ico' } })
+      : new Response(png);
+  };
+  const canonical = await worker.fetch(request(), env);
+  assert.equal(canonical.status, 200);
+  assert.deepEqual(Buffer.from(await canonical.arrayBuffer()), png);
+  assert.deepEqual(redirected, ['https://synthetic-icon-fixture.com/favicon.ico', 'https://www.synthetic-icon-fixture.com/favicon.ico']);
   globalThis.fetch = async () => new Response(null, { status: 404 });
   const missing = await worker.fetch(request(), env);
   assert.equal(missing.status, 404);
@@ -40,5 +52,5 @@ try {
   assert.equal(outage.headers.has('X-PassKey-Favicon'), false);
   assert.equal(outage.headers.get('cache-control'), 'no-store');
   assert.equal(await (await worker.fetch(new Request('https://vault.example.test/'), env)).text(), 'synthetic shell');
-  console.log('PASS: compiled Pages favicon endpoint, confirmed miss/outage distinction, fixed target, no-store, exact route, shell cache exclusion.');
+  console.log('PASS: compiled Pages favicon endpoint, bounded canonical hop, confirmed miss/outage distinction, fixed target, no-store, exact route, shell cache exclusion.');
 } finally { globalThis.fetch = original; }

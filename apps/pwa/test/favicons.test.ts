@@ -112,7 +112,7 @@ describe('optional encrypted per-vault favicon cache', () => {
     expect(await storage.getPreference('faviconCache')).toBeNull();
   });
 
-  it('retries legacy misses after upgrading while preserving downloaded icons', async () => {
+  it.each([undefined, 2])('retries legacy miss policy %s after upgrading while preserving downloaded icons', async (policy) => {
     const storage = await openStorage({ indexedDB: new IDBFactory() });
     const controller = new VaultController(storage);
     const h = new VaultWorkerHandlers(storage, controller);
@@ -129,7 +129,7 @@ describe('optional encrypted per-vault favicon cache', () => {
     const additionalData = new TextEncoder().encode('PassKey Local favicon cache v1');
     const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: decode64(e!.iv), additionalData }, key, decode64(e!.ciphertext));
     const rows = JSON.parse(new TextDecoder().decode(plaintext));
-    for (const row of rows) delete row.missPolicy;
+    for (const row of rows) row.missPolicy = policy;
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData }, key, new TextEncoder().encode(JSON.stringify(rows)));
     await storage.setPreference('faviconCache', { ...e, iv: encode64(iv), ciphertext: encode64(new Uint8Array(ciphertext)) });
@@ -143,6 +143,37 @@ describe('optional encrypted per-vault favicon cache', () => {
 describe('Cloudflare favicon endpoint and browser transport', () => {
   const request = (domain = DOMAIN, extra: RequestInit = {}) => new Request('https://vault.example.test/api/favicon', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://vault.example.test' }, body: JSON.stringify({ domain }), ...extra
+  });
+
+  it('loads a fixed icon path redirected once between the exact domain and its www alias', async () => {
+    for (const [domain, canonical] of [[DOMAIN, `www.${DOMAIN}`], [`www.${DOMAIN}`, DOMAIN]]) {
+      const upstream = vi.fn<typeof fetch>()
+        .mockResolvedValueOnce(new Response(null, { status: 301, headers: { Location: `https://${canonical}/favicon.ico` } }))
+        .mockResolvedValueOnce(new Response(PNG));
+      const response = await faviconRequest(request(domain), upstream);
+      expect(response.status).toBe(200);
+      expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG);
+      expect(upstream.mock.calls.map(([url]) => url)).toEqual([`https://${domain}/favicon.ico`, `https://${canonical}/favicon.ico`]);
+      for (const [, init] of upstream.mock.calls) expect(init).toMatchObject({ redirect: 'manual', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' });
+    }
+  });
+
+  it('keeps unsupported redirects retryable and never follows other hosts, paths, credentials or redirect chains', async () => {
+    for (const location of [`https://other-site.com/favicon.ico`, 'http://127.0.0.1/favicon.ico',
+      `http://www.${DOMAIN}/favicon.ico`, `https://www.${DOMAIN}:8443/favicon.ico`,
+      `https://user:pw@www.${DOMAIN}/favicon.ico`, `https://www.${DOMAIN}/private`,
+      `https://www.${DOMAIN}/favicon.ico?secret=1`, `https://www.${DOMAIN}/favicon.ico#fragment`]) {
+      const upstream = vi.fn<typeof fetch>().mockImplementation(async () => new Response(null, { status: 302, headers: { Location: location } }));
+      const response = await faviconRequest(request(), upstream);
+      expect(response.status, location).toBe(503);
+      expect(response.headers.has('X-PassKey-Favicon')).toBe(false);
+      expect(upstream.mock.calls.map(([url]) => url)).toEqual([`https://${DOMAIN}/favicon.ico`, `https://${DOMAIN}/apple-touch-icon.png`]);
+    }
+    const loop = vi.fn<typeof fetch>().mockImplementation(async (url) => new Response(null, {
+      status: 301, headers: { Location: String(url).replace(`https://${DOMAIN}/`, `https://www.${DOMAIN}/`) }
+    }));
+    expect((await faviconRequest(request(), loop)).status).toBe(503);
+    expect(loop).toHaveBeenCalledTimes(4);
   });
 
   it('only sends a domain to fixed HTTPS paths, drops upstream cookies and never caches plaintext', async () => {
