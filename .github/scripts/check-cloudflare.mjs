@@ -1,4 +1,4 @@
-/** Read-only production probe: public shell and one public GitHub favicon, no vault. */
+/** Read-only production probe: public shell and public GitHub/Google favicons, no vault. */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { safeRaster } from '../../apps/pwa/src/favicon/image.ts';
@@ -9,6 +9,7 @@ const report = { version, origin, checkedAt: new Date().toISOString(), requests:
 if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
 async function probe(path, init = {}, maxBytes = 65_536) {
   const row = { path, method: init.method ?? 'GET' };
+  if (row.method === 'POST') row.domain = JSON.parse(init.body).domain;
   try {
     const response = await fetch(origin + path, { ...init, redirect: 'manual',
       signal: AbortSignal.timeout(15_000), headers: { ...init.headers, 'User-Agent': 'PassKey-Local-deployment-check' } });
@@ -57,11 +58,13 @@ if (validManifest) for (const path of worker.precache) if (path !== '/') assets.
 const method = await probe('/api/favicon');
 const icon = await probe('/api/favicon', { method: 'POST', body: JSON.stringify({ domain: 'github.com' }),
   headers: { 'Content-Type': 'application/json', Origin: origin } });
+const google = await probe('/api/favicon', { method: 'POST', body: JSON.stringify({ domain: 'google.com' }),
+  headers: { 'Content-Type': 'application/json', Origin: origin } });
 report.outcome = shell.status !== 200 ? 'origin-unavailable'
   : worker.status !== 200 || !worker.shellVersion || !/javascript|ecmascript/.test(worker.headers?.['content-type'] ?? '') ? 'service-worker-unavailable'
   : !validManifest || assets.some(asset => asset.status !== 200 || asset.error) ? 'offline-shell-incomplete'
   : method.status !== 405 || method.headers?.allow !== 'POST' ? 'endpoint-not-connected'
-  : icon.status !== 200 || !icon.validRaster ? 'icon-request-failed' : 'passed';
+  : [icon, google].some(row => row.status !== 200 || !row.validRaster) ? 'icon-request-failed' : 'passed';
 writeFileSync(`cloudflare-check-${version}.json`, JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));
 process.exitCode = report.outcome === 'passed' ? 0 : 1;

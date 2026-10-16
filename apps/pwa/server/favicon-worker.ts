@@ -6,6 +6,15 @@ type Env = { ASSETS: { fetch(request: Request): Promise<Response> } };
 const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
 const unavailable = () => new Response(null, { status: 404, headers });
 
+/** Only the same fixed HTTPS path on the exact www/bare alias; no arbitrary redirects. */
+function canonicalTarget(domain: string, path: string, location: string | null): string | null {
+  if (!location) return null;
+  const alias = domain.startsWith('www.') ? domain.slice(4) : `www.${domain}`;
+  if (!publicDomain(alias)) return null;
+  const expected = `https://${alias}${path}`;
+  return location === expected ? expected : null;
+}
+
 export async function faviconRequest(request: Request, upstream: typeof fetch = fetch): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { ...headers, Allow: 'POST' } });
   const origin = request.headers.get('origin');
@@ -32,31 +41,42 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
   const signal = AbortSignal.timeout(8000);
   let temporaryFailure = false;
   for (const path of ['/favicon.ico', '/apple-touch-icon.png']) {
-    try {
-      // Fixed HTTPS paths, no redirect following: never forward stored URLs or credentials.
-      const response = await upstream(`https://${domain}${path}`, {
-        redirect: 'manual', credentials: 'omit', referrerPolicy: 'no-referrer', signal,
-        cache: 'no-store', headers: { Accept: 'image/png,image/x-icon,image/vnd.microsoft.icon' }
-      });
-      if (!response.ok && response.status !== 404 && response.status !== 410 && response.status >= 400) temporaryFailure = true;
-      if (!response.ok || Number(response.headers.get('content-length')) > MAX_ICON_BYTES) {
-        await response.body?.cancel(); continue;
-      }
-      const stream = response.body?.getReader();
-      if (!stream) continue;
-      const bytes = new Uint8Array(MAX_ICON_BYTES);
-      let size = 0, overflow = false;
+    const targets = [`https://${domain}${path}`];
+    for (const target of targets) {
       try {
-        while (true) {
-          const { done, value } = await stream.read();
-          if (done) break;
-          if (size + value.length > bytes.length) { overflow = true; break; }
-          bytes.set(value, size); size += value.length;
+        // Fetch each validated target manually, without forwarding URLs or credentials.
+        const response = await upstream(target, {
+          redirect: 'manual', credentials: 'omit', referrerPolicy: 'no-referrer', signal,
+          cache: 'no-store', headers: { Accept: 'image/png,image/x-icon,image/vnd.microsoft.icon' }
+        });
+        if ([301, 302, 303, 307, 308].includes(response.status) && targets.length === 1) {
+          const canonical = canonicalTarget(domain, path, response.headers.get('location'));
+          if (canonical) {
+            await response.body?.cancel();
+            targets.push(canonical);
+            continue;
+          }
         }
-      } finally { await stream.cancel().catch(() => {}); }
-      const icon = bytes.slice(0, size);
-      if (!overflow && safeRaster(icon)) return new Response(icon, { headers: { ...headers, 'Content-Type': 'application/octet-stream' } });
-    } catch { temporaryFailure = true; }
+        if (!response.ok && response.status !== 404 && response.status !== 410) temporaryFailure = true;
+        if (!response.ok || Number(response.headers.get('content-length')) > MAX_ICON_BYTES) {
+          await response.body?.cancel(); continue;
+        }
+        const stream = response.body?.getReader();
+        if (!stream) continue;
+        const bytes = new Uint8Array(MAX_ICON_BYTES);
+        let size = 0, overflow = false;
+        try {
+          while (true) {
+            const { done, value } = await stream.read();
+            if (done) break;
+            if (size + value.length > bytes.length) { overflow = true; break; }
+            bytes.set(value, size); size += value.length;
+          }
+        } finally { await stream.cancel().catch(() => {}); }
+        const icon = bytes.slice(0, size);
+        if (!overflow && safeRaster(icon)) return new Response(icon, { headers: { ...headers, 'Content-Type': 'application/octet-stream' } });
+      } catch { temporaryFailure = true; }
+    }
   }
   return temporaryFailure
     ? new Response(null, { status: 503, headers })

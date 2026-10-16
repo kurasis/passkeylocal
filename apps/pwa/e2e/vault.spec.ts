@@ -3,6 +3,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
+import { faviconRequest } from '../server/favicon-worker.ts';
 const APP_VERSION: string = createRequire(import.meta.url)('../package.json').version;
 
 // Synthetic data only.
@@ -624,4 +625,48 @@ test('a temporary icon endpoint failure retries on the next list visit without c
   await page.getByRole('link', { name: 'Vault', exact: true }).click();
   await expect(page.locator('.entries .avatar img')).toBeVisible();
   expect(calls).toBe(2);
+});
+
+test('canonical-host ICO renders and an earlier image decode failure does not poison the encrypted cache', async ({ page }) => {
+  // An ICO containing our synthetic PNG exercises the actual browser decoder.
+  const ico = Buffer.alloc(22 + ICON_PNG.length);
+  ico.writeUInt16LE(1, 2); ico.writeUInt16LE(1, 4); ico[6] = ico[7] = 1;
+  ico.writeUInt32LE(ICON_PNG.length, 14); ico.writeUInt32LE(22, 18); ICON_PNG.copy(ico, 22);
+  let calls = 0;
+  const upstreamUrls: string[] = [];
+  await page.addInitScript(() => {
+    (window as any).__iconDecodeFailures = 0;
+    const decode = HTMLImageElement.prototype.decode;
+    HTMLImageElement.prototype.decode = function () {
+      const result = decode.call(this);
+      void result.catch(() => { (window as any).__iconDecodeFailures++; });
+      return result;
+    };
+  });
+  await page.route('**/api/favicon', async (route) => {
+    calls++;
+    const response = await faviconRequest(new Request(route.request().url(), {
+      method: 'POST', body: route.request().postData(), headers: { 'Content-Type': 'application/json', Origin: ORIGIN }
+    }), async (url) => {
+      upstreamUrls.push(String(url));
+      return String(url) === `https://${ICON_DOMAIN}/favicon.ico`
+        ? new Response(null, { status: 301, headers: { Location: `https://www.${ICON_DOMAIN}/favicon.ico` } })
+        : new Response(calls === 1 ? ICON_PNG.subarray(0, 24) : ico);
+    });
+    await route.fulfill({ status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer()) });
+  });
+  await page.goto('/'); await createAndVerifyVault(page);
+  await addIconEntry(page, ICON_DOMAIN, '');
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Download website icons' }).check();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as any).__iconDecodeFailures)).toBe(1);
+  await expect(page.locator('.entries .avatar')).toHaveText('S');
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  const image = page.locator('.entries .avatar img');
+  await expect(image).toBeVisible();
+  expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(32);
+  expect(calls).toBe(2);
+  expect(upstreamUrls).toEqual(Array(2).fill([`https://${ICON_DOMAIN}/favicon.ico`, `https://www.${ICON_DOMAIN}/favicon.ico`]).flat());
 });
