@@ -85,5 +85,9 @@ export function rankedIcons(icons: IconCandidate[], base: string): string[] {
   }
   const score = (icon: IconCandidate) => Math.min(icon.size, 512) + (icon.png ? 16 : 0);
   const selected = [...unique.values()].sort((a, b) => score(b) - score(a)).slice(0, 4).map(i => i.url);
+  // Verified from Google's public image metadata; usable when its root page is a regional/blocked variant.
+  if (['google.com', 'www.google.com'].includes(new URL(base).hostname)) {
+    selected.push('https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png');
+  }
   return [...new Set([...selected, new URL('/apple-touch-icon.png', base).href, new URL('/favicon.png', base).href, new URL('/favicon.ico', base).href])];
 }

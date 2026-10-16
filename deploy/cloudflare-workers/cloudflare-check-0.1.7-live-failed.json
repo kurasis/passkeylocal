@@ -1,0 +1,217 @@
+{
+  "version": "0.1.7",
+  "origin": "https://passkeylocal.top",
+  "checkedAt": "2026-10-16T11:30:02.177Z",
+  "requests": [
+    {
+      "path": "/",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/html",
+        "cache-control": "no-cache",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6bab39dd9f4c4-SJC"
+      },
+      "bytes": 1034,
+      "sha256": "4944719ff247b5ac3e66209bca734b4f46c810cef0d23860253b7bbd1c265264",
+      "scripts": [
+        "/assets/index-U64l1j9q.js"
+      ]
+    },
+    {
+      "path": "/sw.js",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/javascript",
+        "cache-control": "no-cache",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6bab4bf4df4c4-SJC"
+      },
+      "bytes": 2782,
+      "sha256": "d9f8de5c007fbd7e756d79393d8eaafc0446e8e094f53a00d2563911e1b7c832",
+      "shellVersion": "0.1.7-8b418a958cd6e404",
+      "precache": [
+        "/",
+        "/assets/index-DTN3nuMt.css",
+        "/assets/index-U64l1j9q.js",
+        "/assets/vault.worker-BPiFB6QY.js",
+        "/icons/apple-touch-icon.png",
+        "/icons/icon-192.png",
+        "/icons/icon-512.png",
+        "/manifest.webmanifest"
+      ]
+    },
+    {
+      "path": "/assets/index-DTN3nuMt.css",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/css",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6bab5b8d3f4c4-SJC"
+      },
+      "bytes": 27978,
+      "sha256": "d523d28ca11cce5fa063b87af56cffc9d6db2fc6a3db9729ffb3118ea9494590"
+    },
+    {
+      "path": "/assets/index-U64l1j9q.js",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/javascript",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6bab62963f4c4-SJC"
+      },
+      "bytes": 394647,
+      "sha256": "bb0e4357144d71bdf582d286778a407e3563e212c530fd8b6a69a4fa8717eac3"
+    },
+    {
+      "path": "/assets/vault.worker-BPiFB6QY.js",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "text/javascript",
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6bab7ab9ef4c4-SJC"
+      },
+      "bytes": 327423,
+      "sha256": "c202c53c0fc163dd685bc24ec0b303f852c6e8e08b27263ceafd402e1e9aaaa3"
+    },
+    {
+      "path": "/icons/apple-touch-icon.png",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6bab97e3cf4c4-SJC"
+      },
+      "bytes": 881,
+      "sha256": "d058c6833201dcb819e97488b1625f7a4dc27965be7fd479d4e6da2bbe738d33"
+    },
+    {
+      "path": "/icons/icon-192.png",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6bab9fd2e6809-SJC"
+      },
+      "bytes": 1116,
+      "sha256": "2978ef64fa004cacb020b86e4a0e43b16a326502d04a9206e45ade64e61e544e"
+    },
+    {
+      "path": "/icons/icon-512.png",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "image/png",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6baba3f37f4c4-SJC"
+      },
+      "bytes": 3597,
+      "sha256": "a58e2189379ebbe8ffbc6084aa641ece8b102fcd3641ff0c1af42a65ebe40a5a"
+    },
+    {
+      "path": "/manifest.webmanifest",
+      "method": "GET",
+      "status": 200,
+      "headers": {
+        "content-type": "application/manifest+json",
+        "cache-control": "public, max-age=0, must-revalidate",
+        "content-security-policy": "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6babaad856809-SJC"
+      },
+      "bytes": 458,
+      "sha256": "5e56a2250a9f9983cbcb670c8ed92311ef76ed6634d023b754ef67fe71e77c6f"
+    },
+    {
+      "path": "/api/favicon",
+      "method": "GET",
+      "status": 405,
+      "headers": {
+        "content-type": null,
+        "cache-control": "no-store",
+        "content-security-policy": null,
+        "allow": "POST",
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6babae810f4c4-SJC"
+      },
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/api/favicon",
+      "method": "POST",
+      "domain": "github.com",
+      "status": 200,
+      "headers": {
+        "content-type": "image/png",
+        "cache-control": "no-store",
+        "content-security-policy": null,
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6babb4dc96809-SJC"
+      },
+      "bytes": 9825,
+      "sha256": "f304abd26e1a0dbf21be68ced4b9d7bb115c61d39fd0ac4b898b28dc0b760790",
+      "validRaster": true,
+      "dimensions": {
+        "width": 512,
+        "height": 512,
+        "png": true
+      }
+    },
+    {
+      "path": "/api/favicon",
+      "method": "POST",
+      "domain": "google.com",
+      "status": 200,
+      "headers": {
+        "content-type": "image/x-icon",
+        "cache-control": "no-store",
+        "content-security-policy": null,
+        "allow": null,
+        "x-passkey-favicon": null,
+        "cf-ray": "a4b6babebdbbf4c4-SJC"
+      },
+      "bytes": 5430,
+      "sha256": "6da5620880159634213e197fafca1dde0272153be3e4590818533fab8d040770",
+      "validRaster": true,
+      "dimensions": {
+        "width": 32,
+        "height": 32,
+        "png": false
+      }
+    }
+  ],
+  "outcome": "high-resolution-icon-unavailable",
+  "probeRun": "https://github.com/kurasis/passkeylocal/actions/runs/38893958353"
+}

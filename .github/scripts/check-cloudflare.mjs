@@ -15,7 +15,7 @@ async function probe(path, init = {}, maxBytes = 65_536) {
       signal: AbortSignal.timeout(15_000), headers: { ...init.headers, 'User-Agent': 'PassKey-Local-deployment-check' } });
     row.status = response.status;
     row.headers = Object.fromEntries(['content-type', 'cache-control', 'content-security-policy', 'allow',
-      'x-passkey-favicon', 'cf-ray'].map(name => [name, response.headers.get(name)]));
+      'x-passkey-favicon', 'x-passkey-icon-discovery', 'x-passkey-icon-width', 'x-passkey-icon-height', 'cf-ray'].map(name => [name, response.headers.get(name)]));
     const chunks = [];
     let size = 0;
     const reader = response.body?.getReader();

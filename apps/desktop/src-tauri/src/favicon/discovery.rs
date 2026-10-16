@@ -189,6 +189,19 @@ pub(super) fn ranked_icons(icons: Vec<Candidate>, base: &str) -> Vec<String> {
     unique
         .sort_by_key(|icon| std::cmp::Reverse(icon.size.min(512) + if icon.png { 16 } else { 0 }));
     let mut urls: Vec<_> = unique.into_iter().take(4).map(|icon| icon.url).collect();
+    // Public Google metadata points here; its homepage may vary by region/network.
+    if Url::parse(base)
+        .ok()
+        .and_then(|url| url.host_str().map(str::to_owned))
+        .is_some_and(|host| ["google.com", "www.google.com"].contains(&host.as_str()))
+    {
+        let hint =
+            "https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png"
+                .to_owned();
+        if !urls.contains(&hint) {
+            urls.push(hint);
+        }
+    }
     for path in ["/apple-touch-icon.png", "/favicon.png", "/favicon.ico"] {
         if let Some(url) = public_url(path, base) {
             if !urls.contains(&url) {
@@ -243,6 +256,23 @@ pub(super) fn dimensions(bytes: &[u8]) -> Option<(usize, usize, bool)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn verified_google_png_hint_is_limited_to_exact_hosts() {
+        let hint =
+            "https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png";
+        for host in ["google.com", "www.google.com"] {
+            assert_eq!(ranked_icons(vec![], &format!("https://{host}/"))[0], hint);
+        }
+        for host in [
+            "google.com.evil.com",
+            "notgoogle.com",
+            "synthetic-icon-fixture.com",
+        ] {
+            assert!(!ranked_icons(vec![], &format!("https://{host}/"))
+                .iter()
+                .any(|url| url == hint));
+        }
+    }
     #[test]
     fn shared_public_metadata_fixture_ignores_inert_links_and_ranks_pngs() {
         let f: serde_json::Value = serde_json::from_str(include_str!(

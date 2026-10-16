@@ -82,9 +82,9 @@ key cannot open it. A copied KDBX/old backup includes its encrypted cache key:
 anyone able to decrypt that backup and obtain the cache can also decrypt those
 icons. This cache offers no separate password protection or secure-erasure claim.
 
-Hits refresh after 30 days, misses after one day. Quality policy 1 marks icons
-checked by the 0.1.7 discovery path; earlier cached hits are rechecked while
-remaining available offline. Miss policy 4 retries older absent-icon rows. Stale hits remain visible
+Hits refresh after 30 days, misses after one day. Quality policy 2 marks icons
+checked by the 0.1.8 discovery path; earlier cached hits are rechecked while
+remaining available offline. Miss policy 5 retries older absent-icon rows. Stale hits remain visible
 offline; successful background refreshes notify current list avatars. Cache data
 is local auxiliary state, not part of backup completeness or vault recovery.
 Missing cached data simply downloads again when enabled and online. Clear and
@@ -158,3 +158,10 @@ on both implementations. New dependencies are pinned in the existing lockfiles.
 - https://docs.rs/scraper/0.24.0/scraper/
 - https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel#icon
 - https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/icons
+
+The exact Google/www.google.com hosts also have a first-party 128px PNG fallback
+observed in Google public image metadata (`/images/branding/googleg/1x/googleg_standard_color_128dp.png`).
+It is tried after discovered candidates when regional homepage variants or a
+failed homepage fetch omit the metadata. Other domains never use this hint.
+Endpoint diagnostics expose only bounded HTTP status/byte/candidate/request
+counters, with no saved entry data, page contents or upstream error text.

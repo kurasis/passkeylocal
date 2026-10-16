@@ -56,14 +56,14 @@ export class FaviconCache {
     try { png = row?.png ? decode64(row.png) : null; } catch { /* Disposable cache. */ }
     const valid = png && safeRaster(png);
     return { png: valid ? png : null,
-      refresh: !row || !row.png && row.missPolicy !== 4 || !!row.png && (!valid || row.imagePolicy !== 1) || Date.now() - row.at > (row.png ? 30 : 1) * 86_400_000 };
+      refresh: !row || !row.png && row.missPolicy !== 5 || !!row.png && (!valid || row.imagePolicy !== 2) || Date.now() - row.at > (row.png ? 30 : 1) * 86_400_000 };
   }
 
   put(s: UnlockedSession, domain: string, png: Uint8Array | null): Promise<void> {
     const operation = this.queue.catch(() => {}).then(async () => {
       const { id, key } = await this.material(s);
       const rows = (await this.read(s, id, key)).filter((r) => r.domain !== domain);
-      rows.push({ domain, png: png ? encode64(png) : null, at: Date.now(), ...png ? { imagePolicy: 1 } : { missPolicy: 4 } });
+      rows.push({ domain, png: png ? encode64(png) : null, at: Date.now(), ...png ? { imagePolicy: 2 } : { missPolicy: 5 } });
       while (rows.length > 64 || JSON.stringify(rows).length > MAX_TEXT) rows.shift();
       const plaintext = new TextEncoder().encode(JSON.stringify(rows));
       try {

@@ -34,6 +34,7 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
   const signal = AbortSignal.timeout(12_000);
   let remaining = 12;
   let temporaryFailure = false;
+  let pageStatus = 0;
   async function get(target: string, limit: number, prefix = false): Promise<{ url: string; bytes: Uint8Array } | null> {
     for (let hop = 0; hop < 2 && remaining > 0 && !signal.aborted; hop++) {
       remaining--;
@@ -43,6 +44,7 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
           signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]), cache: 'no-store',
           headers: { Accept: prefix ? 'text/html' : 'image/png,image/x-icon,image/vnd.microsoft.icon,application/manifest+json' }
         });
+        if (prefix) pageStatus = response.status;
         const canonical = hop === 0 && [301, 302, 303, 307, 308].includes(response.status)
           ? canonicalIconTarget(target, response.headers.get('location')) : null;
         if (canonical) { await response.body?.cancel(); target = canonical; continue; }
@@ -93,7 +95,8 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
   if (best) {
     const dimensions = iconDimensions(best)!;
     return new Response(new Uint8Array(best), { headers: { ...headers, 'Content-Type': dimensions.png ? 'image/png' : 'image/x-icon',
-      'X-PassKey-Icon-Width': String(dimensions.width), 'X-PassKey-Icon-Height': String(dimensions.height) } });
+      'X-PassKey-Icon-Width': String(dimensions.width), 'X-PassKey-Icon-Height': String(dimensions.height),
+      'X-PassKey-Icon-Discovery': `page=${pageStatus};bytes=${page?.bytes.length ?? 0};icons=${metadata.icons.length};requests=${12 - remaining}` } });
   }
   return temporaryFailure
     ? new Response(null, { status: 503, headers })

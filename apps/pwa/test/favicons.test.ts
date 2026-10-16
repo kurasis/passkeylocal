@@ -114,7 +114,7 @@ describe('optional encrypted per-vault favicon cache', () => {
     expect(await storage.getPreference('faviconCache')).toBeNull();
   });
 
-  it.each([undefined, 2])('retries legacy miss policy %s after upgrading while preserving downloaded icons', async (policy) => {
+  it.each([undefined, 2, 4])('retries legacy miss policy %s after upgrading while preserving downloaded icons', async (policy) => {
     const storage = await openStorage({ indexedDB: new IDBFactory() });
     const controller = new VaultController(storage);
     const h = new VaultWorkerHandlers(storage, controller);
@@ -143,7 +143,7 @@ describe('optional encrypted per-vault favicon cache', () => {
 });
 
 describe('high-resolution cache upgrade', () => {
-  it('keeps an old thumbnail offline while marking it for one quality upgrade', async () => {
+  it.each([undefined, 1])('keeps thumbnail policy %s offline while marking it for one quality upgrade', async (policy) => {
     const storage = await openStorage({ indexedDB: new IDBFactory() });
     const controller = new VaultController(storage);
     const h = new VaultWorkerHandlers(storage, controller);
@@ -156,7 +156,7 @@ describe('high-resolution cache upgrade', () => {
     const e = await storage.getPreference<any>('faviconCache');
     const additionalData = new TextEncoder().encode('PassKey Local favicon cache v1');
     const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: decode64(e.iv), additionalData }, key, decode64(e.ciphertext));
-    const rows = JSON.parse(new TextDecoder().decode(plain)); delete rows[0].imagePolicy;
+    const rows = JSON.parse(new TextDecoder().decode(plain)); rows[0].imagePolicy = policy;
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData }, key, new TextEncoder().encode(JSON.stringify(rows)));
     await storage.setPreference('faviconCache', { ...e, iv: encode64(iv), ciphertext: encode64(new Uint8Array(encrypted)) });
@@ -226,6 +226,21 @@ describe('Cloudflare favicon endpoint and browser transport', () => {
     expect(iconDimensions(bytes)).toEqual({ width: 192, height: 192, png: true });
     expect(response.headers.get('X-PassKey-Icon-Width')).toBe('192');
     expect(upstream.mock.calls.map(([url]) => url)).toEqual([fixture.base, metadata.manifest, fixture.expected[0]]);
+  });
+
+  it.each(['google.com', 'www.google.com'])('finds the verified first-party PNG when %s homepage is unavailable', async (domain) => {
+    const target = 'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png';
+    const large = new Uint8Array(readFileSync(new URL('../../../tests/fixtures/icons/retina-192.png', import.meta.url)));
+    const upstream = vi.fn<typeof fetch>().mockImplementation(async url => String(url) === target
+      ? new Response(large) : new Response(null, { status: 403 }));
+    const response = await faviconRequest(request(domain), upstream);
+    expect(response.status).toBe(200);
+    expect(iconDimensions(new Uint8Array(await response.arrayBuffer()))).toEqual({ width: 192, height: 192, png: true });
+    expect(response.headers.get('X-PassKey-Icon-Discovery')).toBe('page=403;bytes=0;icons=0;requests=2');
+    expect(upstream.mock.calls.map(([url]) => url)).toEqual([`https://${domain}/`, target]);
+    for (const other of ['google.com.evil.com', 'notgoogle.com', DOMAIN]) {
+      expect(rankedIcons([], `https://${other}/`)).not.toContain(target);
+    }
   });
 
   it('bounds metadata, image bodies and request count while retaining the ICO fallback', async () => {
