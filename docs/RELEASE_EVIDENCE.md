@@ -19,6 +19,14 @@ Tested source/target: `e334bd6825dcb848314b71afb2c1ee47f12e99cc`. Windows ZIP:
 221,204,263 bytes, SHA-256 `17b3c504388b8ea056fad94eeb8d4a9a4071f58cc26a40758e696ea914e365a6`.
 Installer SHA-256: `b96136782a0c8fd08e32858fc3d2f2ba9f50d76ccd3b5244368a5dcaae179ccb`.
 [Retained manifest](../deploy/windows-desktop/release-0.1.8.json).
+Also downloaded the publisher's small Pages ZIP: CRC, API digest, 0.1.8 shell
+and compiled first-party high-resolution fallback checks PASS. This is the
+separate Windows CI production build (255,977 bytes, SHA-256
+`3cb01b8686b576669bd1ef375171e3a32bb0657f6e800b186c6fdd0108e2cbfc`),
+not a byte-identical copy of the Linux-created deployment ZIP. The connected
+Cloudflare deployment uses the repository hosting archive, whose exact live
+hashes are independently verified in the next section. Do not interchange
+these two archives' checksum sidecars.
 The large installer was not redundantly downloaded/executed in this Linux
 workspace; installed proof is the original hosted Windows smoke. Physical
 owner-device rendering/Hello/network, standard-user and clean-machine/offline
