@@ -21,6 +21,6 @@ Archive: 229,138 bytes; SHA-256 `858410e1214db40d31767bb6e5c8dac9a5ac1b3930b573e
 
 Enable **Settings → Website icons → Download website icons** explicitly. Website takes priority; otherwise Title must be a bare domain. The setting explains domain disclosure. Cache content is encrypted locally and available offline. See [the exact behavior](../../docs/FAVICONS.md).
 
-Version/title **PassKey Local (0.1.6)**. Built from the current 0.1.6 application source; `python deploy/cloudflare-pages/package.py` packages production output reproducibly. Windows installer/File Safe/native Hello IPC remain separate. [Release 0.1.2](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.2) and [release evidence](../../docs/RELEASE_EVIDENCE.md).
+Version/title **PassKey Local (0.1.6)**. Built from the current 0.1.6 application source; `python deploy/cloudflare-pages/package.py` packages production output reproducibly. Windows installer/File Safe/native Hello IPC remain separate. [Windows release 0.1.6](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.6) and [release evidence](../../docs/RELEASE_EVIDENCE.md).
 
 Use HTTPS and a stable hostname; local vault data and passkeys belong to that origin. Disable Cloudflare Web Analytics/Rocket Loader. [Deployment instructions](../../docs/DEPLOYMENT.md). No direct deployment to a live server was performed. Previous versioned ZIPs remain historical.
