@@ -70,6 +70,16 @@ screen, and the update is applied only when the user taps "Update now". Old
 asset caches are deleted only after the new version is active. Updates never
 touch IndexedDB.
 
+From 0.1.4 the locked screen also has **Check for updates**, with progress,
+current-version and actionable failure messages. Discovery handles an existing
+installing/waiting worker and late registration, and rechecks on return/online
+without reloading an unlocked editor. Applying is still explicit and locked.
+If an older cached interface never shows the offer, desktop Chrome/Edge can
+use Ctrl+Shift+R once to load the current page; closing all site/PWA windows
+also releases an old worker. Neither recovery path requires deleting site data.
+See [0.1.4 recovery instructions](releases/0.1.4.md). Native EXE updates are
+separate from publishing the PWA.
+
 A user-confirmed update does not make a hostile host trustworthy: whoever
 controls the origin can ship different code. Protect the hosting account, DNS
 and build credentials, review release diffs, and keep encrypted backup files

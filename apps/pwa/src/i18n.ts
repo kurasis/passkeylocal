@@ -511,7 +511,12 @@ const en = {
   offlineReady: 'Ready offline',
   offlineNotReady: 'Not yet ready offline',
   updateAvailable: 'An app update is available.',
-  updateNow: 'Update now'
+  updateNow: 'Update now',
+  checkUpdates: 'Check for updates',
+  checkingUpdates: 'Checking for updates…',
+  applyingUpdate: 'Applying update…',
+  updateCurrent: 'This application is up to date.',
+  updateFailed: 'Could not check or download the update. Check your connection and try again.'
 };
 
 export type MessageKey = keyof typeof en;
@@ -1009,7 +1014,12 @@ const ru: Record<MessageKey, string> = {
   offlineReady: 'Готово к работе офлайн',
   offlineNotReady: 'Ещё не готово к работе офлайн',
   updateAvailable: 'Доступно обновление приложения.',
-  updateNow: 'Обновить'
+  updateNow: 'Обновить',
+  checkUpdates: 'Проверить обновления',
+  checkingUpdates: 'Проверка обновлений…',
+  applyingUpdate: 'Установка обновления…',
+  updateCurrent: 'Установлена актуальная версия приложения.',
+  updateFailed: 'Не удалось проверить или загрузить обновление. Проверьте подключение и повторите попытку.'
 };
 
 export type Language = 'en' | 'ru';
