@@ -7,7 +7,7 @@ const origin = 'https://passkeylocal.top';
 const version = JSON.parse(readFileSync(new URL('../../apps/pwa/package.json', import.meta.url))).version;
 const report = { version, origin, checkedAt: new Date().toISOString(), requests: [] };
 if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
-async function probe(path, init = {}) {
+async function probe(path, init = {}, maxBytes = 65_536) {
   const row = { path, method: init.method ?? 'GET' };
   try {
     const response = await fetch(origin + path, { ...init, redirect: 'manual',
@@ -24,7 +24,7 @@ async function probe(path, init = {}) {
           const { done, value } = await reader.read();
           if (done) break;
           size += value.length;
-          if (size > 65_536) throw new Error('response-limit');
+          if (size > maxBytes) throw new Error('response-limit');
           chunks.push(value);
         }
       } finally { await reader.cancel().catch(() => {}); }
@@ -38,16 +38,28 @@ async function probe(path, init = {}) {
       const html = new TextDecoder().decode(bytes);
       row.scripts = [...html.matchAll(/src="(\/assets\/[^"<>]+\.js)"/g)].map(m => m[1]);
     }
+    if (path === '/sw.js' && response.ok) {
+      const text = new TextDecoder().decode(bytes);
+      row.shellVersion = /const VERSION = "([^"]+)"/.exec(text)?.[1] ?? null;
+      try { row.precache = JSON.parse(/const PRECACHE = (\[[^;]+\]);/.exec(text)?.[1] ?? 'null'); } catch { row.precache = null; }
+    }
     if (row.method === 'POST') row.validRaster = safeRaster(bytes);
   } catch (error) { row.error = error.name === 'TimeoutError' ? 'timeout' : 'request-failed'; }
   report.requests.push(row);
   return row;
 }
 const shell = await probe('/');
+const worker = await probe('/sw.js');
+const validManifest = Array.isArray(worker.precache) && worker.precache.length > 0 && worker.precache.length <= 100 &&
+  worker.precache.every(path => typeof path === 'string' && /^(?:\/|\/(?:assets|icons)\/[a-zA-Z0-9_.-]+|\/manifest\.webmanifest)$/.test(path));
+const assets = [];
+if (validManifest) for (const path of worker.precache) if (path !== '/') assets.push(await probe(path, {}, 1_048_576));
 const method = await probe('/api/favicon');
 const icon = await probe('/api/favicon', { method: 'POST', body: JSON.stringify({ domain: 'github.com' }),
   headers: { 'Content-Type': 'application/json', Origin: origin } });
 report.outcome = shell.status !== 200 ? 'origin-unavailable'
+  : worker.status !== 200 || !worker.shellVersion || !/javascript|ecmascript/.test(worker.headers?.['content-type'] ?? '') ? 'service-worker-unavailable'
+  : !validManifest || assets.some(asset => asset.status !== 200 || asset.error) ? 'offline-shell-incomplete'
   : method.status !== 405 || method.headers?.allow !== 'POST' ? 'endpoint-not-connected'
   : icon.status !== 200 || !icon.validRaster ? 'icon-request-failed' : 'passed';
 writeFileSync(`cloudflare-check-${version}.json`, JSON.stringify(report, null, 2) + '\n');

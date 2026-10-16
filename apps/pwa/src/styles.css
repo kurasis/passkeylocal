@@ -129,6 +129,8 @@ input[type='checkbox'] { width: 20px; min-height: 20px; height: 20px; flex: none
 .avatar-tone-1 { background: var(--mint-bg); color: var(--mint-text); }
 .avatar-tone-2 { background: var(--peach-bg); color: var(--peach-text); }
 .avatar-tone-3 { background: var(--sky-bg); color: var(--sky-text); }
+.update-controls { width: min(100%, 680px); margin: 12px auto; padding: 0 16px; display: grid; gap: 12px; }
+.update-controls:has([role="status"]:empty) { gap: 0; }
 .badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-text); font-size: 12px; }
 .kv { display: grid; grid-template-columns: minmax(90px, 30%) minmax(0, 1fr); gap: 8px 16px; padding: 16px 0; border-bottom: 1px solid var(--border); align-items: center; }
 .kv:last-child { border-bottom: none; }

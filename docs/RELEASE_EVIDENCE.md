@@ -1,5 +1,48 @@
 # Release evidence and gate status
 
+## PWA update discovery 0.1.4 (2026-10-16)
+
+The owner remained on an older cached interface with no update offer. Existing
+code queried registration once, ignored a worker already installing at that
+point, and attached listeners without removing them. Two observation regressions
+failed against extracted original logic. The new observer watches current
+installing/waiting workers immediately, handles replacement/redundancy and
+removes listeners on teardown. The hook also handles registration completing
+after the initial lookup, requests fresh checks on startup/return/online/lock
+with an automatic throttle, and registers with `updateViaCache: none`.
+
+The locked screen has a localized **Check for updates** button, polite atomic
+progress/status, explicit ready-to-apply action and actionable retry errors.
+Automatic success does not leave a persistent "up to date" notification.
+Applying makes the unlock form inert, has a bounded failure timeout, and only
+reloads a locked screen after explicit approval. No cache routine clears
+IndexedDB, and the existing SW still requires complete precaching before use.
+
+Executed locally: 195 unit tests (99 adapter, 40 core, 56 PWA), workspace
+typecheck, both production frontend builds/isolation/version check: PASS.
+15 Chromium production scenarios PASS, including an actual hot-swapped A→B
+service-worker upgrade with real response headers. The test keeps an unsaved
+editor open while B installs, verifies no activation/reload, explicitly locks
+and applies, compares all persisted IndexedDB data by SHA-256 before/after,
+and verifies offline password unlock and the saved entry after a deliberately
+incomplete C install fails. The first test attempt exposed a fixture navigation
+race (it navigated before async Save completed); awaiting the saved detail fixed
+the test, and both the focused and full runs passed. Unit checks cover missed
+install events, replaced workers, initial install exclusion, cleanup, failed
+install, abort and bounded waits.
+
+Current web-design-guidelines were fetched and applied to the changed controls:
+`apps/pwa/src/ui/App.tsx` — pass for labeled native buttons, busy/disabled states,
+atomic polite status and explicit activation; `apps/pwa/src/styles.css` — pass
+for wrapping, inherited focus/contrast and responsive width. Locale completeness
+passes. No physical Safari/iPhone or installed Windows acceptance is claimed.
+
+Versioned 0.1.4 Pages/Workers/static packages and checksums retain all previous
+archives unchanged. Existing `node package.mjs` hosting selects the new version.
+The hosted read-only probe now also checks the actual SW MIME/version and every
+bounded same-origin precache asset to detect incomplete deployments. Live 0.1.4
+publication and the owner's cached-browser recovery still need confirmation.
+
 ## Hosted 0.1.3 publication confirmed (2026-10-15)
 
 After the owner saved `node package.mjs`, main commit `a614ed0` triggered

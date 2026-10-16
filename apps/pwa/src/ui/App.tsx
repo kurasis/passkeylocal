@@ -56,7 +56,7 @@ export function App() {
     draftSave.current = save;
     return () => { if (draftSave.current === save) draftSave.current = null; };
   }, []);
-  const update = useServiceWorkerUpdate();
+  const update = useServiceWorkerUpdate(phase !== 'unlocked');
 
   const lang = prefs.language === 'auto' ? deviceLanguage() : prefs.language;
   const t = useMemo(() => translator(lang), [lang]);
@@ -298,6 +298,11 @@ export function App() {
 
   if (module === 'files' && fileSafe) body = <FileSafe api={fileSafe} />;
   const unlocked = module === 'passwords' && phase === 'unlocked' && overview && prefs.onboardingBackupVerified;
+  const updateMessage = update.status === 'checking' ? 'checkingUpdates'
+    : update.status === 'applying' ? 'applyingUpdate'
+    : update.status === 'failed' ? 'updateFailed'
+    : update.available ? 'updateAvailable'
+    : update.status === 'current' ? 'updateCurrent' : null;
 
   return (
     <I18nContext.Provider value={{ t, lang }}>
@@ -322,16 +327,23 @@ export function App() {
             )}
             </div>
           </header>
-          {update && phase !== 'unlocked' && (
-            <Banner kind="info">
-              {t('updateAvailable')}{' '}
-              <button type="button" className="secondary" onClick={update}>
-                {t('updateNow')}
-              </button>
-            </Banner>
+          {update.supported && phase !== 'unlocked' && phase !== 'loading' && (
+            <div className="update-controls">
+              <div role="status" aria-live="polite" aria-atomic="true">
+                {updateMessage ? t(updateMessage) : null}
+              </div>
+              <div className="row wrap">
+                <button type="button" className="secondary" disabled={update.status === 'checking' || update.status === 'applying'} onClick={update.check}>
+                  {t(update.status === 'checking' ? 'checkingUpdates' : 'checkUpdates')}
+                </button>
+                {update.available && <button type="button" disabled={update.status === 'applying' || update.status === 'checking'} onClick={update.apply}>
+                  {t(update.status === 'applying' ? 'applyingUpdate' : 'updateNow')}
+                </button>}
+              </div>
+            </div>
           )}
 
-          <main id="main-content" tabIndex={-1}>{body}</main>
+          <main id="main-content" tabIndex={-1} inert={update.status === 'applying'} aria-busy={update.status === 'applying'}>{body}</main>
           {desktop && closePrompt && <Modal className="desktop-close-dialog" labelledBy="desktop-close-title" busy={closing} close={() => { closeResolve.current?.(false); closeResolve.current = null; setClosePrompt(false); }}>
             <h2 id="desktop-close-title">{t('desktopCloseTitle')}</h2><p>{t('desktopCloseExplain')}</p>
             <button type="button" disabled={closing} onClick={async () => {
