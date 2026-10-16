@@ -45,9 +45,10 @@ in this folder. `source.json` inside the ZIP records source checksum/tool versio
 
 Local Wrangler 4.151.0 dry-run and runtime checks passed for static byte identity,
 CSP/cache headers, API method routing, cross-origin rejection and invalid-domain
-rejection. The previous connected production
-build and [live probe](cloudflare-check-0.1.3-live.json) confirmed exact 0.1.3
-shell bytes and a successful GitHub icon response on `passkeylocal.top`.
+rejection. The connected production build and
+[live 0.1.5 probe](cloudflare-check-0.1.5-live.json) confirmed exact 0.1.5
+HTML, service-worker and all precache bytes, plus a successful GitHub icon
+response on `passkeylocal.top`.
 Display in the owner's browser after applying the app update remains unconfirmed.
 See [release evidence](../../docs/RELEASE_EVIDENCE.md). For **Pages**, use the
 [separate Pages archive](../cloudflare-pages/).
