@@ -45,10 +45,11 @@ in this folder. `source.json` inside the ZIP records source checksum/tool versio
 
 Local Wrangler 4.151.0 dry-run and runtime checks passed for static byte identity,
 CSP/cache headers, API method routing, cross-origin rejection and invalid-domain
-rejection. The previous connected production build and
-[live 0.1.6 probe](cloudflare-check-0.1.6-live.json) confirmed exact 0.1.6
-HTML, service-worker and all precache bytes, plus a successful GitHub icon
-and canonical Google responses on `passkeylocal.top`.
+rejection. The connected production build and
+[live 0.1.8 probe](cloudflare-check-0.1.8-live.json) confirmed exact 0.1.8
+HTML, service-worker and all precache bytes. Actual Google PNG is 128x128;
+GitHub manifest PNG is 512x512, both 200/no-store. The failed 0.1.7 quality
+probe is retained separately; its small Google ICO is fixed in this version.
 Display in the owner's browser after applying the app update remains unconfirmed.
 See [release evidence](../../docs/RELEASE_EVIDENCE.md). For **Pages**, use the
 [separate Pages archive](../cloudflare-pages/).

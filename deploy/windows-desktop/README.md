@@ -1,6 +1,19 @@
 # Windows desktop releases
 
-Latest: **PassKey Local 0.1.6** — [release page](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.6), [Windows x64 0.1.6 ZIP](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.6/PassKey-Local-Windows-x64-0.1.6-unsigned.zip), [SHA-256](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.6/PassKey-Local-Windows-x64-0.1.6-unsigned.zip.sha256).
+Latest: **PassKey Local 0.1.8** — [release page](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.8), [Windows x64 0.1.8 ZIP](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.8/PassKey-Local-Windows-x64-0.1.8-unsigned.zip), [SHA-256](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.8/PassKey-Local-Windows-x64-0.1.8-unsigned.zip.sha256).
+
+Close the old app, extract the **0.1.8** ZIP and run `PassKey-Local-Windows-x64-0.1.8-unsigned-setup.exe` over the existing installation. Keep local data. The title is **PassKey Local (0.1.8)**. Node/Python are not required; the unsigned experimental installer includes the official offline WebView2 runtime.
+
+This release discovers large PNGs from public website metadata, declared manifests and image/CDN hosts, retains up to 128px for Retina avatars and selects the largest ICO frame. The verified first-party Google PNG fallback handles its homepage redirect variant. Old encrypted thumbnails refresh automatically while retaining offline fallback; entry, vault and recovery formats/data identifiers are unchanged. [Release details](../../docs/releases/0.1.8.md).
+
+Windows archive: 221,204,263 bytes; SHA-256 `17b3c504388b8ea056fad94eeb8d4a9a4071f58cc26a40758e696ea914e365a6`. Installer SHA-256: `b96136782a0c8fd08e32858fc3d2f2ba9f50d76ccd3b5244368a5dcaae179ccb`.
+[Release manifest](release-0.1.8.json), [Windows checks and installed smoke](https://github.com/kurasis/passkeylocal/actions/runs/38895480135), [publication/source verification](https://github.com/kurasis/passkeylocal/actions/runs/38899306811). Original synthetic reports are inside the ZIP. Hosted elevated Windows checks do not establish physical Hello/favicon-network, standard-user or clean-machine/offline acceptance on the owner's computer.
+
+PWA **0.1.8** is already deployed at [passkeylocal.top](https://passkeylocal.top) and updates separately from EXE. [Hosted report](../cloudflare-workers/cloudflare-check-0.1.8-live.json) verifies exact shell/asset hashes, Google PNG 128x128 and GitHub PNG 512x512. Apply the PWA update while locked; do not clear site data.
+
+## Previous 0.1.6 release
+
+Previous: **PassKey Local 0.1.6** — [release page](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.6), [Windows x64 0.1.6 ZIP](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.6/PassKey-Local-Windows-x64-0.1.6-unsigned.zip), [SHA-256](https://github.com/kurasis/passkeylocal/releases/download/desktop-v0.1.6/PassKey-Local-Windows-x64-0.1.6-unsigned.zip.sha256).
 
 Extract the 0.1.6 ZIP and run `PassKey-Local-Windows-x64-0.1.6-unsigned-setup.exe`.
 Close the old application first; install over it without clearing local data.
