@@ -24,8 +24,9 @@ Executed final source: 205 JS tests (99 adapter, 40 core, 66 PWA), workspace
 typechecks, both frontend builds, compiled Worker check, version consistency,
 Rust format/clippy and 153 Linux native tests PASS (5 GiB gate ignored locally).
 All three versioned hosting archives pass CRC/SHA checks and Pages bytes match
-the tested dist exactly. Browser and hosted publication checks are recorded
-when completed; no physical-device rendering is inferred from these tests.
+the tested dist exactly. All 17 production Chromium scenarios PASS, including
+retina PNG persistence/offline re-unlock and largest ICO frame decoding. Hosted
+publication is recorded when completed; physical-device rendering is separate.
 
 ## High-resolution website icons 0.1.7 (2026-10-16)
 
