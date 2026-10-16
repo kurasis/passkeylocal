@@ -81,10 +81,23 @@ test('real shell upgrade waits during editing, applies only while locked, preser
   await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Synthetic unsaved draft');
   await expect(page.getByRole('button', { name: 'Update now', exact: true })).toHaveCount(0);
   expect(await page.evaluate(() => (globalThis as any).__updateFixture)).toBe('a');
+  // A real browser bypass reload must still offer the waiting worker when the
+  // original editing tab keeps the old active worker alive.
+  const recovery = await context.newPage();
+  await recovery.goto(origin);
+  const cdp = await context.newCDPSession(recovery);
+  await cdp.send('Network.setBypassServiceWorker', { bypass: true });
+  await cdp.send('Network.setCacheDisabled', { cacheDisabled: true });
+  await cdp.send('Page.reload', { ignoreCache: true });
+  await expect.poll(() => recovery.evaluate(() => (globalThis as any).__updateFixture).catch(() => null)).toBe('b');
+  expect(await recovery.evaluate(() => navigator.serviceWorker.controller)).toBeNull();
+  await expect(recovery.getByRole('button', { name: 'Update now', exact: true })).toBeVisible();
+  await recovery.close(); await page.bringToFront();
+  await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Synthetic unsaved draft');
   await page.getByRole('button', { name: 'Lock', exact: true }).click();
   const before = await fingerprint(page);
   await page.getByRole('button', { name: 'Update now', exact: true }).click();
-  await expect.poll(() => page.evaluate(() => (globalThis as any).__updateFixture)).toBe('b');
+  await expect.poll(() => page.evaluate(() => (globalThis as any).__updateFixture).catch(() => null)).toBe('b');
   await expect(page.getByRole('heading', { name: 'Vault locked', exact: true })).toBeVisible();
   expect(await fingerprint(page)).toEqual(before);
 

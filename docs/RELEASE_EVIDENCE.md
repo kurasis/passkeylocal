@@ -1,5 +1,40 @@
 # Release evidence and gate status
 
+## Multi-tab hard-reload recovery 0.1.5 (2026-10-16)
+
+Follow-up review of the proposed hard-reload recovery found an additional case:
+the network-loaded page can have no controller while another tab retains an
+old active registration. Checking only `container.controller` hides its waiting
+update. Now an existing active registration also distinguishes an upgrade from
+first installation. 0.1.4 was already merged, so this is versioned separately;
+its published repository archives were not overwritten.
+
+Executed locally: all 196 JS tests (99 adapter, 40 core, 57 PWA), PWA production
+build/typecheck/compiled endpoint check, desktop frontend/isolation and
+synchronized version check PASS. The seven SW unit cases include this new
+active-registration/no-controller case. The real shell-upgrade scenario also
+passes with a second tab hard-reloaded through Chromium CDP: it runs shell B,
+has a null controller and offers the waiting update while the original shell A
+retains its unsaved editor. The first CDP attempt used the automation reload
+path instead of a browser bypass reload; using the same CDP session's explicit
+bypass/cache-disabled reload and tolerating context replacement corrected the
+test harness. No product assertion was removed.
+
+The inherited locked-only activation, exact ciphertext preservation, offline
+unlock after a failed incomplete install, progress/error controls and observer
+cleanup remain tested. The full 15-case production Chromium browser suite PASS
+for the final 0.1.5 build, including the actual null-controller recovery case.
+Hosted publication and SW/precache checks will be recorded after deployment.
+Publication attempted from `fix/pwa-hard-reload-update`: Git push was rejected
+with invalid credentials, and a repository API request returned HTTP 401
+`Bad credentials`. The 0.1.5 commit and archives remain local; no 0.1.5 PR,
+merge, hosted deployment or live precache verification is claimed. Restore the
+environment's GitHub connection before publishing. The existing main source
+still reports 0.1.4; that source observation does not establish the live version.
+The prior scoped web-design-guidelines review still applies: this follow-up
+changes only discovery logic and versions. Native EXE release/physical device
+acceptance remains separate.
+
 ## PWA update discovery 0.1.4 (2026-10-16)
 
 The owner remained on an older cached interface with no update offer. Existing
