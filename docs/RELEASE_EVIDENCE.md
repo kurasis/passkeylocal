@@ -1,5 +1,55 @@
 # Release evidence and gate status
 
+## Verified permanent 0.1.8 release (2026-10-16)
+
+Native [Windows run 38895480135](https://github.com/kurasis/passkeylocal/actions/runs/38895480135)
+completed successfully for source `e334bd6825dcb848314b71afb2c1ee47f12e99cc`. Full existing gates passed:
+Windows compilation/clippy, actual replacement/storage tests, recovery interop,
+5 GiB resource gate, hostile isolated TXT worker proof, installer packaging and
+installed process/main-window smoke. The public version/title is 0.1.8.
+
+Publisher [38899306811](https://github.com/kurasis/passkeylocal/actions/runs/38899306811)
+succeeded and published [desktop-v0.1.8](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.8). Its prepare
+stage checked the original successful Windows run, exact source subtrees,
+installer/smoke versions and hash; publishing verified immutable payloads.
+Independently re-read the public release and downloaded its small manifest:
+all five expected assets are uploaded; API byte counts and SHA-256 digests match
+the manifest, and the manifest download's own hash matches its API digest.
+Tested source/target: `e334bd6825dcb848314b71afb2c1ee47f12e99cc`. Windows ZIP:
+221,204,263 bytes, SHA-256 `17b3c504388b8ea056fad94eeb8d4a9a4071f58cc26a40758e696ea914e365a6`.
+Installer SHA-256: `b96136782a0c8fd08e32858fc3d2f2ba9f50d76ccd3b5244368a5dcaae179ccb`.
+[Retained manifest](../deploy/windows-desktop/release-0.1.8.json).
+The large installer was not redundantly downloaded/executed in this Linux
+workspace; installed proof is the original hosted Windows smoke. Physical
+owner-device rendering/Hello/network, standard-user and clean-machine/offline
+acceptance remain separate. Release notes and download folder now point to 0.1.8.
+This follow-up modifies only docs/evidence; tested app and archive bytes remain
+unchanged. Earlier reports and versioned releases remain historical.
+
+## Hosted high-resolution PNG verified in 0.1.8 (2026-10-16)
+
+[PR 60](https://github.com/kurasis/passkeylocal/pull/60) merged as
+`e334bd6825dcb848314b71afb2c1ee47f12e99cc`. Cloudflare build
+`18edf72a-b37b-4ffe-ad00-079addaf9e86` succeeded. Read-only hosted probe
+[38895541304](https://github.com/kurasis/passkeylocal/actions/runs/38895541304)
+PASS: live SW `0.1.8-fb7c76ab6d09f3c6`; all nine HTML/SW/precache files match
+the tested 0.1.8 Pages archive exactly by SHA-256. HTML SHA-256:
+`8809f626d29aa4e04303d4f38eb536980068d212cee6f1bfbd03a14976ec3a04`.
+
+Actual endpoint responses are 200/no-store PNG: GitHub 512x512, 9825 bytes,
+SHA-256 `f304abd26e1a0dbf21be68ced4b9d7bb115c61d39fd0ac4b898b28dc0b760790`;
+Google 128x128, 3428 bytes, SHA-256
+`5b95eed86b7603081f22edd5da01de4c028b118b20885793b9b3ad5f6cbe1e71`.
+Public counters show Google root returned an unfollowed 302 (zero HTML/icons),
+so the first-party PNG fallback resolved the live difference; GitHub returned
+200 with 12 metadata candidates and used three requests. Arbitrary redirects
+remain disallowed. [Retained report](../deploy/cloudflare-workers/cloudflare-check-0.1.8-live.json).
+General main CI [38895479985](https://github.com/kurasis/passkeylocal/actions/runs/38895479985)
+also completed successfully, including all recovery platforms, fresh interop,
+Linux native/large-file gates and production browser checks. This verifies
+published endpoint/source resolution, not physical owner-device PWA refresh
+acceptance or native Windows network behavior.
+
 ## First-party PNG fallback 0.1.8 (2026-10-16)
 
 The hosted 0.1.7 quality probe [38893958353](https://github.com/kurasis/passkeylocal/actions/runs/38893958353)

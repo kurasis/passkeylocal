@@ -1,6 +1,6 @@
 # Cloudflare Pages upload archives
 
-Latest PWA: **PassKey Local 0.1.8** — [download passkeylocal-cloudflare-pages-0.1.8.zip](passkeylocal-cloudflare-pages-0.1.8.zip) using GitHub **Download raw file**. Upload through Cloudflare Pages **Direct Upload**. This fixes PWA update discovery and adds an explicit locked-screen check; existing 0.1.2 release assets remain historical.
+Latest PWA: **PassKey Local 0.1.8** — [download passkeylocal-cloudflare-pages-0.1.8.zip](passkeylocal-cloudflare-pages-0.1.8.zip) using GitHub **Download raw file**. Upload through Cloudflare Pages **Direct Upload**. This release discovers larger website PNGs and retains sharp cached icons for Retina displays. Earlier versioned archives remain historical.
 
 **Choose Pages, not Workers' static-files uploader.** For an existing Pages site,
 open that project → **Create a new deployment**. For a new site, **Workers & Pages**
@@ -21,6 +21,6 @@ Archive: 256,623 bytes; SHA-256 `5d7375eefbe86d0973f5efb23db7aea4dccfc0853a4b928
 
 Enable **Settings → Website icons → Download website icons** explicitly. Website takes priority; otherwise Title must be a bare domain. The setting explains domain disclosure. Cache content is encrypted locally and available offline. See [the exact behavior](../../docs/FAVICONS.md).
 
-Version/title **PassKey Local (0.1.8)**. Built from the current 0.1.8 application source; `python deploy/cloudflare-pages/package.py` packages production output reproducibly. Windows installer/File Safe/native Hello IPC remain separate. [Previous Windows release 0.1.6](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.6) and [release evidence](../../docs/RELEASE_EVIDENCE.md).
+Version/title **PassKey Local (0.1.8)**. Built from the current 0.1.8 application source; `python deploy/cloudflare-pages/package.py` packages production output reproducibly. Windows installer/File Safe/native Hello IPC remain separate. [Windows release 0.1.8](https://github.com/kurasis/passkeylocal/releases/tag/desktop-v0.1.8) and [release evidence](../../docs/RELEASE_EVIDENCE.md).
 
-Use HTTPS and a stable hostname; local vault data and passkeys belong to that origin. Disable Cloudflare Web Analytics/Rocket Loader. [Deployment instructions](../../docs/DEPLOYMENT.md). No direct deployment to a live server was performed. Previous versioned ZIPs remain historical.
+Use HTTPS and a stable hostname; local vault data and passkeys belong to that origin. Disable Cloudflare Web Analytics/Rocket Loader. [Deployment instructions](../../docs/DEPLOYMENT.md). The connected Workers production site at `passkeylocal.top` is verified against the same 0.1.8 application bytes; [live report](../cloudflare-workers/cloudflare-check-0.1.8-live.json). A separate Pages account upload was not performed. Previous versioned ZIPs remain historical.
