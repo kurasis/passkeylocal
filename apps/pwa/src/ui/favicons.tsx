@@ -6,15 +6,17 @@ import { normalizeIcon } from '../favicon/image.ts';
 import { useApp } from './common.tsx';
 
 type Load = (entry: EntryView) => Promise<Uint8Array | null>;
-const Icons = createContext<Load | null>(null);
+type IconLoader = { load: Load; subscribe: (domain: string, changed: (png: Uint8Array) => void) => () => void };
+const Icons = createContext<IconLoader | null>(null);
 
 export function FaviconProvider({ enabled, children }: { enabled: boolean; children: ReactNode }) {
   const { client } = useApp();
-  const [loadIcon, setLoadIcon] = useState<Load | null>(null);
+  const [loader, setLoader] = useState<IconLoader | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     const epoch = client.epoch;
     const pending = new Map<string, Promise<Uint8Array | null>>();
+    const listeners = new Map<string, Set<(png: Uint8Array) => void>>();
     const waiters: (() => void)[] = [];
     let active = 0;
     const live = () => !controller.signal.aborted && client.epoch === epoch;
@@ -29,16 +31,16 @@ export function FaviconProvider({ enabled, children }: { enabled: boolean; child
       try { return await work(); }
       finally { release(); }
     }
-    async function update(entry: EntryView, domain: string): Promise<Uint8Array | null> {
+    async function update(entry: EntryView, domain: string, keepExisting = false): Promise<Uint8Array | null> {
       if (!live()) return null;
-      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]);
+      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]);
       try {
         const bytes = await fetchFavicon(domain, signal);
         if (!live() || signal.aborted) return null;
         const png = bytes ? await normalizeIcon(bytes) : null;
         if (!live() || signal.aborted) return null;
         // A decoder failure is not proof that the website has no icon.
-        if (bytes && !png) return null;
+        if (bytes && !png || keepExisting && !png) return null;
         await client.call('storeFavicon', { uuid: entry.uuid, domain, png });
         return live() ? png : null;
       } catch { return null; }
@@ -53,7 +55,9 @@ export function FaviconProvider({ enabled, children }: { enabled: boolean; child
           if (!live() || cached.domain !== domain) return null;
           if (cached.png) {
             // A stale icon remains useful offline; refresh without delaying paint.
-            if (cached.refresh) void limited(() => update(entry, domain));
+            if (cached.refresh) void limited(() => update(entry, domain, true)).then(png => {
+              if (png && live()) for (const changed of listeners.get(domain) ?? []) changed(png);
+            });
             return cached.png;
           }
           return cached.refresh ? update(entry, domain) : null;
@@ -62,35 +66,43 @@ export function FaviconProvider({ enabled, children }: { enabled: boolean; child
       }
       return request;
     };
-    setLoadIcon(() => enabled ? load : null);
+    setLoader(enabled ? { load, subscribe(domain, changed) {
+      const callbacks = listeners.get(domain) ?? new Set();
+      callbacks.add(changed); listeners.set(domain, callbacks);
+      return () => { callbacks.delete(changed); if (!callbacks.size) listeners.delete(domain); };
+    } } : null);
     return () => controller.abort();
   }, [client, enabled]);
-  return <Icons.Provider value={enabled ? loadIcon : null}>{children}</Icons.Provider>;
+  return <Icons.Provider value={enabled ? loader : null}>{children}</Icons.Provider>;
 }
 
 export function EntryAvatar({ entry }: { entry: EntryView }) {
-  const load = useContext(Icons);
+  const icons = useContext(Icons);
   const ref = useRef<HTMLSpanElement>(null);
   const [source, setSource] = useState<string | null>(null);
   useEffect(() => {
     setSource(null);
-    if (!load || !ref.current) return;
+    if (!icons || !ref.current) return;
     let live = true;
     let url: string | null = null;
     let started = false;
+    const display = (bytes: Uint8Array | null) => {
+      if (!live || !bytes) return;
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'image/png' }));
+      setSource(url);
+    };
+    const domain = faviconDomain(entry.title, entry.url);
+    const unsubscribe = domain ? icons.subscribe(domain, display) : () => {};
     const start = () => {
       if (started) return;
       started = true;
-      void load(entry).then((bytes) => {
-        if (!live || !bytes) return;
-        url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'image/png' }));
-        setSource(url);
-      });
+      void icons.load(entry).then(display);
     };
     const observer = new IntersectionObserver((items) => { if (items.some((i) => i.isIntersecting)) { start(); observer.disconnect(); } }, { rootMargin: '160px' });
     observer.observe(ref.current);
-    return () => { live = false; observer.disconnect(); if (url) URL.revokeObjectURL(url); };
-  }, [load, entry.uuid, entry.title, entry.url]);
+    return () => { live = false; unsubscribe(); observer.disconnect(); if (url) URL.revokeObjectURL(url); };
+  }, [icons, entry.uuid, entry.title, entry.url]);
   const title = entry.title.trim();
   return <span ref={ref} className={`avatar avatar-tone-${(entry.title.codePointAt(0) ?? 0) % 4}`} aria-hidden="true">
     {source ? <img src={source} alt="" width={32} height={32} loading="lazy" onError={() => setSource(null)} /> : title ? [...title][0]!.toUpperCase() : '•'}

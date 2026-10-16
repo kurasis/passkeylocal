@@ -43,7 +43,7 @@ import { BiometricVault } from './biometric.ts';
 import type { HelloVault } from '../hello-vault-protocol.ts';
 import { FaviconCache, FAVICON_KEY, encode64 } from './favicon-cache.ts';
 import { faviconDomain } from '../favicon/domain.ts';
-import { safeRaster } from '../favicon/image.ts';
+import { MAX_CACHED_ICON_BYTES, safeRaster } from '../favicon/image.ts';
 
 type KdbxEntry = ReturnType<typeof findEntry>;
 
@@ -139,7 +139,7 @@ export class VaultWorkerHandlers {
       const e = findEntry(s.db, uuid);
       if (await this.storage.getPreference('faviconsEnabled') !== true) return;
       if (domain !== faviconDomain(text(e.fields.get('Title')), text(e.fields.get('URL'))) ||
-        (png !== null && (!(png instanceof Uint8Array) || png.length > 8192 || !safeRaster(png)))) throw new VaultError('INVALID_INPUT', 'favicon');
+        (png !== null && (!(png instanceof Uint8Array) || png.length > MAX_CACHED_ICON_BYTES || !safeRaster(png)))) throw new VaultError('INVALID_INPUT', 'favicon');
       await this.icons.put(s, domain, png);
     },
     clearFaviconCache: async () => { this.session(); await this.icons.clear(); },

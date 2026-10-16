@@ -1,0 +1,14 @@
+{
+  "base": "https://www.synthetic-icon-fixture.com/",
+  "html": "<!doctype html><head><!-- <link rel=\"icon\" href=\"https://evil-marker.com/comment.png\"> --><script>const x='<link rel=\"icon\" href=\"https://evil-marker.com/script.png\">';</script><template><link rel=\"icon\" href=\"https://evil-marker.com/template.png\"></template><noscript><link rel=\"icon\" href=\"https://evil-marker.com/noscript.png\"></noscript><link REL=\"shortcut ICON\" sizes=\"16x16\" href=\"/tiny.ico\"><link rel=\"apple-touch-icon\" href=\"/branding/touch.png\"><link rel=\"icon\" type=\"image/png\" sizes=\"192x192\" href=\"https://cdn.synthetic-icon-fixture.com/logo.png?v=2&amp;s=192\"><link rel=\"icon\" type=\"image/svg+xml\" href=\"/vector.svg\"><link rel=\"icon\" href=\"http://127.0.0.1/private.png\"><link rel=\"manifest\" href=\"/assets/app.webmanifest\"><meta itemprop=\"image\" content=\"/brand-square.png\"></head>",
+  "manifest": "{\"icons\":[{\"src\":\"retina.png\",\"sizes\":\"512x512\",\"type\":\"image/png\"},{\"src\":\"http://127.0.0.1/private.png\",\"sizes\":\"512x512\"},{\"src\":\"/vector.svg\",\"type\":\"image/svg+xml\"}]}",
+  "expected": [
+    "https://www.synthetic-icon-fixture.com/assets/retina.png",
+    "https://cdn.synthetic-icon-fixture.com/logo.png?v=2&s=192",
+    "https://www.synthetic-icon-fixture.com/branding/touch.png",
+    "https://www.synthetic-icon-fixture.com/brand-square.png",
+    "https://www.synthetic-icon-fixture.com/apple-touch-icon.png",
+    "https://www.synthetic-icon-fixture.com/favicon.png",
+    "https://www.synthetic-icon-fixture.com/favicon.ico"
+  ]
+}

@@ -1,7 +1,7 @@
 /** Read-only production probe: public shell and public GitHub/Google favicons, no vault. */
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { safeRaster } from '../../apps/pwa/src/favicon/image.ts';
+import { MAX_ICON_BYTES, iconDimensions, safeRaster } from '../../apps/pwa/src/favicon/image.ts';
 
 const origin = 'https://passkeylocal.top';
 const version = JSON.parse(readFileSync(new URL('../../apps/pwa/package.json', import.meta.url))).version;
@@ -44,7 +44,7 @@ async function probe(path, init = {}, maxBytes = 65_536) {
       row.shellVersion = /const VERSION = "([^"]+)"/.exec(text)?.[1] ?? null;
       try { row.precache = JSON.parse(/const PRECACHE = (\[[^;]+\]);/.exec(text)?.[1] ?? 'null'); } catch { row.precache = null; }
     }
-    if (row.method === 'POST') row.validRaster = safeRaster(bytes);
+    if (row.method === 'POST') { row.validRaster = safeRaster(bytes); row.dimensions = iconDimensions(bytes); }
   } catch (error) { row.error = error.name === 'TimeoutError' ? 'timeout' : 'request-failed'; }
   report.requests.push(row);
   return row;
@@ -57,14 +57,16 @@ const assets = [];
 if (validManifest) for (const path of worker.precache) if (path !== '/') assets.push(await probe(path, {}, 1_048_576));
 const method = await probe('/api/favicon');
 const icon = await probe('/api/favicon', { method: 'POST', body: JSON.stringify({ domain: 'github.com' }),
-  headers: { 'Content-Type': 'application/json', Origin: origin } });
+  headers: { 'Content-Type': 'application/json', Origin: origin } }, MAX_ICON_BYTES);
 const google = await probe('/api/favicon', { method: 'POST', body: JSON.stringify({ domain: 'google.com' }),
-  headers: { 'Content-Type': 'application/json', Origin: origin } });
+  headers: { 'Content-Type': 'application/json', Origin: origin } }, MAX_ICON_BYTES);
 report.outcome = shell.status !== 200 ? 'origin-unavailable'
   : worker.status !== 200 || !worker.shellVersion || !/javascript|ecmascript/.test(worker.headers?.['content-type'] ?? '') ? 'service-worker-unavailable'
   : !validManifest || assets.some(asset => asset.status !== 200 || asset.error) ? 'offline-shell-incomplete'
   : method.status !== 405 || method.headers?.allow !== 'POST' ? 'endpoint-not-connected'
-  : [icon, google].some(row => row.status !== 200 || !row.validRaster) ? 'icon-request-failed' : 'passed';
+  : [icon, google].some(row => row.status !== 200 || !row.validRaster) ? 'icon-request-failed'
+  : [icon, google].some(row => !row.dimensions?.png || Math.min(row.dimensions.width, row.dimensions.height) < 128)
+    ? 'high-resolution-icon-unavailable' : 'passed';
 writeFileSync(`cloudflare-check-${version}.json`, JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));
 process.exitCode = report.outcome === 'passed' ? 0 : 1;

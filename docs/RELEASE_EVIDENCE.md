@@ -1,5 +1,39 @@
 # Release evidence and gate status
 
+## High-resolution website icons 0.1.7 (2026-10-16)
+
+The owner requested PNG discovery on the website and sharper cached images.
+Previous code tried ICO first and always rasterized to 32px. Both loaders now
+read bounded public homepage metadata and a declared manifest, rank icon/touch
+links and PNG image/logo metadata, and support declared public image/CDN hosts.
+They prefer a real 128px-or-larger PNG, preserve ICO/direct-path fallback, and
+do not execute website scripts or automatically follow arbitrary redirects.
+Every native host is separately DNS-validated and pinned. Streaming HTML parsing
+keeps the Worker independent of Node compatibility; the compiled endpoint test
+checks that boundary. Parser dependencies are pinned and documented.
+
+Normalization retains up to 128px and explicitly selects the largest ICO frame.
+Cached entries allow 16 KiB within the existing 64 KiB plaintext/encrypted/native
+metadata budgets. Quality policy 1 refreshes earlier hits without discarding
+their offline fallback; miss policy 4 rechecks earlier misses. Current avatars
+receive successful background refreshes without navigating away. No format,
+stable identifier or KDBX recovery change. Prior published ZIPs are untouched.
+
+Executed: all 201 JS tests (99 adapter, 40 core, 62 PWA), 17 production
+Chromium scenarios, workspace typecheck, both frontend builds/isolation/version,
+compiled Worker check, Rust format/clippy and 152 Linux native tests PASS. The
+explicit 5 GiB gate remains ignored locally. Focused icon checks also PASS. Public read-only compiled
+handler probe finds Google PNG 128×128/3428 bytes and GitHub manifest PNG
+512×512/9825 bytes, replacing the old small ICO path. Google homepage parsing
+was locally profiled at 6.54 ms cold / 1.90 ms maximum warmed for ~85 KiB;
+these are local measurements, not Cloudflare CPU-limit or physical-device proof.
+Current web-design-guidelines were fetched and applied to the avatar and privacy
+copy: decorative images retain empty alt, fixed 32px layout and lazy loading;
+no new controls/layout or focus changes. Hosted/Windows publication and physical
+owner-device rendering remain separate from these local results.
+The hosted public probe explicitly requires PNG and at least 128px for both
+Google and GitHub, rather than accepting a successful but tiny ICO response.
+
 ## Verified permanent 0.1.6 release (2026-10-16)
 
 Publisher [38887155096](https://github.com/kurasis/passkeylocal/actions/runs/38887155096)

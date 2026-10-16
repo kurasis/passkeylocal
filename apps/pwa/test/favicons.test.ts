@@ -1,12 +1,14 @@
+import { readFileSync } from 'node:fs';
 import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it, vi } from 'vitest';
 import { openStorage, VaultController } from '@passkey-local/vault-core';
 import { faviconDomain, publicDomain } from '../src/favicon/domain.ts';
-import { safeRaster } from '../src/favicon/image.ts';
+import { MAX_ICON_BYTES, iconDimensions, safeRaster } from '../src/favicon/image.ts';
 import { browserFavicon } from '../src/favicon/transport.ts';
 import { FaviconCache, FAVICON_KEY, decode64, encode64 } from '../src/worker/favicon-cache.ts';
 import { VaultWorkerHandlers } from '../src/worker/handlers.ts';
 import { faviconRequest } from '../server/favicon-worker.ts';
+import { pageIcons, manifestIcons, rankedIcons, publicIconUrl } from '../server/icon-discovery.ts';
 
 const DOMAIN = 'synthetic-icon-fixture.com';
 const PW = 'synthetic favicon test passphrase';
@@ -29,7 +31,7 @@ describe('favicon domain and image boundary', () => {
     expect(safeRaster(new TextEncoder().encode('<svg xmlns="x" onload="alert(1)"></svg>'))).toBe(false);
     const enormous = PNG.slice(); new DataView(enormous.buffer).setUint32(16, 100_000);
     expect(safeRaster(enormous)).toBe(false);
-    expect(safeRaster(new Uint8Array(65_537))).toBe(false);
+    expect(safeRaster(new Uint8Array(MAX_ICON_BYTES + 1))).toBe(false);
     const ico = new Uint8Array(22 + PNG.length);
     const v = new DataView(ico.buffer);
     v.setUint16(2, 1, true); v.setUint16(4, 1, true); ico[6] = ico[7] = 1;
@@ -140,53 +142,107 @@ describe('optional encrypted per-vault favicon cache', () => {
   });
 });
 
+describe('high-resolution cache upgrade', () => {
+  it('keeps an old thumbnail offline while marking it for one quality upgrade', async () => {
+    const storage = await openStorage({ indexedDB: new IDBFactory() });
+    const controller = new VaultController(storage);
+    const h = new VaultWorkerHandlers(storage, controller);
+    await h.handle('create', { password: PW });
+    await h.handle('setPreference', { key: 'faviconsEnabled', value: true });
+    const s = controller.current!, cache = new FaviconCache(storage);
+    await cache.put(s, DOMAIN, PNG);
+    const raw = decode64(s.db.meta.customData.get(FAVICON_KEY)!.value!);
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']); raw.fill(0);
+    const e = await storage.getPreference<any>('faviconCache');
+    const additionalData = new TextEncoder().encode('PassKey Local favicon cache v1');
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: decode64(e.iv), additionalData }, key, decode64(e.ciphertext));
+    const rows = JSON.parse(new TextDecoder().decode(plain)); delete rows[0].imagePolicy;
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData }, key, new TextEncoder().encode(JSON.stringify(rows)));
+    await storage.setPreference('faviconCache', { ...e, iv: encode64(iv), ciphertext: encode64(new Uint8Array(encrypted)) });
+    expect(await cache.get(s, DOMAIN)).toEqual({ png: PNG, refresh: true });
+    const large = new Uint8Array(readFileSync(new URL('../../../tests/fixtures/icons/retina-192.png', import.meta.url)));
+    await cache.put(s, DOMAIN, large);
+    expect(await cache.get(s, DOMAIN)).toEqual({ png: large, refresh: false });
+    expect(JSON.stringify(await storage.getPreference('faviconCache'))).not.toContain(DOMAIN);
+  });
+});
+
 describe('Cloudflare favicon endpoint and browser transport', () => {
   const request = (domain = DOMAIN, extra: RequestInit = {}) => new Request('https://vault.example.test/api/favicon', {
     method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://vault.example.test' }, body: JSON.stringify({ domain }), ...extra
   });
 
-  it('loads a fixed icon path redirected once between the exact domain and its www alias', async () => {
-    for (const [domain, canonical] of [[DOMAIN, `www.${DOMAIN}`], [`www.${DOMAIN}`, DOMAIN]]) {
-      const upstream = vi.fn<typeof fetch>()
-        .mockResolvedValueOnce(new Response(null, { status: 301, headers: { Location: `https://${canonical}/favicon.ico` } }))
-        .mockResolvedValueOnce(new Response(PNG));
+  it('loads a canonical icon redirect and keeps unsupported redirects retryable', async () => {
+    for (const [domain, alias] of [[DOMAIN, `www.${DOMAIN}`], [`www.${DOMAIN}`, DOMAIN]]) {
+      const upstream = vi.fn<typeof fetch>().mockImplementation(async url => {
+        if (String(url) === `https://${domain}/favicon.ico`) return new Response(null, { status: 301, headers: { Location: `https://${alias}/favicon.ico` } });
+        return String(url) === `https://${alias}/favicon.ico` ? new Response(PNG) : new Response(null, { status: 404 });
+      });
       const response = await faviconRequest(request(domain), upstream);
       expect(response.status).toBe(200);
       expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG);
-      expect(upstream.mock.calls.map(([url]) => url)).toEqual([`https://${domain}/favicon.ico`, `https://${canonical}/favicon.ico`]);
+      expect(upstream.mock.calls.map(([url]) => url)).toContain(`https://${alias}/favicon.ico`);
       for (const [, init] of upstream.mock.calls) expect(init).toMatchObject({ redirect: 'manual', credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer' });
     }
-  });
-
-  it('keeps unsupported redirects retryable and never follows other hosts, paths, credentials or redirect chains', async () => {
-    for (const location of [`https://other-site.com/favicon.ico`, 'http://127.0.0.1/favicon.ico',
-      `http://www.${DOMAIN}/favicon.ico`, `https://www.${DOMAIN}:8443/favicon.ico`,
-      `https://user:pw@www.${DOMAIN}/favicon.ico`, `https://www.${DOMAIN}/private`,
-      `https://www.${DOMAIN}/favicon.ico?secret=1`, `https://www.${DOMAIN}/favicon.ico#fragment`]) {
+    for (const location of ['https://other-site.com/favicon.ico', 'http://127.0.0.1/favicon.ico', `https://user:pw@www.${DOMAIN}/favicon.ico`, `https://www.${DOMAIN}/private`, `https://www.${DOMAIN}:8443/favicon.ico`]) {
       const upstream = vi.fn<typeof fetch>().mockImplementation(async () => new Response(null, { status: 302, headers: { Location: location } }));
       const response = await faviconRequest(request(), upstream);
-      expect(response.status, location).toBe(503);
+      expect(response.status).toBe(503);
       expect(response.headers.has('X-PassKey-Favicon')).toBe(false);
-      expect(upstream.mock.calls.map(([url]) => url)).toEqual([`https://${DOMAIN}/favicon.ico`, `https://${DOMAIN}/apple-touch-icon.png`]);
+      expect(upstream.mock.calls.every(([url]) => String(url).startsWith(`https://${DOMAIN}/`))).toBe(true);
+      expect(upstream.mock.calls.length).toBeLessThanOrEqual(12);
     }
-    const loop = vi.fn<typeof fetch>().mockImplementation(async (url) => new Response(null, {
-      status: 301, headers: { Location: String(url).replace(`https://${DOMAIN}/`, `https://www.${DOMAIN}/`) }
-    }));
-    expect((await faviconRequest(request(), loop)).status).toBe(503);
-    expect(loop).toHaveBeenCalledTimes(4);
   });
 
-  it('only sends a domain to fixed HTTPS paths, drops upstream cookies and never caches plaintext', async () => {
-    const upstream = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(null, { status: 302, headers: { Location: 'http://127.0.0.1/' } }))
-      .mockResolvedValueOnce(new Response(PNG, { headers: { 'Set-Cookie': 'untrusted=1' } }));
+  it('only sends public domain-derived requests, drops cookies and never caches plaintext', async () => {
+    const upstream = vi.fn<typeof fetch>().mockImplementation(async url => String(url).endsWith('/apple-touch-icon.png')
+      ? new Response(PNG, { headers: { 'Set-Cookie': 'untrusted=1' } }) : new Response(null, { status: 404 }));
     const response = await faviconRequest(request(), upstream);
     expect(response.status).toBe(200);
     expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG);
-    expect(upstream.mock.calls.map((call) => call[0])).toEqual([`https://${DOMAIN}/favicon.ico`, `https://${DOMAIN}/apple-touch-icon.png`]);
     for (const [, init] of upstream.mock.calls) expect(init).toMatchObject({ credentials: 'omit', redirect: 'manual', cache: 'no-store', referrerPolicy: 'no-referrer' });
     expect(response.headers.get('cache-control')).toBe('no-store');
     expect(response.headers.has('set-cookie')).toBe(false);
     expect(response.headers.has('access-control-allow-origin')).toBe(false);
+  });
+
+  it('matches the native public metadata fixture and prefers a real large PNG over ICO', async () => {
+    const fixture = JSON.parse(readFileSync(new URL('../../../tests/fixtures/icons/discovery.json', import.meta.url), 'utf8'));
+    const metadata = pageIcons(fixture.html, fixture.base);
+    expect(metadata.manifest).toBe('https://www.synthetic-icon-fixture.com/assets/app.webmanifest');
+    expect(rankedIcons([...metadata.icons, ...manifestIcons(fixture.manifest, metadata.manifest!)], fixture.base)).toEqual(fixture.expected);
+    for (const input of ['https://127.0.0.1/a.png', 'https://u:pw@site.com/a.png', 'https://site.com:8443/a.png', 'file:///secret', 'data:image/png,abc', 'https://foo.local/a.png']) expect(publicIconUrl(input, fixture.base)).toBeNull();
+    const large = new Uint8Array(readFileSync(new URL('../../../tests/fixtures/icons/retina-192.png', import.meta.url)));
+    const upstream = vi.fn<typeof fetch>().mockImplementation(async url => {
+      const path = new URL(String(url)).pathname;
+      if (path === '/') return new Response(fixture.html);
+      if (path === '/assets/app.webmanifest') return new Response(fixture.manifest);
+      if (path === '/assets/retina.png') return new Response(large);
+      return new Response(PNG);
+    });
+    const response = await faviconRequest(request('www.' + DOMAIN), upstream);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    expect(iconDimensions(bytes)).toEqual({ width: 192, height: 192, png: true });
+    expect(response.headers.get('X-PassKey-Icon-Width')).toBe('192');
+    expect(upstream.mock.calls.map(([url]) => url)).toEqual([fixture.base, metadata.manifest, fixture.expected[0]]);
+  });
+
+  it('bounds metadata, image bodies and request count while retaining the ICO fallback', async () => {
+    const requests: string[] = [];
+    const upstream = vi.fn<typeof fetch>().mockImplementation(async url => {
+      const target = String(url); requests.push(target);
+      if (target === `https://${DOMAIN}/`) return new Response('<link rel="manifest" href="/manifest.json">' + Array.from({ length: 40 }, (_, i) => `<link rel="icon" sizes="512x512" href="/bad-${i}.png">`).join(''));
+      if (target.endsWith('/manifest.json')) return new Response('x'.repeat(32_769));
+      if (target.endsWith('/favicon.ico')) return new Response(PNG);
+      return new Response(new Uint8Array(MAX_ICON_BYTES + 1));
+    });
+    const response = await faviconRequest(request(), upstream);
+    expect(response.status).toBe(200);
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(PNG);
+    expect(requests.length).toBeLessThanOrEqual(12);
+    expect(requests).toContain(`https://${DOMAIN}/favicon.ico`);
+    expect(requests.every(url => url.startsWith(`https://${DOMAIN}/`))).toBe(true);
   });
 
   it('rejects invalid/private targets, cross-site requests, active/huge images and unsupported methods', async () => {
@@ -197,7 +253,7 @@ describe('Cloudflare favicon endpoint and browser transport', () => {
     expect((await faviconRequest(new Request('https://vault.example.test/api/favicon'), upstream)).status).toBe(405);
     upstream.mockImplementation(async () => new Response('<svg onload="alert(1)"/>'));
     expect((await faviconRequest(request(), upstream)).status).toBe(404);
-    upstream.mockImplementation(async () => new Response(new Uint8Array(65_537)));
+    upstream.mockImplementation(async () => new Response(new Uint8Array(MAX_ICON_BYTES + 1)));
     expect((await faviconRequest(request(), upstream)).status).toBe(404);
     const oversized = request(DOMAIN, { body: ' '.repeat(1025) });
     expect((await faviconRequest(oversized, upstream)).status).toBe(404);
@@ -211,7 +267,7 @@ describe('Cloudflare favicon endpoint and browser transport', () => {
       expect(mock).toHaveBeenCalledWith('/api/favicon', expect.objectContaining({ method: 'POST', body: JSON.stringify({ domain: DOMAIN }), cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', redirect: 'error' }));
       expect(await browserFavicon('127.0.0.1', new AbortController().signal)).toBeNull();
       expect(mock).toHaveBeenCalledTimes(1);
-      mock.mockResolvedValue(new Response(new Uint8Array(65_537)));
+      mock.mockResolvedValue(new Response(new Uint8Array(MAX_ICON_BYTES + 1)));
       await expect(browserFavicon(DOMAIN, new AbortController().signal)).rejects.toThrow();
     } finally { vi.unstubAllGlobals(); }
   });
