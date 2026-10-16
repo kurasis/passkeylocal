@@ -1,19 +1,12 @@
 /** Cloudflare Pages advanced-mode endpoint. No remote cache, cookies, logs or analytics. */
 import { publicDomain } from '../src/favicon/domain.ts';
-import { MAX_ICON_BYTES, safeRaster } from '../src/favicon/image.ts';
+import { MAX_ICON_BYTES, iconDimensions, safeRaster } from '../src/favicon/image.ts';
+
+import { canonicalIconTarget, DOCUMENT_LIMIT, MANIFEST_LIMIT, pageIcons, manifestIcons, rankedIcons } from './icon-discovery.ts';
 
 type Env = { ASSETS: { fetch(request: Request): Promise<Response> } };
 const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
 const unavailable = () => new Response(null, { status: 404, headers });
-
-/** Only the same fixed HTTPS path on the exact www/bare alias; no arbitrary redirects. */
-function canonicalTarget(domain: string, path: string, location: string | null): string | null {
-  if (!location) return null;
-  const alias = domain.startsWith('www.') ? domain.slice(4) : `www.${domain}`;
-  if (!publicDomain(alias)) return null;
-  const expected = `https://${alias}${path}`;
-  return location === expected ? expected : null;
-}
 
 export async function faviconRequest(request: Request, upstream: typeof fetch = fetch): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405, headers: { ...headers, Allow: 'POST' } });
@@ -38,45 +31,69 @@ export async function faviconRequest(request: Request, upstream: typeof fetch = 
   try { const parsed = JSON.parse(body); domain = typeof parsed.domain === 'string' ? publicDomain(parsed.domain) : null; }
   catch { return unavailable(); }
   if (!domain) return unavailable();
-  const signal = AbortSignal.timeout(8000);
+  const signal = AbortSignal.timeout(12_000);
+  let remaining = 12;
   let temporaryFailure = false;
-  for (const path of ['/favicon.ico', '/apple-touch-icon.png']) {
-    const targets = [`https://${domain}${path}`];
-    for (const target of targets) {
+  async function get(target: string, limit: number, prefix = false): Promise<{ url: string; bytes: Uint8Array } | null> {
+    for (let hop = 0; hop < 2 && remaining > 0 && !signal.aborted; hop++) {
+      remaining--;
       try {
-        // Fetch each validated target manually, without forwarding URLs or credentials.
         const response = await upstream(target, {
-          redirect: 'manual', credentials: 'omit', referrerPolicy: 'no-referrer', signal,
-          cache: 'no-store', headers: { Accept: 'image/png,image/x-icon,image/vnd.microsoft.icon' }
+          redirect: 'manual', credentials: 'omit', referrerPolicy: 'no-referrer',
+          signal: AbortSignal.any([signal, AbortSignal.timeout(3000)]), cache: 'no-store',
+          headers: { Accept: prefix ? 'text/html' : 'image/png,image/x-icon,image/vnd.microsoft.icon,application/manifest+json' }
         });
-        if ([301, 302, 303, 307, 308].includes(response.status) && targets.length === 1) {
-          const canonical = canonicalTarget(domain, path, response.headers.get('location'));
-          if (canonical) {
-            await response.body?.cancel();
-            targets.push(canonical);
-            continue;
-          }
+        const canonical = hop === 0 && [301, 302, 303, 307, 308].includes(response.status)
+          ? canonicalIconTarget(target, response.headers.get('location')) : null;
+        if (canonical) { await response.body?.cancel(); target = canonical; continue; }
+        if (!response.ok) {
+          if (![404, 410].includes(response.status)) temporaryFailure = true;
+          await response.body?.cancel(); return null;
         }
-        if (!response.ok && response.status !== 404 && response.status !== 410) temporaryFailure = true;
-        if (!response.ok || Number(response.headers.get('content-length')) > MAX_ICON_BYTES) {
-          await response.body?.cancel(); continue;
-        }
-        const stream = response.body?.getReader();
-        if (!stream) continue;
-        const bytes = new Uint8Array(MAX_ICON_BYTES);
+        if (!prefix && Number(response.headers.get('content-length')) > limit) { await response.body?.cancel(); return null; }
+        const reader = response.body?.getReader();
+        if (!reader) return null;
+        const bytes = new Uint8Array(limit);
         let size = 0, overflow = false;
         try {
           while (true) {
-            const { done, value } = await stream.read();
+            const { done, value } = await reader.read();
             if (done) break;
-            if (size + value.length > bytes.length) { overflow = true; break; }
-            bytes.set(value, size); size += value.length;
+            const length = Math.min(value.length, limit - size);
+            bytes.set(value.subarray(0, length), size); size += length;
+            if (length < value.length || size === limit && prefix) { overflow = !prefix; break; }
           }
-        } finally { await stream.cancel().catch(() => {}); }
-        const icon = bytes.slice(0, size);
-        if (!overflow && safeRaster(icon)) return new Response(icon, { headers: { ...headers, 'Content-Type': 'application/octet-stream' } });
-      } catch { temporaryFailure = true; }
+        } finally { await reader.cancel().catch(() => {}); }
+        return overflow ? null : { url: target, bytes: bytes.slice(0, size) };
+      } catch { temporaryFailure = true; return null; }
     }
+    return null;
+  }
+  const websiteRoot = `https://${domain}/`;
+  const page = await get(websiteRoot, DOCUMENT_LIMIT, true);
+  const base = page?.url ?? websiteRoot;
+  const metadata = page ? pageIcons(new TextDecoder().decode(page.bytes), base) : { icons: [], manifest: null };
+  if (metadata.manifest && remaining > 4) {
+    const manifest = await get(metadata.manifest, MANIFEST_LIMIT);
+    if (manifest) metadata.icons.push(...manifestIcons(new TextDecoder().decode(manifest.bytes), manifest.url));
+  }
+  let best: Uint8Array | null = null, quality = 0;
+  for (const url of rankedIcons(metadata.icons, base)) {
+    // Reserve the last two attempts for the ordinary ICO fallback.
+    if (remaining <= 2 && new URL(url).pathname !== '/favicon.ico') continue;
+    const image = await get(url, MAX_ICON_BYTES);
+    if (!image || !safeRaster(image.bytes)) continue;
+    const dimensions = iconDimensions(image.bytes)!;
+    const edge = Math.min(dimensions.width, dimensions.height);
+    if (Math.max(dimensions.width, dimensions.height) > edge * 2) continue;
+    const candidateQuality = edge * 2 + Number(dimensions.png);
+    if (candidateQuality > quality) { best = image.bytes; quality = candidateQuality; }
+    if (dimensions.png && edge >= 128) break;
+  }
+  if (best) {
+    const dimensions = iconDimensions(best)!;
+    return new Response(new Uint8Array(best), { headers: { ...headers, 'Content-Type': dimensions.png ? 'image/png' : 'image/x-icon',
+      'X-PassKey-Icon-Width': String(dimensions.width), 'X-PassKey-Icon-Height': String(dimensions.height) } });
   }
   return temporaryFailure
     ? new Response(null, { status: 503, headers })

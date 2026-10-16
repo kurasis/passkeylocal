@@ -21,12 +21,33 @@ reject embedded credentials, other schemes, IP literals, local/reserved suffixes
 backslashes and malformed domains. A title such as `GitHub work` is not a domain.
 Subdomains remain distinct; do not guess a registrable parent or remove `www`.
 
-Fetch only fixed `/favicon.ico` and `/apple-touch-icon.png` paths, without
-following redirects. Do not read website HTML, execute scripts, scrape login
-pages or use Google/DuckDuckGo/other logo directories. Bounded PNG and ICO
-rasters are supported; SVG, JPEG, WebP, oversized or invalid images retain
-generated initials. Valid images are rasterized to a 32 × 32 PNG before caching.
-This deliberately does not promise an icon for every site.
+Starting in 0.1.7, the owner's request for sharper images authorizes reading the
+public HTTPS homepage, its declared manifest and image hosts/CDNs. Only the
+normalized domain reaches the loader; stored Website paths, credentials, queries
+and fragments are never forwarded. HTML is parsed inertly (no script, CSS or
+embedded resource execution). Icon/apple-touch links, PNG image/logo metadata,
+explicit PNG logo images and manifest icons are ranked by advertised size;
+actual raster dimensions decide quality. A suitable PNG of at least 128px wins.
+The ordinary touch-icon, favicon.png and favicon.ico paths remain fallbacks.
+One exact same-path bare/www redirect is allowed per request. Discovered image
+hosts must be public HTTPS domains, without credentials or non-default ports.
+No external logo directory is used. Template/noscript/foreign markup is ignored.
+
+Discovery allows at most 12 requests, 128 KiB of homepage metadata, 32 KiB of
+manifest JSON, 256 KiB per image and 512px source dimensions. It stops on a
+12-second network deadline with a three-second per-request cap; the browser's
+outer deadline is 15 seconds. Native DNS uses the OS resolver, then separately
+validates and pins every host's public addresses. The website and its declared
+image/CDN hosts necessarily see those requests. No downloaded HTML is persisted.
+Unsupported/oversized images keep a usable fallback or the generated initial.
+
+The largest ICO frame is selected explicitly, instead of letting a decoder
+choose a tiny frame. Valid rasters are normalized to a lossless PNG up to
+128 × 128, preserving smaller originals rather than inventing detail. Display
+size remains 32 CSS pixels. The 16 KiB cache-entry cap may require a smaller
+96/64/32px normalization for unusually complex images. Old thumbnails remain
+visible/offline while a background quality refresh replaces them in the same
+list. A failed refresh cannot discard a valid old image.
 
 List loading observes nearby visible rows, deduplicates domains, allows three
 concurrent loads and aborts browser requests when leaving the list or locking.
@@ -61,8 +82,10 @@ key cannot open it. A copied KDBX/old backup includes its encrypted cache key:
 anyone able to decrypt that backup and obtain the cache can also decrypt those
 icons. This cache offers no separate password protection or secure-erasure claim.
 
-Hits refresh after 30 days, misses after one day. Stale hits remain visible
-offline; a background refresh becomes visible on the next list mount. Cache data
+Hits refresh after 30 days, misses after one day. Quality policy 1 marks icons
+checked by the 0.1.7 discovery path; earlier cached hits are rechecked while
+remaining available offline. Miss policy 4 retries older absent-icon rows. Stale hits remain visible
+offline; successful background refreshes notify current list avatars. Cache data
 is local auxiliary state, not part of backup completeness or vault recovery.
 Missing cached data simply downloads again when enabled and online. Clear and
 disable overwrite the preference with null; neither claims physical secure erasure.
@@ -81,7 +104,7 @@ recovery after a static upload or an endpoint outage without changing KDBX data.
 Windows uses a fixed native command scoped to the local main window, active
 native session and persisted opt-in. It validates public DNS results, pins those
 addresses for the HTTPS request, uses the operating system TLS verifier, disables
-proxies/redirects/cookies and limits time and response size. Blocking native I/O
+proxies/automatic redirects/cookies and limits time and response size. Blocking native I/O
 may finish after UI cancellation; its result cannot repopulate a locked screen.
 
 PWA uses a credential-free, no-referrer, no-store same-origin POST to
@@ -122,3 +145,16 @@ that configuration without changing the released 0.1.2 application bytes.
 
 These addresses were fetched successfully during implementation. Behavioral,
 privacy and deployment evidence is recorded in [RELEASE_EVIDENCE.md](RELEASE_EVIDENCE.md).
+
+## Discovery parsers
+
+The Worker uses pinned `htmlparser2` 10.0.0 (MIT), a streaming metadata parser
+without a DOM or Node compatibility requirement. Native Windows uses `scraper`
+0.24.0 (ISC) with `url` 2.5.8; inputs remain bounded and inert. A shared synthetic
+HTML/manifest fixture checks ranking, public URL validation and ignored markup
+on both implementations. New dependencies are pinned in the existing lockfiles.
+
+- https://github.com/fb55/htmlparser2
+- https://docs.rs/scraper/0.24.0/scraper/
+- https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel#icon
+- https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/icons

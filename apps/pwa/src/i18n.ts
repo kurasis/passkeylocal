@@ -8,7 +8,7 @@ import { createContext, useContext } from 'react';
 const en = {
   faviconTitle: "Website icons",
   faviconEnable: "Download website icons",
-  faviconPrivacy: "Optional. Windows contacts the website directly; PWA sends its domain through this app’s Cloudflare Pages service. The website and service can see that domain. No username, password or full website URL is sent. Icons are cached encrypted on this device and remain available offline.",
+  faviconPrivacy: "Optional. Windows reads the public homepage and icons directly; PWA uses this app’s Cloudflare service. The website, its declared image/CDN hosts and the service can see those requests. No username, password or full website URL is sent. Icons are cached encrypted on this device and remain available offline.",
   faviconPriority: "Website takes priority. If it is empty, the title must be a domain, such as github.com. Unavailable icons keep their initial. Enabling creates one vault revision for the encrypted cache key; icon downloads do not change entries or backups.",
   faviconClear: "Clear downloaded icons",
   faviconCleared: "Icon cache cleared. Icons will download again when you open the list.",
@@ -524,7 +524,7 @@ export type MessageKey = keyof typeof en;
 const ru: Record<MessageKey, string> = {
   faviconTitle: "Иконки сайтов",
   faviconEnable: "Загружать иконки сайтов",
-  faviconPrivacy: "По желанию. Windows обращается к сайту напрямую; PWA передаёт его домен через сервис Cloudflare Pages этого приложения. Сайт и сервис видят этот домен. Логин, пароль и полный адрес не передаются. Иконки хранятся на устройстве в зашифрованном кеше и доступны без интернета.",
+  faviconPrivacy: "По желанию. Windows читает общедоступную страницу сайта и иконки напрямую; PWA использует сервис Cloudflare этого приложения. Сайт, объявленные им серверы картинок/CDN и сервис видят эти запросы. Логин, пароль и полный адрес не передаются. Иконки хранятся на устройстве в зашифрованном кеше и доступны без интернета.",
   faviconPriority: "Приоритет у поля «Веб-сайт». Если оно пустое, название должно быть доменом, например github.com. Если иконка недоступна, остаётся буква. При включении создаётся одна ревизия хранилища для ключа кеша; загрузка иконок не меняет записи и резервные копии.",
   faviconClear: "Очистить загруженные иконки",
   faviconCleared: "Кеш иконок очищен. Они загрузятся снова при открытии списка.",

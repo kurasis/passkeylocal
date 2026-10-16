@@ -2,7 +2,7 @@
   "name": "@passkey-local/pwa",
   "private": true,
   "license": "GPL-3.0-only",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "PassKey Local progressive web app (UI, vault worker, offline shell).",
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
   "dependencies": {
     "@passkey-local/vault-adapter": "0.1.0",
     "@passkey-local/vault-core": "0.1.0",
+    "htmlparser2": "10.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

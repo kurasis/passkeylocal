@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
@@ -490,7 +490,7 @@ test('draft navigation is guarded, browser history works and private values neve
 
 const ICON_DOMAIN = 'synthetic-icon-fixture.com';
 const ICON_TITLE = 'synthetic-title-fixture.com';
-const ICON_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMIMVj1HwAEOAIuIYFLowAAAABJRU5ErkJggg==', 'base64');
+const ICON_PNG = readFileSync(new URL('../../../tests/fixtures/icons/retina-192.png', import.meta.url));
 
 async function addIconEntry(page: Page, title = ICON_TITLE, website = `https://${ICON_DOMAIN}/private?marker=do-not-send`) {
   await page.getByRole('button', { name: 'Add entry' }).click();
@@ -528,7 +528,7 @@ test('optional website icons: URL priority, encrypted cache, offline re-unlock, 
   await page.getByRole('link', { name: 'Vault', exact: true }).click();
   await expect(avatar.locator('img')).toBeVisible();
   expect(domains).toEqual([ICON_DOMAIN]);
-  expect(await avatar.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(32);
+  expect(await avatar.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(128);
   const atRest = await persistedText(page);
   expect(atRest).not.toContain(ICON_DOMAIN);
   expect(atRest).not.toContain('iVBORw0KGgo');
@@ -629,9 +629,7 @@ test('a temporary icon endpoint failure retries on the next list visit without c
 
 test('canonical-host ICO renders and an earlier image decode failure does not poison the encrypted cache', async ({ page }) => {
   // An ICO containing our synthetic PNG exercises the actual browser decoder.
-  const ico = Buffer.alloc(22 + ICON_PNG.length);
-  ico.writeUInt16LE(1, 2); ico.writeUInt16LE(1, 4); ico[6] = ico[7] = 1;
-  ico.writeUInt32LE(ICON_PNG.length, 14); ico.writeUInt32LE(22, 18); ICON_PNG.copy(ico, 22);
+  const ico = readFileSync(new URL('../../../tests/fixtures/icons/multi-size.ico', import.meta.url));
   let calls = 0;
   const upstreamUrls: string[] = [];
   await page.addInitScript(() => {
@@ -651,7 +649,8 @@ test('canonical-host ICO renders and an earlier image decode failure does not po
       upstreamUrls.push(String(url));
       return String(url) === `https://${ICON_DOMAIN}/favicon.ico`
         ? new Response(null, { status: 301, headers: { Location: `https://www.${ICON_DOMAIN}/favicon.ico` } })
-        : new Response(calls === 1 ? ICON_PNG.subarray(0, 24) : ico);
+        : String(url) === `https://www.${ICON_DOMAIN}/favicon.ico`
+          ? new Response(calls === 1 ? ICON_PNG.subarray(0, 24) : ico) : new Response(null, { status: 404 });
     });
     await route.fulfill({ status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer()) });
   });
@@ -666,7 +665,41 @@ test('canonical-host ICO renders and an earlier image decode failure does not po
   await page.getByRole('link', { name: 'Vault', exact: true }).click();
   const image = page.locator('.entries .avatar img');
   await expect(image).toBeVisible();
-  expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(32);
+  expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(128);
   expect(calls).toBe(2);
-  expect(upstreamUrls).toEqual(Array(2).fill([`https://${ICON_DOMAIN}/favicon.ico`, `https://www.${ICON_DOMAIN}/favicon.ico`]).flat());
+  expect(upstreamUrls.filter(url => url.endsWith('/favicon.ico'))).toEqual(Array(2).fill([`https://${ICON_DOMAIN}/favicon.ico`, `https://www.${ICON_DOMAIN}/favicon.ico`]).flat());
+});
+
+test('website manifest PNG is retained at retina resolution and remains encrypted and available offline', async ({ page, context }) => {
+  let calls = 0;
+  const visited: string[] = [];
+  await page.route('**/api/favicon', async route => {
+    calls++;
+    const response = await faviconRequest(new Request(route.request().url(), {
+      method: 'POST', body: route.request().postData(), headers: { 'Content-Type': 'application/json', Origin: ORIGIN }
+    }), async url => {
+      const target = String(url); visited.push(target);
+      if (target === `https://${ICON_DOMAIN}/`) return new Response('<link rel="icon" sizes="16x16" href="/tiny.ico"><link rel="manifest" href="/app.webmanifest">');
+      if (target.endsWith('/app.webmanifest')) return new Response(JSON.stringify({ icons: [{ src: '/brand/retina.png', sizes: '192x192', type: 'image/png' }] }));
+      if (target.endsWith('/brand/retina.png')) return new Response(ICON_PNG);
+      return new Response(null, { status: 404 });
+    });
+    await route.fulfill({ status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer()) });
+  });
+  await page.goto('/'); await createAndVerifyVault(page); await addIconEntry(page, ICON_DOMAIN, '');
+  await page.getByRole('link', { name: 'Settings', exact: true }).click();
+  await page.getByRole('checkbox', { name: 'Download website icons' }).check();
+  await page.getByRole('link', { name: 'Vault', exact: true }).click();
+  const image = page.locator('.entries .avatar img');
+  await expect(image).toBeVisible();
+  expect(await image.evaluate((img: HTMLImageElement) => ({ source: img.naturalWidth, display: img.width }))).toEqual({ source: 128, display: 32 });
+  expect(visited).toEqual([`https://${ICON_DOMAIN}/`, `https://${ICON_DOMAIN}/app.webmanifest`, `https://${ICON_DOMAIN}/brand/retina.png`]);
+  expect(await persistedText(page)).not.toContain(ICON_DOMAIN);
+  await page.getByRole('button', { name: 'Lock', exact: true }).click();
+  await context.setOffline(true); await page.reload();
+  await page.getByLabel('Master password').fill(MASTER);
+  await page.getByRole('button', { name: 'Unlock', exact: true }).click();
+  await expect(image).toBeVisible();
+  expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(128);
+  expect(calls).toBe(1);
 });
