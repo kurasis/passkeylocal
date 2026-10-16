@@ -1,6 +1,8 @@
 /** Observe existing/late installs without activating or reloading them. */
 export function pendingUpdate(container: ServiceWorkerContainer, registration: ServiceWorkerRegistration): ServiceWorker | null {
-  if (!container.controller || registration.installing && registration.installing.state !== 'installed') return null;
+  // A hard-reloaded page can be uncontrolled while another tab keeps an old
+  // active worker alive. That is still an update, not a first installation.
+  if (!container.controller && !registration.active || registration.installing && registration.installing.state !== 'installed') return null;
   const worker = registration.waiting ?? registration.installing;
   return worker?.state === 'installed' ? worker : null;
 }

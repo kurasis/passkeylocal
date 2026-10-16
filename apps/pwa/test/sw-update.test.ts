@@ -6,6 +6,7 @@ class Worker extends EventTarget {
   stateTo(state: ServiceWorkerState) { this.state = state; this.dispatchEvent(new Event('statechange')); }
 }
 class Registration extends EventTarget {
+  active: Worker | null = null;
   waiting: Worker | null = null;
   installing: Worker | null = null;
 }
@@ -34,6 +35,13 @@ describe('service worker update observation', () => {
     container.controller = null;
     const first = watch(container, reg);
     expect(first.changes.filter(Boolean)).toEqual([]); first.stop();
+  });
+  it('offers a waiting update after hard reload when another tab keeps the old worker active', () => {
+    const container = new Container(), reg = new Registration(), waiting = new Worker();
+    container.controller = null; reg.active = new Worker(); reg.active.state = 'activated';
+    waiting.state = 'installed'; reg.waiting = waiting;
+    const { changes, stop } = watch(container, reg);
+    expect(changes.at(-1)).toBe(waiting); stop();
   });
   it('clears a superseded update and observes the replacement', () => {
     const container = new Container(), reg = new Registration(), old = new Worker(), next = new Worker();

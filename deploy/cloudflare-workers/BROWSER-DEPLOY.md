@@ -1,4 +1,4 @@
-# Deploy application 0.1.4 using only the browser
+# Deploy application 0.1.5 using only the browser
 
 No Node.js, terminal or Wrangler installation is required on the owner's PC.
 Do not install anything on the running website either. Cloudflare can run the
@@ -6,10 +6,10 @@ deployment tools in its own build environment.
 
 ## Static ZIP: the existing upload screen
 
-[Download the static-only application 0.1.4 ZIP](https://github.com/kurasis/passkeylocal/raw/refs/heads/main/deploy/cloudflare-workers/passkeylocal-cloudflare-workers-static-0.1.4.zip).
+[Download the static-only application 0.1.5 ZIP](https://github.com/kurasis/passkeylocal/raw/refs/heads/main/deploy/cloudflare-workers/passkeylocal-cloudflare-workers-static-0.1.5.zip).
 
-227,024 bytes; SHA-256
-`0b72dd5a1bba5b92b96d8aac7eef4c2fe142725a4174aff276a1f274825a5928`.
+227,028 bytes; SHA-256
+`51ab7a4909bc29ce7ad5c6344066f08e44c4057376cb3f05da605e60ecf37224`.
 
 On **Upload static files to update your Worker**, choose **Remove all**, upload
 this ZIP, then deploy. If the uploader requests a folder, extract the ZIP and
@@ -66,7 +66,7 @@ served version before treating the change as published.
 5. Open the current site and apply its offered app update from the locked screen.
    From 0.1.4, **Check for updates** can request a fresh check. If the old cached
    interface lacks that control, use Ctrl+Shift+R in desktop Chrome/Edge once,
-   or close all site/PWA windows and reopen; see [update recovery](../../docs/releases/0.1.4.md).
+   or close all site/PWA windows and reopen; see [update recovery](../../docs/releases/0.1.5.md).
    Do not clear browser site data. Enable the optional icon setting and test a
    site icon. Verify that `GET /api/favicon` returns 405 with `Allow: POST`, not
    the app HTML. A method response alone does not prove upstream icon retrieval.
