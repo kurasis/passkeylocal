@@ -1,5 +1,32 @@
 # Release evidence and gate status
 
+## First-party PNG fallback 0.1.8 (2026-10-16)
+
+The hosted 0.1.7 quality probe [38893958353](https://github.com/kurasis/passkeylocal/actions/runs/38893958353)
+failed honestly: GitHub returned PNG 512x512 but Google still returned ICO 32x32.
+Local Google HTML was different from the hosted discovery result; the earlier
+response did not expose enough metadata to determine its exact cause. Retained
+[failed report](../deploy/cloudflare-workers/cloudflare-check-0.1.7-live-failed.json).
+The superseded 0.1.7 native run was cancelled before publishing an installer.
+
+Both loaders now additionally try the first-party Google 128px PNG path observed
+in Google's public image metadata, restricted to the exact google.com/www hosts.
+General HTML/manifest/CDN discovery still takes priority. The endpoint exposes
+bounded public discovery counters to diagnose homepage variants without page
+contents, saved fields or error details. Quality policy 2/miss policy 5 recheck
+0.1.7 thumbnails/misses, preserving valid offline icons. No vault/data format or
+identifier change. Versions and title are synchronized to 0.1.8. Existing release
+archives remain immutable.
+
+Added synthetic regression coverage for an unavailable Google homepage, exact
+host matching in both loaders and encrypted policy-1 thumbnail migration.
+Executed final source: 205 JS tests (99 adapter, 40 core, 66 PWA), workspace
+typechecks, both frontend builds, compiled Worker check, version consistency,
+Rust format/clippy and 153 Linux native tests PASS (5 GiB gate ignored locally).
+All three versioned hosting archives pass CRC/SHA checks and Pages bytes match
+the tested dist exactly. Browser and hosted publication checks are recorded
+when completed; no physical-device rendering is inferred from these tests.
+
 ## High-resolution website icons 0.1.7 (2026-10-16)
 
 The owner requested PNG discovery on the website and sharper cached images.
