@@ -31,6 +31,8 @@ Current web-design-guidelines were fetched and applied to the avatar and privacy
 copy: decorative images retain empty alt, fixed 32px layout and lazy loading;
 no new controls/layout or focus changes. Hosted/Windows publication and physical
 owner-device rendering remain separate from these local results.
+The hosted public probe explicitly requires PNG and at least 128px for both
+Google and GitHub, rather than accepting a successful but tiny ICO response.
 
 ## Verified permanent 0.1.6 release (2026-10-16)
 

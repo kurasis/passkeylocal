@@ -64,7 +64,9 @@ report.outcome = shell.status !== 200 ? 'origin-unavailable'
   : worker.status !== 200 || !worker.shellVersion || !/javascript|ecmascript/.test(worker.headers?.['content-type'] ?? '') ? 'service-worker-unavailable'
   : !validManifest || assets.some(asset => asset.status !== 200 || asset.error) ? 'offline-shell-incomplete'
   : method.status !== 405 || method.headers?.allow !== 'POST' ? 'endpoint-not-connected'
-  : [icon, google].some(row => row.status !== 200 || !row.validRaster) ? 'icon-request-failed' : 'passed';
+  : [icon, google].some(row => row.status !== 200 || !row.validRaster) ? 'icon-request-failed'
+  : [icon, google].some(row => !row.dimensions?.png || Math.min(row.dimensions.width, row.dimensions.height) < 128)
+    ? 'high-resolution-icon-unavailable' : 'passed';
 writeFileSync(`cloudflare-check-${version}.json`, JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify(report, null, 2));
 process.exitCode = report.outcome === 'passed' ? 0 : 1;
